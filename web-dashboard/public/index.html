@@ -3,59 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SafeSight | AI Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <title>SafeSight | Video Management System</title>
+    <!-- Modern professional font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="dashboard-wrapper">
-        <header class="glass-header">
+    <div class="app-container">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="vms-sidebar glass-panel">
             <div class="logo-container">
                 <div class="logo-icon pulse"></div>
                 <h1>Safe<span>Sight</span></h1>
             </div>
-            <div class="system-status">
-                <span class="status-indicator online"></span>
-                <span class="status-text">System Online</span>
-            </div>
-            <div class="header-stats">
-                <div class="stat-box">
-                    <span>Uptime</span>
-                    <strong id="uptime">00:00:00</strong>
-                </div>
-                <div class="stat-box">
-                    <span>Total Alerts</span>
-                    <strong id="total-alerts" class="alert-text">0</strong>
-                </div>
-            </div>
-        </header>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+                    <span>Live View</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <span>Timeline</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <span>Anomalies</span>
+                </a>
+                <a href="#" class="nav-item settings-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
 
-        <main class="dashboard-grid">
-            <section class="camera-feed glass-panel">
-                <div class="panel-header">
-                    <h2>Live Camera Feed</h2>
-                    <span class="live-badge">LIVE</span>
-                </div>
-                <div class="video-container">
-                    <img id="video-stream" src="/placeholder.png" alt="Camera Feed Waiting..." />
-                    <div class="loading-overlay" id="video-overlay">
-                        <div class="spinner"></div>
-                        <p>Waiting for AI Engine...</p>
+        <!-- Main Workspace -->
+        <div class="main-content">
+            
+            <!-- Top Header -->
+            <header class="top-header glass-panel">
+                <div class="header-left">
+                    <h2 class="page-title">Headquarters Live View</h2>
+                    <div class="system-status">
+                        <span class="status-indicator online"></span>
+                        <span class="status-text">Network Optimal</span>
                     </div>
                 </div>
-            </section>
-
-            <aside class="alerts-sidebar glass-panel">
-                <div class="panel-header">
-                    <h2>Real-Time Alerts</h2>
-                    <button id="clear-alerts" class="glass-btn">Clear</button>
+                
+                <div class="header-stats">
+                    <div class="stat-box">
+                        <span>System Uptime</span>
+                        <strong id="uptime">00:00:00</strong>
+                    </div>
+                    <div class="stat-box">
+                        <span>Total Security Events</span>
+                        <strong id="total-alerts" class="alert-text">0</strong>
+                    </div>
                 </div>
-                <ul class="alerts-list" id="alerts-list">
-                    <!-- Alerts will be injected here via socket.io -->
-                    <li class="empty-state">No anomalies detected recently.</li>
-                </ul>
-            </aside>
-        </main>
+
+                <div class="user-profile">
+                    <div class="profile-info">
+                        <span class="profile-name">Admin User</span>
+                        <span class="profile-role">Commander</span>
+                    </div>
+                    <img class="profile-avatar" src="https://ui-avatars.com/api/?name=Admin+User&background=58a6ff&color=fff&bold=true" alt="User Avatar">
+                </div>
+            </header>
+
+            <!-- Grid & Alerts Split -->
+            <div class="dashboard-split">
+                
+                <!-- CCTV Grid (3 Cameras) -->
+                <section class="cctv-grid">
+                    
+                    <!-- Camera 1: LIVE FEED -->
+                    <div class="cam-panel active-cam cctv-frame">
+                        <div class="cam-overlay">
+                            <div class="cam-header">
+                                <span class="cam-id">CAM 01 // MAIN LOBBY</span>
+                                <span class="live-badge">REC</span>
+                            </div>
+                            <div class="cam-footer">
+                                <span id="cam-timestamp">2026-03-29 00:00:00</span>
+                                <span class="cam-resolution">1080p 30FPS</span>
+                            </div>
+                        </div>
+                        <img id="video-stream" src="/placeholder.png" alt="Stream Waiting" />
+                        <div class="loading-overlay" id="video-overlay">
+                            <div class="spinner"></div>
+                            <p>WAITING FOR UPLINK...</p>
+                        </div>
+                    </div>
+
+                    <!-- Camera 2: OFFLINE -->
+                    <div class="cam-panel offline-cam cctv-frame">
+                        <div class="cam-overlay">
+                            <div class="cam-header">
+                                <span class="cam-id">CAM 02 // PARKING NORTH</span>
+                                <span class="offline-badge">LOS</span>
+                            </div>
+                        </div>
+                        <div class="static-noise"></div>
+                        <div class="offline-msg">
+                            <svg viewBox="0 0 24 24" width="32" height="32" stroke="rgba(255,255,255,0.4)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg>
+                            <span>SIGNAL LOST</span>
+                        </div>
+                    </div>
+
+                    <!-- Camera 3: OFFLINE -->
+                    <div class="cam-panel offline-cam cctv-frame">
+                        <div class="cam-overlay">
+                            <div class="cam-header">
+                                <span class="cam-id">CAM 03 // BACK ENTRANCE</span>
+                                <span class="offline-badge">OFFLINE</span>
+                            </div>
+                        </div>
+                        <div class="offline-black"></div>
+                        <div class="offline-msg">
+                            <svg viewBox="0 0 24 24" width="32" height="32" stroke="rgba(255,255,255,0.4)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>
+                            <span>MAINTENANCE</span>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- Alerts Sidebar -->
+                <aside class="alerts-sidebar glass-panel">
+                    <div class="panel-header">
+                        <h2>Anomaly Activity Log</h2>
+                        <button id="clear-alerts" class="glass-btn">Purge Log</button>
+                    </div>
+                    <ul class="alerts-list" id="alerts-list">
+                        <!-- Alerts via Socket.io -->
+                        <li class="empty-state">
+                            <svg viewBox="0 0 24 24" width="48" height="48" stroke="rgba(255,255,255,0.1)" stroke-width="1.5" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                            <br><br>
+                            Area Secure.<br>No anomalies continuously detected.
+                        </li>
+                    </ul>
+                </aside>
+
+            </div>
+        </div>
     </div>
 
     <!-- Socket.io -->
