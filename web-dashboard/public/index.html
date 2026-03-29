@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeSight | AI Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <header class="glass-header">
+            <div class="logo-container">
+                <div class="logo-icon pulse"></div>
+                <h1>Safe<span>Sight</span></h1>
+            </div>
+            <div class="system-status">
+                <span class="status-indicator online"></span>
+                <span class="status-text">System Online</span>
+            </div>
+            <div class="header-stats">
+                <div class="stat-box">
+                    <span>Uptime</span>
+                    <strong id="uptime">00:00:00</strong>
+                </div>
+                <div class="stat-box">
+                    <span>Total Alerts</span>
+                    <strong id="total-alerts" class="alert-text">0</strong>
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard-grid">
+            <section class="camera-feed glass-panel">
+                <div class="panel-header">
+                    <h2>Live Camera Feed</h2>
+                    <span class="live-badge">LIVE</span>
+                </div>
+                <div class="video-container">
+                    <img id="video-stream" src="/placeholder.png" alt="Camera Feed Waiting..." />
+                    <div class="loading-overlay" id="video-overlay">
+                        <div class="spinner"></div>
+                        <p>Waiting for AI Engine...</p>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="alerts-sidebar glass-panel">
+                <div class="panel-header">
+                    <h2>Real-Time Alerts</h2>
+                    <button id="clear-alerts" class="glass-btn">Clear</button>
+                </div>
+                <ul class="alerts-list" id="alerts-list">
+                    <!-- Alerts will be injected here via socket.io -->
+                    <li class="empty-state">No anomalies detected recently.</li>
+                </ul>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Socket.io -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
