@@ -33,6 +33,17 @@ def send_to_dashboard(frame, is_alert, confidence):
         # Ignore connection errors if dashboard is not running
         pass
 
+def heartbeat_loop():
+    while True:
+        try:
+            requests.post('http://localhost:3000/api/heartbeat', timeout=1)
+        except Exception:
+            pass
+        time.sleep(5)
+
+# Start heartbeat thread
+threading.Thread(target=heartbeat_loop, daemon=True).start()
+
 model = YOLO('yolov8n.pt') 
 cap = cv2.VideoCapture(0)
 
