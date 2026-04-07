@@ -2,7 +2,7 @@ const token = localStorage.getItem("token");
 const username = localStorage.getItem("username");
 
 if (!token) {
-    window.location.href = "/login.html";
+    window.location.href = "login.html";
 }
 
 // Display username
@@ -12,7 +12,7 @@ document.getElementById("user-display").textContent = username || "Unknown";
 document.getElementById("logout-btn").addEventListener("click", () => {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
-    window.location.href = "/login.html";
+    window.location.href = "login.html";
 });
 
 const socket = io({ auth: { token } });
@@ -21,7 +21,7 @@ const socket = io({ auth: { token } });
 socket.on("connect_error", (err) => {
     if (err.message.includes("Authentication error")) {
         localStorage.removeItem("token");
-        window.location.href = "/login.html";
+        window.location.href = "login.html";
     }
 });
 

@@ -13,10 +13,10 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
 
         const data = await response.json();
 
-        if (response.ok && data.token) {
+        if (response.ok && data.success && data.token) {
             localStorage.setItem("token", data.token);
             localStorage.setItem("username", data.username);
-            window.location.href = "/";
+            window.location.href = "/dashboard.html";
         } else {
             errorMsg.textContent = data.error || "Authentication failed.";
             errorMsg.classList.remove("hidden");

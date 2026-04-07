@@ -15,6 +15,12 @@ import base64
 import threading
 import time
 
+import os
+
+def get_base_url():
+    alert_url = os.environ.get('DASHBOARD_URL', 'http://localhost:3000/api/alert')
+    return alert_url.replace('/api/alert', '')
+
 def send_to_dashboard(frame, is_alert, confidence):
     try:
         # Resize to save bandwidth
@@ -22,13 +28,14 @@ def send_to_dashboard(frame, is_alert, confidence):
         _, buffer = cv2.imencode('.jpg', frame_resized, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
         base64_frame = base64.b64encode(buffer).decode('utf-8')
         
+        base_url = get_base_url()
         # Send Video Frame
-        requests.post('http://localhost:3000/api/video', json={'frame': base64_frame}, timeout=1)
+        requests.post(f"{base_url}/api/video", json={'frame': base64_frame}, timeout=1)
         
         # Send Alert
         if is_alert:
             alert_data = {"label": "Person Detected", "confidence": confidence}
-            requests.post('http://localhost:3000/api/alert', json=alert_data, timeout=1)
+            requests.post(f"{base_url}/api/alert", json=alert_data, timeout=1)
     except Exception as e:
         # Ignore connection errors if dashboard is not running
         pass
@@ -36,7 +43,8 @@ def send_to_dashboard(frame, is_alert, confidence):
 def heartbeat_loop():
     while True:
         try:
-            requests.post('http://localhost:3000/api/heartbeat', timeout=1)
+            base_url = get_base_url()
+            requests.post(f"{base_url}/api/heartbeat", timeout=1)
         except Exception:
             pass
         time.sleep(5)
