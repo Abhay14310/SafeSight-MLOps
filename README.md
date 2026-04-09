@@ -21,33 +21,35 @@ SafeSight is a professional-grade computer vision system designed to detect huma
 
 ### Prerequisites
 * Docker Desktop installed
-* Node.js LTS installed
 * Python 3.10+ installed
+* Webcam connected to your computer
 
-### Running the Project (Development Mode)
-1. Clone the repository:
+### 🏁 Getting Started
+
+1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/YOUR_USERNAME/SafeSight-MLOps.git](https://github.com/YOUR_USERNAME/SafeSight-MLOps.git)
-   🏁 Getting Started
-1. Prerequisites
-Docker Desktop installed.
+   git clone https://github.com/Abhay14310/SafeSight-MLOps.git
+   cd SafeSight-MLOps
+   ```
 
-Node.js (LTS Version).
+2. **Start the Web Dashboard & Database:**
+   We use Docker Compose to instantly launch the Node.js Server and MongoDB database.
+   ```bash
+   docker-compose up --build -d
+   ```
+   *The dashboard will be available at http://localhost:3000.*
 
-Python 3.10+.
+3. **Start the Edge AI Engine:**
+   Open a new terminal. The AI Engine runs natively on your machine to access your local webcam and utilize maximum hardware performance.
+   ```bash
+   cd ai-engine
+   pip install -r requirements.txt # (Ensure dependencies like opencv-python, ultralytics are installed)
+   python src/detection.py
+   ```
 
-2. Installation
-Clone the repository:
+4. **Activate Uplink:**
+   Visit `http://localhost:3000` in your browser. Authenticate, and click the **START UPLINK** button. The Python Engine will receive the signal, turn on your webcam, and begin streaming real-time YOLOv8 annotations directly to your browser!
 
-Bash
-git clone [https://github.com/Abhay14310/SafeSight-MLOps.git](https://github.com/Abhay14310/SafeSight-MLOps.git)
-cd SafeSight-MLOps
-3. Running the Project (The DevOps Way)
-To launch the entire ecosystem (AI + Web + DB) at once:
-
-Bash
-docker-compose up --build
-The dashboard will be available at http://localhost:3000.
 ---
 
 ### 💡 Pro-Tips for your GitHub:
