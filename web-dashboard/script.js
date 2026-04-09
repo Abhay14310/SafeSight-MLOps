@@ -26,12 +26,17 @@ app.get("/", (req, res) => {
 // Increase payload limit for base64 images
 app.use(express.json({ limit: "50mb" }));
 
-// --- System Health Monitoring ---
+// --- System Health Monitoring & Camera Control ---
 let lastAiHeartbeat = 0;
+let isCameraActive = false;
 
 app.post("/api/heartbeat", (req, res) => {
   lastAiHeartbeat = Date.now();
   res.status(200).send({ status: "Heartbeat Logged" });
+});
+
+app.get("/api/camera-status", (req, res) => {
+  res.json({ active: isCameraActive });
 });
 
 // Broadcast System Status to clients every 5 seconds
@@ -86,6 +91,15 @@ io.on("connection", (socket) => {
   // Instantly send system status upon connection
   const isAiOnline = (Date.now() - lastAiHeartbeat) < 15000;
   socket.emit("system-status", { web: true, ai: isAiOnline });
+  
+  // Instantly send camera status
+  socket.emit("camera-status", isCameraActive);
+  
+  // Handle toggle-camera events from client
+  socket.on("toggle-camera", (state) => {
+    isCameraActive = state;
+    io.emit("camera-status", isCameraActive);
+  });
   
   socket.on("disconnect", () => {
     console.log("Client disconnected: " + socket.id);

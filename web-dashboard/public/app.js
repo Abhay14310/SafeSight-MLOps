@@ -208,3 +208,40 @@ socket.on("system-status", (status) => {
         aiTxt.textContent = "OFFLINE";
     }
 });
+
+// --- Camera Toggle Logic ---
+const toggleCameraBtn = document.getElementById("toggle-camera-btn");
+let isCameraActive = false;
+
+if (toggleCameraBtn) {
+    toggleCameraBtn.addEventListener("click", () => {
+        // Optimistically update
+        socket.emit("toggle-camera", !isCameraActive);
+    });
+}
+
+socket.on("camera-status", (state) => {
+    isCameraActive = state;
+    if (toggleCameraBtn) {
+        toggleCameraBtn.textContent = state ? "PAUSE UPLINK" : "START UPLINK";
+        toggleCameraBtn.className = state ? 
+            "absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] bg-red-600/70 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg z-50 transition-colors" : 
+            "absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg z-50 shadow-[0_0_15px_rgba(37,99,235,0.6)] transition-colors";
+    }
+    
+    // Clear video feed if paused
+    if (!state) {
+        if (videoOverlay) {
+            videoOverlay.style.display = "flex";
+            videoOverlay.querySelector("p").textContent = "UPLINK PAUSED - DEVICE IDLE";
+        }
+        if (videoStream) {
+            videoStream.src = "/placeholder.png";
+        }
+    } else {
+        if (videoOverlay && videoStream.getAttribute('src').includes('placeholder.png')) {
+            videoOverlay.style.display = "flex";
+            videoOverlay.querySelector("p").textContent = "INITIALIZING AI ENGINE...";
+        }
+    }
+});

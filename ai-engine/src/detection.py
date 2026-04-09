@@ -52,46 +52,75 @@ def heartbeat_loop():
 # Start heartbeat thread
 threading.Thread(target=heartbeat_loop, daemon=True).start()
 
-model = YOLO('yolov8n.pt') 
-cap = cv2.VideoCapture(0)
+is_camera_active = False
 
-print("AI Engine Running... Press 'q' or Ctrl+C to stop.")
+def status_loop():
+    global is_camera_active
+    while True:
+        try:
+            base_url = get_base_url()
+            res = requests.get(f"{base_url}/api/camera-status", timeout=1)
+            if res.status_code == 200:
+                is_camera_active = res.json().get("active", False)
+        except Exception:
+            pass
+        time.sleep(1)
+
+threading.Thread(target=status_loop, daemon=True).start()
+
+model = YOLO('yolov8n.pt') 
+cap = None
+
+print("AI Engine Ready... Waiting for dashboard to START UPLINK.")
 
 try:
     frame_count = 0
     last_alert_time = 0
     
-    while cap.isOpened():
-        success, frame = cap.read()
-        if not success:
-            break
+    while True:
+        if is_camera_active:
+            if cap is None or not cap.isOpened():
+                print("[INFO] Starting Camera Uplink...")
+                cap = cv2.VideoCapture(0)
+                
+            success, frame = cap.read()
+            if not success:
+                time.sleep(0.1)
+                continue
 
-        results = model(frame, conf=0.5, verbose=False) # verbose=False cleans up terminal
-        annotated_frame = results[0].plot()
+            results = model(frame, conf=0.5, verbose=False) # verbose=False cleans up terminal
+            annotated_frame = results[0].plot()
 
-        # cv2.imshow("SafeSight AI Test", annotated_frame) # Removed to prevent external popup
+            # cv2.imshow("SafeSight AI Test", annotated_frame) # Removed to prevent external popup
 
-        # Basic alert logic (Person = class 0 in COCO)
-        is_alert = False
-        max_conf = 0.0
-        current_time = time.time()
-        
-        # Cooldown of 5 seconds for alerts
-        if current_time - last_alert_time > 5:
-            for box in results[0].boxes:
-                if int(box.cls) == 0: # Person detected
-                    is_alert = True
-                    max_conf = float(box.conf[0])
-                    break
-        
-        if is_alert:
-            last_alert_time = current_time
+            # Basic alert logic (Person = class 0 in COCO)
+            is_alert = False
+            max_conf = 0.0
+            current_time = time.time()
+            
+            # Cooldown of 5 seconds for alerts
+            if current_time - last_alert_time > 5:
+                for box in results[0].boxes:
+                    if int(box.cls) == 0: # Person detected
+                        is_alert = True
+                        max_conf = float(box.conf[0])
+                        break
+            
+            if is_alert:
+                last_alert_time = current_time
 
-        # Send frame to dashboard asynchronously (every 3rd frame to reduce network load)
-        if frame_count % 3 == 0 or is_alert:
-            threading.Thread(target=send_to_dashboard, args=(annotated_frame, is_alert, max_conf), daemon=True).start()
+            # Send frame to dashboard asynchronously (every 3rd frame to reduce network load)
+            if frame_count % 3 == 0 or is_alert:
+                threading.Thread(target=send_to_dashboard, args=(annotated_frame, is_alert, max_conf), daemon=True).start()
 
-        frame_count += 1
+            frame_count += 1
+            
+        else:
+            if cap is not None and cap.isOpened():
+                print("[INFO] Pausing Camera Uplink...")
+                cap.release()
+                cap = None
+            time.sleep(0.5)
 
 except KeyboardInterrupt:
     print("\n[INFO] Stopping AI Engine... (Ctrl+C pressed)")
