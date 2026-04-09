@@ -17,6 +17,12 @@ const JWT_SECRET = process.env.JWT_SECRET || 'safesight-super-secret';
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, "public")));
+
+// Default route to serve login.html
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
 // Increase payload limit for base64 images
 app.use(express.json({ limit: "50mb" }));
 

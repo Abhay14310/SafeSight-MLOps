@@ -69,7 +69,7 @@ try:
         results = model(frame, conf=0.5, verbose=False) # verbose=False cleans up terminal
         annotated_frame = results[0].plot()
 
-        cv2.imshow("SafeSight AI Test", annotated_frame)
+        # cv2.imshow("SafeSight AI Test", annotated_frame) # Removed to prevent external popup
 
         # Basic alert logic (Person = class 0 in COCO)
         is_alert = False
@@ -92,9 +92,6 @@ try:
             threading.Thread(target=send_to_dashboard, args=(annotated_frame, is_alert, max_conf), daemon=True).start()
 
         frame_count += 1
-
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
 
 except KeyboardInterrupt:
     print("\n[INFO] Stopping AI Engine... (Ctrl+C pressed)")
