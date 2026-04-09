@@ -6,22 +6,12 @@ services:
     build: ./web-dashboard
     ports:
       - "3000:3000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/safesight
     networks:
       - safesight-network
     depends_on:
       - mongodb
-
-  # --- The AI Engine (Python + YOLO) ---
-  ai-engine:
-    build: ./ai-engine
-    volumes:
-      - /dev/video0:/dev/video0  # Accesses your webcam (Linux/Ubuntu)
-    environment:
-      - DASHBOARD_URL=http://web-dashboard:3000/api/alert
-    networks:
-      - safesight-network
-    depends_on:
-      - web-dashboard
 
   # --- Database (MongoDB) ---
   mongodb:

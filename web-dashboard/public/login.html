@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeSight | Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-image: radial-gradient(circle at center, #1e2430 0%, #0a0c10 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-panel p-10 rounded-2xl w-full max-w-md shadow-2xl relative overflow-hidden text-center">
+        <!-- Logo -->
+        <div class="flex justify-center items-center gap-3 mb-8">
+            <div class="w-4 h-4 rounded-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] animate-pulse"></div>
+            <h1 class="text-3xl font-extrabold font-[Outfit] tracking-tight">Safe<span class="text-blue-500 font-normal">Sight</span></h1>
+        </div>
+
+        <h2 class="text-lg text-gray-400 mb-6 uppercase tracking-widest font-semibold text-center">Authorized Access Only</h2>
+
+        <form id="login-form" class="flex flex-col gap-5 text-left">
+            <div>
+                <label class="block text-sm text-gray-400 mb-1 ml-1">Commander ID</label>
+                <input type="text" id="username" class="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="Enter username" required>
+            </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-1 ml-1">Passcode</label>
+                <input type="password" id="password" class="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="Enter password" required>
+            </div>
+            
+            <div id="error-msg" class="text-red-500 text-sm hidden font-mono text-center">Invalid credentials.</div>
+            
+            <button type="submit" class="mt-4 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:shadow-[0_0_25px_rgba(59,130,246,0.5)]">
+                AUTHENTICATE
+            </button>
+        </form>
+    </div>
+
+    <script src="login.js"></script>
+</body>
+</html>

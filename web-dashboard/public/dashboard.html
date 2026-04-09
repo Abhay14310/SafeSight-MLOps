@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeSight | Video Management System</title>
+    <!-- Modern professional font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="vms-sidebar glass-panel">
+            <div class="logo-container">
+                <div class="logo-icon pulse"></div>
+                <h1>Safe<span>Sight</span></h1>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" id="nav-dashboard">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+                    <span>Live View</span>
+                </a>
+                <a href="#" class="nav-item" id="nav-system-status">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    <span>System Status</span>
+                </a>
+                <a href="#" class="nav-item settings-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+        
+        <!-- Main Workspace -->
+        <div class="main-content relative">
+            
+            <!-- Top Header -->
+            <header class="top-header glass-panel">
+                <div class="header-left">
+                    <h2 class="page-title" id="page-title">Headquarters Live View</h2>
+                    <div class="system-status">
+                        <span class="status-indicator online" id="global-status-indicator"></span>
+                        <span class="status-text" id="global-status-text">Network Optimal</span>
+                    </div>
+                </div>
+                
+                <div class="header-stats">
+                    <div class="stat-box">
+                        <span>System Uptime</span>
+                        <strong id="uptime">00:00:00</strong>
+                    </div>
+                    <div class="stat-box">
+                        <span>Total Security Events</span>
+                        <strong id="total-alerts" class="alert-text">0</strong>
+                    </div>
+                </div>
+                
+                <div class="user-profile relative select-none group">
+                    <div class="profile-info">
+                        <span class="profile-name" id="user-display">Loading...</span>
+                        <span class="profile-role">Commander</span>
+                    </div>
+                    <img class="profile-avatar" src="https://ui-avatars.com/api/?name=Commander&background=58a6ff&color=fff&bold=true" alt="Avatar">
+                    
+                    <button id="logout-btn" class="absolute top-12 right-0 bg-red-600/90 hover:bg-red-500 text-white text-xs font-bold px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity border border-red-400">
+                        LOGOUT
+                    </button>
+                </div>
+            </header>
+
+            <!-- Grid & Alerts Split (DASHBOARD TAB) -->
+            <div class="dashboard-split h-full" id="view-dashboard">
+                
+                <!-- CCTV Grid (3 Cameras) -->
+                <section class="cctv-grid">
+                    <!-- Camera 1: LIVE FEED -->
+                    <div class="cam-panel active-cam cctv-frame">
+                        <div class="cam-overlay">
+                            <div class="cam-header">
+                                <span class="cam-id">CAM 01 // MAIN LOBBY</span>
+                                <span class="live-badge">REC</span>
+                            </div>
+                            <button id="toggle-camera-btn" class="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg z-50 shadow-[0_0_15px_rgba(37,99,235,0.6)] transition-colors">
+                                START UPLINK
+                            </button>
+                            <div class="cam-footer">
+                                <span id="cam-timestamp">2026-03-29 00:00:00</span>
+                                <span class="cam-resolution">1080p 30FPS</span>
+                            </div>
+                        </div>
+                        <img id="video-stream" src="/placeholder.png" alt="Stream Waiting" />
+                        <div class="loading-overlay" id="video-overlay">
+                            <div class="spinner"></div>
+                            <p>WAITING FOR UPLINK...</p>
+                        </div>
+                    </div>
+
+                    <!-- Camera 2 & 3: OFFLINE -->
+                    <div class="cam-panel offline-cam cctv-frame">
+                        <div class="cam-overlay"><div class="cam-header"><span class="cam-id">CAM 02 // PARKING NORTH</span><span class="offline-badge">LOS</span></div></div>
+                        <div class="static-noise"></div>
+                        <div class="offline-msg"><svg viewBox="0 0 24 24" width="32" height="32" stroke="rgba(255,255,255,0.4)" stroke-width="2" fill="none"><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg><span>SIGNAL LOST</span></div>
+                    </div>
+                    <div class="cam-panel offline-cam cctv-frame">
+                        <div class="cam-overlay"><div class="cam-header"><span class="cam-id">CAM 03 // BACK ENTRANCE</span><span class="offline-badge">OFFLINE</span></div></div>
+                        <div class="offline-black"></div>
+                        <div class="offline-msg"><svg viewBox="0 0 24 24" width="32" height="32" stroke="rgba(255,255,255,0.4)" stroke-width="2" fill="none"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg><span>MAINTENANCE</span></div>
+                    </div>
+                </section>
+
+                <!-- Alerts Sidebar (Tailwind Enhanced via app.js) -->
+                <aside class="alerts-sidebar glass-panel">
+                    <div class="panel-header">
+                        <h2>Anomaly Activity Log</h2>
+                        <button id="clear-alerts" class="glass-btn">Purge Log</button>
+                    </div>
+                    <!-- Added relative Tailwind classes to fix scrolling and overflow -->
+                    <ul class="alerts-list overflow-y-auto space-y-3 p-3 flex-grow" id="alerts-list">
+                        <!-- Empty State -->
+                        <li class="empty-state text-center text-gray-500 py-10">
+                            <svg class="mx-auto block mb-4" viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                            Area Secure.<br>No anomalies continuously detected.
+                        </li>
+                    </ul>
+                </aside>
+            </div>
+
+            <!-- SYSTEM STATUS TAB -->
+            <div class="hidden h-full flex items-center justify-center" id="view-system-status">
+                <div class="glass-panel p-10 w-full max-w-3xl">
+                    <h2 class="text-2xl font-bold font-[Outfit] text-white mb-8 border-b border-gray-700 pb-4">Core Infrastructure Diagnostics</h2>
+                    
+                    <div class="grid grid-cols-2 gap-8">
+                        <!-- Web Server Node -->
+                        <div class="bg-black/30 p-6 rounded-xl border border-gray-800 flex flex-col items-center">
+                            <svg class="w-16 h-16 text-blue-500 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            <h3 class="text-lg font-semibold text-gray-200">Web Server (Node.js)</h3>
+                            <div class="mt-4 flex items-center gap-3">
+                                <div id="status-web-indicator" class="w-4 h-4 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]"></div>
+                                <span id="status-web-text" class="text-green-500 font-bold tracking-widest">ONLINE</span>
+                            </div>
+                        </div>
+
+                        <!-- AI Engine Node -->
+                        <div class="bg-black/30 p-6 rounded-xl border border-gray-800 flex flex-col items-center">
+                            <svg class="w-16 h-16 text-purple-500 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path><path d="M12 12 2.1 7.1"></path><path d="M12 12l9.9 4.9"></path></svg>
+                            <h3 class="text-lg font-semibold text-gray-200">AI Engine (Python/YOLO)</h3>
+                            <div class="mt-4 flex items-center gap-3">
+                                <div id="status-ai-indicator" class="w-4 h-4 rounded-full bg-red-500 shadow-[0_0_10px_#ef4444] transition-colors duration-300"></div>
+                                <span id="status-ai-text" class="text-red-500 font-bold tracking-widest transition-colors duration-300">OFFLINE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Socket.io -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
