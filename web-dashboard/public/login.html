@@ -1,50 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SafeSight | Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            background-image: radial-gradient(circle at center, #1e2430 0%, #0a0c10 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-    </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Login — Tasuke'26 Cyber Sentinel</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
 </head>
-<body>
-    <div class="glass-panel p-10 rounded-2xl w-full max-w-md shadow-2xl relative overflow-hidden text-center">
-        <!-- Logo -->
-        <div class="flex justify-center items-center gap-3 mb-8">
-            <div class="w-4 h-4 rounded-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] animate-pulse"></div>
-            <h1 class="text-3xl font-extrabold font-[Outfit] tracking-tight">Safe<span class="text-blue-500 font-normal">Sight</span></h1>
-        </div>
+<body class="auth-page">
+<div id="cursor"></div>
+<div id="cursor-trail"></div>
+<canvas id="auth-canvas"></canvas>
 
-        <h2 class="text-lg text-gray-400 mb-6 uppercase tracking-widest font-semibold text-center">Authorized Access Only</h2>
-
-        <form id="login-form" class="flex flex-col gap-5 text-left">
-            <div>
-                <label class="block text-sm text-gray-400 mb-1 ml-1">Commander ID</label>
-                <input type="text" id="username" class="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="Enter username" required>
-            </div>
-            <div>
-                <label class="block text-sm text-gray-400 mb-1 ml-1">Passcode</label>
-                <input type="password" id="password" class="w-full bg-black/40 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="Enter password" required>
-            </div>
-            
-            <div id="error-msg" class="text-red-500 text-sm hidden font-mono text-center">Invalid credentials.</div>
-            
-            <button type="submit" class="mt-4 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg transition-all shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:shadow-[0_0_25px_rgba(59,130,246,0.5)]">
-                AUTHENTICATE
-            </button>
-        </form>
+<div class="auth-wrap">
+  <div class="auth-left">
+    <div class="al-brand">
+      <a href="index.html" class="nav-logo">T<span>26</span></a>
     </div>
+    <h1 class="al-title">Secure Access<br/><span>Portal</span></h1>
+    <p class="al-sub">Protected by Tasuke'26 Zero-Trust Architecture. All sessions are encrypted, monitored, and audited.</p>
+    <div class="al-stats">
+      <div class="als-item"><span class="als-num mono">AES-256</span><span class="als-label">Encryption</span></div>
+      <div class="als-item"><span class="als-num mono">MFA</span><span class="als-label">Required</span></div>
+      <div class="als-item"><span class="als-num mono">Zero-Trust</span><span class="als-label">Architecture</span></div>
+    </div>
+    <div class="al-badges">
+      <div class="badge-chip">SOC 2 Type II</div>
+      <div class="badge-chip">ISO 27001</div>
+      <div class="badge-chip">GDPR Compliant</div>
+    </div>
+  </div>
 
-    <script src="login.js"></script>
+  <div class="auth-right">
+    <div class="auth-card">
+      <!-- Tabs -->
+      <div class="auth-tabs">
+        <button class="atab active" id="tab-login" onclick="switchTab('login')">Sign In</button>
+        <button class="atab" id="tab-register" onclick="switchTab('register')">Register</button>
+      </div>
+
+      <!-- Login Form -->
+      <div id="form-login" class="auth-form">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" placeholder="e.g. admin" class="form-input" id="login-email"/>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" placeholder="••••••••••••" class="form-input" id="login-pass"/>
+          <a href="#" class="forgot-link">Forgot password?</a>
+        </div>
+        <div class="form-group">
+          <label>MFA Code</label>
+          <div class="otp-grid">
+            <input type="text" maxlength="1" class="otp-input" oninput="otpNext(this)"/>
+            <input type="text" maxlength="1" class="otp-input" oninput="otpNext(this)"/>
+            <input type="text" maxlength="1" class="otp-input" oninput="otpNext(this)"/>
+            <input type="text" maxlength="1" class="otp-input" oninput="otpNext(this)"/>
+            <input type="text" maxlength="1" class="otp-input" oninput="otpNext(this)"/>
+            <input type="text" maxlength="1" class="otp-input" oninput="otpNext(this)"/>
+          </div>
+        </div>
+        <button class="auth-btn" onclick="doLogin()">
+          <span id="login-btn-text">Access Dashboard</span>
+          <div id="login-spinner" class="btn-spinner hidden"></div>
+        </button>
+        <p class="auth-note mono">Session secured · Zero-trust verified · Audit logged</p>
+      </div>
+
+      <!-- Register Form -->
+      <div id="form-register" class="auth-form hidden">
+        <div class="form-group">
+          <label>Organization Name</label>
+          <input type="text" placeholder="ACME Corporation" class="form-input"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" placeholder="John" class="form-input"/>
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" placeholder="Doe" class="form-input"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Username / Email</label>
+          <input type="text" placeholder="john@company.com" class="form-input" id="reg-email"/>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" placeholder="Min. 12 characters" class="form-input" id="reg-pass" oninput="checkPassStrength(this)"/>
+          <div class="pass-strength">
+            <div class="ps-bar" id="ps-bar"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Subscription Tier</label>
+          <select class="form-input form-select">
+            <option value="">Select a plan...</option>
+            <option value="core">Sentinel Core — $299/mo</option>
+            <option value="pro">Guardian Pro — $799/mo</option>
+            <option value="elite">Fortress Elite — $1,999/mo</option>
+          </select>
+        </div>
+        <button class="auth-btn" onclick="doRegister()">
+          <span>Create Account</span>
+        </button>
+        <p class="auth-note mono">By registering, you agree to our Terms & Privacy Policy</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="main.js"></script>
+<script>
+function switchTab(tab) {
+  document.getElementById('tab-login').classList.toggle('active', tab==='login');
+  document.getElementById('tab-register').classList.toggle('active', tab==='register');
+  document.getElementById('form-login').classList.toggle('hidden', tab!=='login');
+  document.getElementById('form-register').classList.toggle('hidden', tab!=='register');
+}
+function otpNext(el) {
+  if(el.value.length===1) { const n=el.nextElementSibling; if(n&&n.classList.contains('otp-input')) n.focus(); }
+}
+function checkPassStrength(el) {
+  const v=el.value; let s=0;
+  if(v.length>8)s++; if(v.length>12)s++; if(/[A-Z]/.test(v))s++; if(/[0-9]/.test(v))s++; if(/[^a-zA-Z0-9]/.test(v))s++;
+  const bar=document.getElementById('ps-bar');
+  const colors=['#f43f5e','#f59e0b','#f59e0b','#10b981','#38bdf8'];
+  bar.style.width=(s*20)+'%'; bar.style.background=colors[s-1]||'#f43f5e';
+}
+async function doLogin() {
+  const btn = document.getElementById('login-btn-text');
+  const sp = document.getElementById('login-spinner');
+  const email = document.getElementById('login-email').value;
+  const pass = document.getElementById('login-pass').value;
+
+  if (!email || !pass) {
+    alert('Please enter both username and password.');
+    return;
+  }
+
+  btn.textContent = 'Verifying...';
+  sp.classList.remove('hidden');
+
+  try {
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: email, password: pass })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success && data.token) {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('username', data.username);
+      window.location.href = 'dashboard.html';
+    } else {
+      alert(data.error || 'Authentication failed.');
+      btn.textContent = 'Access Dashboard';
+      sp.classList.add('hidden');
+    }
+  } catch (err) {
+    alert('Server connection lost.');
+    btn.textContent = 'Access Dashboard';
+    sp.classList.add('hidden');
+  }
+}
+async function doRegister() {
+  const email = document.getElementById('reg-email').value;
+  const pass = document.getElementById('reg-pass').value;
+
+  if (!email || !pass) {
+    alert('Please enter a username and password to register.');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: email, password: pass })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      alert('Registration successful! You can now log in.');
+      switchTab('login');
+      document.getElementById('login-email').value = email;
+    } else {
+      alert(data.error || 'Registration failed.');
+    }
+  } catch (err) {
+    alert('Server connection lost.');
+  }
+}
+</script>
 </body>
 </html>

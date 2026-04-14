@@ -1,173 +1,515 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SafeSight | Video Management System</title>
-    <!-- Modern professional font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard — Tasuke'26 Cyber Sentinel</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
 </head>
-<body>
-    <div class="app-container">
-        
-        <!-- Sidebar Navigation -->
-        <aside class="vms-sidebar glass-panel">
-            <div class="logo-container">
-                <div class="logo-icon pulse"></div>
-                <h1>Safe<span>Sight</span></h1>
-            </div>
-            
-            <nav class="nav-menu">
-                <a href="#" class="nav-item active" id="nav-dashboard">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                    <span>Dashboard</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
-                    <span>Live View</span>
-                </a>
-                <a href="#" class="nav-item" id="nav-system-status">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                    <span>System Status</span>
-                </a>
-                <a href="#" class="nav-item settings-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    <span>Settings</span>
-                </a>
-            </nav>
-        </aside>
-        
-        <!-- Main Workspace -->
-        <div class="main-content relative">
-            
-            <!-- Top Header -->
-            <header class="top-header glass-panel">
-                <div class="header-left">
-                    <h2 class="page-title" id="page-title">Headquarters Live View</h2>
-                    <div class="system-status">
-                        <span class="status-indicator online" id="global-status-indicator"></span>
-                        <span class="status-text" id="global-status-text">Network Optimal</span>
-                    </div>
-                </div>
-                
-                <div class="header-stats">
-                    <div class="stat-box">
-                        <span>System Uptime</span>
-                        <strong id="uptime">00:00:00</strong>
-                    </div>
-                    <div class="stat-box">
-                        <span>Total Security Events</span>
-                        <strong id="total-alerts" class="alert-text">0</strong>
-                    </div>
-                </div>
-                
-                <div class="user-profile relative select-none group">
-                    <div class="profile-info">
-                        <span class="profile-name" id="user-display">Loading...</span>
-                        <span class="profile-role">Commander</span>
-                    </div>
-                    <img class="profile-avatar" src="https://ui-avatars.com/api/?name=Commander&background=58a6ff&color=fff&bold=true" alt="Avatar">
-                    
-                    <button id="logout-btn" class="absolute top-12 right-0 bg-red-600/90 hover:bg-red-500 text-white text-xs font-bold px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity border border-red-400">
-                        LOGOUT
-                    </button>
-                </div>
-            </header>
+<body class="dashboard-page">
 
-            <!-- Grid & Alerts Split (DASHBOARD TAB) -->
-            <div class="dashboard-split h-full" id="view-dashboard">
-                
-                <!-- CCTV Grid (3 Cameras) -->
-                <section class="cctv-grid">
-                    <!-- Camera 1: LIVE FEED -->
-                    <div class="cam-panel active-cam cctv-frame">
-                        <div class="cam-overlay">
-                            <div class="cam-header">
-                                <span class="cam-id">CAM 01 // MAIN LOBBY</span>
-                                <span class="live-badge">REC</span>
-                            </div>
-                            <button id="toggle-camera-btn" class="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg z-50 shadow-[0_0_15px_rgba(37,99,235,0.6)] transition-colors">
-                                START UPLINK
-                            </button>
-                            <div class="cam-footer">
-                                <span id="cam-timestamp">2026-03-29 00:00:00</span>
-                                <span class="cam-resolution">1080p 30FPS</span>
-                            </div>
-                        </div>
-                        <img id="video-stream" src="/placeholder.png" alt="Stream Waiting" />
-                        <div class="loading-overlay" id="video-overlay">
-                            <div class="spinner"></div>
-                            <p>WAITING FOR UPLINK...</p>
-                        </div>
-                    </div>
+<!-- ═══ SIDEBAR ═══ -->
+<aside id="dash-sidebar">
+  <div class="ds-brand">
+    <a href="index.html" class="nav-logo">T<span>26</span></a>
+    <span class="ds-version mono">v2.6.1</span>
+  </div>
+  <nav class="ds-nav">
+    <div class="ds-nav-section">MAIN</div>
+    <a href="#" class="ds-item active" data-page="overview">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span>Overview</span>
+    </a>
+    <a href="#" class="ds-item" data-page="livefeed">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M20.188 10.934c.388.733.612 1.566.612 2.452 0 2.948-2.388 5.334-5.334 5.334a5.344 5.344 0 01-5.334-5.334c0-2.947 2.386-5.333 5.334-5.333"/></svg>
+      <span>Live Feeds</span>
+      <span class="ds-badge">4</span>
+    </a>
+    <a href="#" class="ds-item" data-page="incidents">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Incidents</span>
+      <span class="ds-badge alert">3</span>
+    </a>
+    <a href="#" class="ds-item" data-page="analytics">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <span>Analytics</span>
+    </a>
+    <div class="ds-nav-section" style="margin-top:16px">AI MODULES</div>
+    <a href="#" class="ds-item" data-page="perimeter" data-tier="core">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span>Perimeter</span>
+      <span class="tier-pill core">CORE</span>
+    </a>
+    <a href="#" class="ds-item locked" data-page="ppe" data-tier="pro">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <span>PPE Safety</span>
+      <span class="tier-pill pro">PRO</span>
+    </a>
+    <a href="#" class="ds-item locked" data-page="intrusion" data-tier="elite">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      <span>Hi-Sec Intrusion</span>
+      <span class="tier-pill elite">ELITE</span>
+    </a>
+    <div class="ds-nav-section" style="margin-top:16px">SETTINGS</div>
+    <a href="#" class="ds-item" data-page="nodes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      <span>Edge Nodes</span>
+    </a>
+    <a href="#" class="ds-item" data-page="subscription">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+      <span>Subscription</span>
+    </a>
+  </nav>
+  <div class="ds-footer">
+    <div class="ds-user">
+      <div class="ds-avatar">JD</div>
+      <div class="ds-user-info">
+        <span class="ds-username">John Doe</span>
+        <span class="ds-org mono">APEX INDUSTRIES · CORE</span>
+      </div>
+    </div>
+    <a href="index.html" class="ds-logout" title="Logout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+    </a>
+  </div>
+</aside>
 
-                    <!-- Camera 2 & 3: OFFLINE -->
-                    <div class="cam-panel offline-cam cctv-frame">
-                        <div class="cam-overlay"><div class="cam-header"><span class="cam-id">CAM 02 // PARKING NORTH</span><span class="offline-badge">LOS</span></div></div>
-                        <div class="static-noise"></div>
-                        <div class="offline-msg"><svg viewBox="0 0 24 24" width="32" height="32" stroke="rgba(255,255,255,0.4)" stroke-width="2" fill="none"><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg><span>SIGNAL LOST</span></div>
-                    </div>
-                    <div class="cam-panel offline-cam cctv-frame">
-                        <div class="cam-overlay"><div class="cam-header"><span class="cam-id">CAM 03 // BACK ENTRANCE</span><span class="offline-badge">OFFLINE</span></div></div>
-                        <div class="offline-black"></div>
-                        <div class="offline-msg"><svg viewBox="0 0 24 24" width="32" height="32" stroke="rgba(255,255,255,0.4)" stroke-width="2" fill="none"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg><span>MAINTENANCE</span></div>
-                    </div>
-                </section>
+<!-- ═══ MAIN CONTENT ═══ -->
+<main id="dash-main">
+  <!-- Top bar -->
+  <div id="dash-topbar">
+    <div class="dtb-left">
+      <h2 id="page-title">Overview</h2>
+      <span class="mono dtb-time" id="dtb-time">--:--:--</span>
+    </div>
+    <div class="dtb-right">
+      <div class="dtb-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" placeholder="Search cameras, incidents..."/>
+      </div>
+      <div class="dtb-notif" id="notif-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </div>
+      <div class="dtb-tier-badge pro-badge mono">CORE TIER</div>
+    </div>
+  </div>
 
-                <!-- Alerts Sidebar (Tailwind Enhanced via app.js) -->
-                <aside class="alerts-sidebar glass-panel">
-                    <div class="panel-header">
-                        <h2>Anomaly Activity Log</h2>
-                        <button id="clear-alerts" class="glass-btn">Purge Log</button>
-                    </div>
-                    <!-- Added relative Tailwind classes to fix scrolling and overflow -->
-                    <ul class="alerts-list overflow-y-auto space-y-3 p-3 flex-grow" id="alerts-list">
-                        <!-- Empty State -->
-                        <li class="empty-state text-center text-gray-500 py-10">
-                            <svg class="mx-auto block mb-4" viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                            Area Secure.<br>No anomalies continuously detected.
-                        </li>
-                    </ul>
-                </aside>
-            </div>
-
-            <!-- SYSTEM STATUS TAB -->
-            <div class="hidden h-full flex items-center justify-center" id="view-system-status">
-                <div class="glass-panel p-10 w-full max-w-3xl">
-                    <h2 class="text-2xl font-bold font-[Outfit] text-white mb-8 border-b border-gray-700 pb-4">Core Infrastructure Diagnostics</h2>
-                    
-                    <div class="grid grid-cols-2 gap-8">
-                        <!-- Web Server Node -->
-                        <div class="bg-black/30 p-6 rounded-xl border border-gray-800 flex flex-col items-center">
-                            <svg class="w-16 h-16 text-blue-500 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                            <h3 class="text-lg font-semibold text-gray-200">Web Server (Node.js)</h3>
-                            <div class="mt-4 flex items-center gap-3">
-                                <div id="status-web-indicator" class="w-4 h-4 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]"></div>
-                                <span id="status-web-text" class="text-green-500 font-bold tracking-widest">ONLINE</span>
-                            </div>
-                        </div>
-
-                        <!-- AI Engine Node -->
-                        <div class="bg-black/30 p-6 rounded-xl border border-gray-800 flex flex-col items-center">
-                            <svg class="w-16 h-16 text-purple-500 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path><path d="M12 12 2.1 7.1"></path><path d="M12 12l9.9 4.9"></path></svg>
-                            <h3 class="text-lg font-semibold text-gray-200">AI Engine (Python/YOLO)</h3>
-                            <div class="mt-4 flex items-center gap-3">
-                                <div id="status-ai-indicator" class="w-4 h-4 rounded-full bg-red-500 shadow-[0_0_10px_#ef4444] transition-colors duration-300"></div>
-                                <span id="status-ai-text" class="text-red-500 font-bold tracking-widest transition-colors duration-300">OFFLINE</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+  <!-- ── PAGE: OVERVIEW ── -->
+  <div id="page-overview" class="dash-page active">
+    <!-- Stat Cards -->
+    <div class="stat-cards">
+      <div class="sc-card">
+        <div class="sc-icon sky"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="sc-data">
+          <span class="sc-val" data-target="1284">0</span>
+          <span class="sc-label">Threats Blocked Today</span>
         </div>
+        <div class="sc-trend up">↑ 12%</div>
+      </div>
+      <div class="sc-card">
+        <div class="sc-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <div class="sc-data">
+          <span class="sc-val" data-target="4">0</span>
+          <span class="sc-label">Cameras Active</span>
+        </div>
+        <div class="sc-trend up">● Online</div>
+      </div>
+      <div class="sc-card">
+        <div class="sc-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>
+        <div class="sc-data">
+          <span class="sc-val" data-target="3">0</span>
+          <span class="sc-label">Active Incidents</span>
+        </div>
+        <div class="sc-trend down">⚠ Needs Review</div>
+      </div>
+      <div class="sc-card">
+        <div class="sc-icon sky"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+        <div class="sc-data">
+          <span class="sc-val" data-target="99.97">0</span><span style="color:var(--sky);font-size:14px">%</span>
+          <span class="sc-label">Detection Accuracy</span>
+        </div>
+        <div class="sc-trend up">↑ Optimal</div>
+      </div>
     </div>
 
-    <!-- Socket.io -->
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="app.js"></script>
+    <!-- Charts row -->
+    <div class="charts-row">
+      <div class="chart-card wide">
+        <div class="chart-header">
+          <h3>Threat Activity — 24h</h3>
+          <div class="chart-legend">
+            <span><i style="background:var(--sky)"></i>Detected</span>
+            <span><i style="background:var(--rose)"></i>Blocked</span>
+          </div>
+        </div>
+        <canvas id="threat-chart" height="180"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><h3>Threat Types</h3></div>
+        <canvas id="pie-chart" height="180"></canvas>
+        <div class="pie-legend">
+          <div><span style="background:var(--sky)"></span>Intrusion</div>
+          <div><span style="background:var(--rose)"></span>Motion</div>
+          <div><span style="background:var(--amber)"></span>Access</div>
+          <div><span style="background:var(--emerald)"></span>Other</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent incidents -->
+    <div class="incidents-table">
+      <div class="it-header">
+        <h3>Recent Incidents</h3>
+        <button class="btn-ghost-sm" onclick="showPage('incidents')">View All</button>
+      </div>
+      <div class="it-list" id="incidents-list"></div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: LIVE FEEDS ── -->
+  <div id="page-livefeed" class="dash-page">
+    <div class="live-controls">
+      <div class="lc-grid-btns">
+        <button class="lc-btn active" onclick="setGrid(2,this)">2×2</button>
+        <button class="lc-btn" onclick="setGrid(3,this)">3×2</button>
+        <button class="lc-btn" onclick="setGrid(1,this)">Full</button>
+      </div>
+      <div class="lc-right">
+        <button class="lc-toggle" id="ai-toggle" onclick="toggleAI()">
+          <span class="toggle-dot"></span> AI Overlay ON
+        </button>
+        <button class="btn-ghost-sm">Export ↓</button>
+      </div>
+    </div>
+    <div class="camera-grid" id="camera-grid">
+      <div class="cam-cell" id="cam-1" style="position:relative;">
+        <img id="video-stream" class="cam-canvas" style="width:100%;height:100%;object-fit:cover;display:none;">
+        <div class="cam-ui" id="video-overlay" style="background:#090e16;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:absolute;top:0;left:0;pointer-events:auto;">
+           <span style="color:#FFF;margin-bottom:12px;" id="video-overlay-text">SYSTEM STANDBY - AWAITING UPLINK</span>
+           <button class="auth-btn" id="start-uplink-btn" onclick="toggleAI()" style="pointer-events:auto;">START UPLINK</button>
+        </div>
+        <div class="cam-ui" style="pointer-events:none;">
+          <div class="cam-top">
+            <button id="stop-uplink-btn" onclick="toggleAI()" style="display:none;pointer-events:auto;background:rgba(244,63,94,0.2);color:#F43F5E;border:1px solid #F43F5E;border-radius:4px;padding:2px 8px;cursor:pointer;margin-right:8px;font-size:12px;font-family:'JetBrains Mono'" title="Pause Uplink">⏹ Stop</button>
+            <span class="cam-id mono">CAM-01</span>
+            <span class="cam-zone mono">Lobby · Zone A</span>
+          </div>
+          <div class="cam-bottom">
+            <span class="mono cam-res">4K · 30fps</span>
+            <span class="live-chip">● LIVE</span>
+          </div>
+        </div>
+      </div>
+      <div class="cam-cell" id="cam-2">
+        <canvas class="cam-canvas"></canvas>
+        <div class="cam-ui">
+          <div class="cam-top">
+            <span class="cam-id mono">CAM-02</span>
+            <span class="cam-zone mono">Entrance · Zone B</span>
+          </div>
+          <div class="cam-bottom">
+            <span class="mono cam-res">4K · 30fps</span>
+            <span class="live-chip">● LIVE</span>
+          </div>
+        </div>
+      </div>
+      <div class="cam-cell alert-cam" id="cam-3">
+        <canvas class="cam-canvas"></canvas>
+        <div class="cam-ui">
+          <div class="cam-top">
+            <span class="cam-id mono">CAM-03</span>
+            <span class="cam-zone mono">Perimeter · Zone C</span>
+          </div>
+          <div class="cam-bottom">
+            <span class="mono cam-res">4K · 30fps</span>
+            <span class="alert-chip">⚠ ALERT</span>
+          </div>
+        </div>
+      </div>
+      <div class="cam-cell" id="cam-4">
+        <canvas class="cam-canvas"></canvas>
+        <div class="cam-ui">
+          <div class="cam-top">
+            <span class="cam-id mono">CAM-04</span>
+            <span class="cam-zone mono">Parking · Zone D</span>
+          </div>
+          <div class="cam-bottom">
+            <span class="mono cam-res">4K · 30fps</span>
+            <span class="live-chip">● LIVE</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: INCIDENTS ── -->
+  <div id="page-incidents" class="dash-page">
+    <div class="inc-filters">
+      <button class="inc-filter active" onclick="filterInc('all',this)">All</button>
+      <button class="inc-filter" onclick="filterInc('critical',this)">Critical</button>
+      <button class="inc-filter" onclick="filterInc('warning',this)">Warning</button>
+      <button class="inc-filter" onclick="filterInc('info',this)">Info</button>
+    </div>
+    <div class="inc-full-list" id="inc-full-list"></div>
+  </div>
+
+  <!-- ── PAGE: ANALYTICS ── -->
+  <div id="page-analytics" class="dash-page">
+    <div class="analytics-grid">
+      <div class="an-card">
+        <h3>Detection Accuracy — 30 Days</h3>
+        <canvas id="acc-chart" height="200"></canvas>
+      </div>
+      <div class="an-card">
+        <h3>Zone Activity Heatmap</h3>
+        <canvas id="heat-chart" height="200"></canvas>
+      </div>
+      <div class="an-card wide">
+        <h3>Weekly Threat Summary</h3>
+        <canvas id="weekly-chart" height="180"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: PERIMETER ── -->
+  <div id="page-perimeter" class="dash-page">
+    <div class="module-dashboard">
+      <div class="mod-header">
+        <div><h3>Perimeter Intrusion Detection</h3><span class="mono mod-status online">● ACTIVE</span></div>
+        <button class="btn-ghost-sm">Configure Zones</button>
+      </div>
+      <div class="mod-body">
+        <div class="mod-feed">
+          <canvas id="perimeter-canvas" height="340"></canvas>
+        </div>
+        <div class="mod-sidebar">
+          <div class="ms-section">ZONES</div>
+          <div class="zone-item active"><span class="zi-dot green"></span>Zone A — Lobby<span class="zi-status">Clear</span></div>
+          <div class="zone-item active"><span class="zi-dot green"></span>Zone B — Entrance<span class="zi-status">Clear</span></div>
+          <div class="zone-item alert"><span class="zi-dot red anim"></span>Zone C — Perimeter<span class="zi-status">⚠ Motion</span></div>
+          <div class="zone-item active"><span class="zi-dot green"></span>Zone D — Parking<span class="zi-status">Clear</span></div>
+          <div class="ms-section" style="margin-top:24px">RECENT EVENTS</div>
+          <div class="mod-event"><span class="mono mev-time">14:32:01</span><span>Motion detected Zone C</span></div>
+          <div class="mod-event"><span class="mono mev-time">13:18:44</span><span>Perimeter breach attempt</span></div>
+          <div class="mod-event"><span class="mono mev-time">11:05:22</span><span>Tailgating detected Zone B</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: LOCKED (PPE) ── -->
+  <div id="page-ppe" class="dash-page locked-page">
+    <div class="locked-overlay">
+      <div class="locked-card">
+        <div class="locked-icon">🔒</div>
+        <h3>PPE / Industrial Safety</h3>
+        <p>This AI module requires <strong>Guardian Pro</strong> or higher. Upgrade your subscription to unlock real-time hardhat, vest, and safety equipment compliance monitoring.</p>
+        <div class="locked-features">
+          <div>✓ Hardhat Detection</div>
+          <div>✓ Safety Vest Recognition</div>
+          <div>✓ Compliance Reporting</div>
+          <div>✓ Incident Auto-Capture</div>
+        </div>
+        <div class="locked-tier mono">Requires: PRO TIER ($799/mo)</div>
+        <a href="index.html#pricing" class="auth-btn" style="text-decoration:none;display:inline-block;margin-top:16px">Upgrade to Pro →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: LOCKED (INTRUSION) ── -->
+  <div id="page-intrusion" class="dash-page locked-page">
+    <div class="locked-overlay">
+      <div class="locked-card">
+        <div class="locked-icon">🔐</div>
+        <h3>High-Security Intrusion</h3>
+        <p>This AI module requires <strong>Fortress Elite</strong> tier. Military-grade threat classification with sub-15ms response and autonomous lockdown capabilities.</p>
+        <div class="locked-features">
+          <div>✓ Military-grade Classification</div>
+          <div>✓ Sub-15ms Response</div>
+          <div>✓ Autonomous Lockdown</div>
+          <div>✓ Air-gapped Deployment</div>
+        </div>
+        <div class="locked-tier mono">Requires: ELITE TIER ($1,999/mo)</div>
+        <a href="index.html#pricing" class="auth-btn" style="text-decoration:none;display:inline-block;margin-top:16px">Upgrade to Elite →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: EDGE NODES ── -->
+  <div id="page-nodes" class="dash-page">
+    <div class="nodes-grid">
+      <div class="node-card online">
+        <div class="node-header">
+          <span class="node-id mono">NODE-001</span>
+          <span class="node-status online">● ONLINE</span>
+        </div>
+        <div class="node-info">
+          <div class="ni-row"><span>IP Address</span><span class="mono">192.168.1.50</span></div>
+          <div class="ni-row"><span>Firmware</span><span class="mono">T26-FW-2.6.1</span></div>
+          <div class="ni-row"><span>Cameras</span><span class="mono">4 / 8 connected</span></div>
+          <div class="ni-row"><span>CPU Load</span><span class="mono" style="color:var(--emerald)">24%</span></div>
+          <div class="ni-row"><span>NPU Load</span><span class="mono" style="color:var(--amber)">68%</span></div>
+          <div class="ni-row"><span>Last Seen</span><span class="mono">Now</span></div>
+        </div>
+        <div class="node-actions">
+          <button class="btn-ghost-sm">Configure</button>
+          <button class="btn-ghost-sm">Reboot</button>
+        </div>
+      </div>
+      <div class="node-card offline">
+        <div class="node-header">
+          <span class="node-id mono">NODE-002</span>
+          <span class="node-status offline">● OFFLINE</span>
+        </div>
+        <div class="node-info">
+          <div class="ni-row"><span>IP Address</span><span class="mono">192.168.1.51</span></div>
+          <div class="ni-row"><span>Firmware</span><span class="mono">T26-FW-2.5.8</span></div>
+          <div class="ni-row"><span>Cameras</span><span class="mono">0 / 4 connected</span></div>
+          <div class="ni-row"><span>Last Seen</span><span class="mono" style="color:var(--rose)">2h ago</span></div>
+        </div>
+        <div class="node-actions">
+          <button class="btn-ghost-sm">Diagnose</button>
+          <button class="btn-ghost-sm">Update FW</button>
+        </div>
+      </div>
+      <div class="node-card add-node" onclick="addNodePrompt()">
+        <div class="add-node-inner">
+          <span class="add-plus">+</span>
+          <span>Add Edge Node</span>
+          <span class="mono" style="font-size:11px;color:var(--text-muted)">Connect new hardware</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: SUBSCRIPTION ── -->
+  <div id="page-subscription" class="dash-page">
+    <div class="sub-current">
+      <div class="sub-card current-plan">
+        <div class="sc-top">
+          <div>
+            <div class="mono sub-tier-label">CURRENT PLAN</div>
+            <h3>Sentinel Core</h3>
+          </div>
+          <div class="tier-pill core" style="font-size:13px;padding:6px 14px">CORE</div>
+        </div>
+        <div class="sub-details">
+          <div class="sd-row"><span>Status</span><span class="mono" style="color:var(--emerald)">● Active</span></div>
+          <div class="sd-row"><span>Billing</span><span class="mono">$299 / month</span></div>
+          <div class="sd-row"><span>Next renewal</span><span class="mono">May 13, 2026</span></div>
+          <div class="sd-row"><span>Cameras</span><span class="mono">4 / 4 used</span></div>
+          <div class="sd-row"><span>Edge Nodes</span><span class="mono">2 / 2 used</span></div>
+        </div>
+        <button class="btn-ghost-sm" style="margin-top:16px">Manage Billing</button>
+      </div>
+      <div class="sub-upgrade-cards">
+        <div class="suc-card pro">
+          <div class="suc-badge mono">UPGRADE AVAILABLE</div>
+          <h4>Guardian Pro</h4>
+          <p>Unlock PPE detection, behaviour analytics, identity verification and more.</p>
+          <div class="suc-price">$799<span>/mo</span></div>
+          <a href="index.html#pricing" class="auth-btn" style="text-decoration:none;display:inline-block;font-size:13px;padding:10px 20px;margin-top:12px">Upgrade to Pro</a>
+        </div>
+        <div class="suc-card elite">
+          <div class="suc-badge mono">MAXIMUM SECURITY</div>
+          <h4>Fortress Elite</h4>
+          <p>Military-grade intrusion, predictive AI, unlimited cameras, and 24/7 SOC support.</p>
+          <div class="suc-price">$1,999<span>/mo</span></div>
+          <a href="index.html#pricing" class="auth-btn" style="text-decoration:none;display:inline-block;font-size:13px;padding:10px 20px;margin-top:12px">Upgrade to Elite</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Notification Panel -->
+<div id="notif-panel" class="hidden">
+  <div class="np-header"><h4>Notifications</h4><button onclick="closeNotif()">✕</button></div>
+  <div class="np-list" id="np-list"></div>
+</div>
+
+<!-- Add Node Modal -->
+<div id="add-node-modal" class="hidden">
+  <div class="modal-overlay" onclick="closeModal()"></div>
+  <div class="modal-card">
+    <h3>Add Edge Node</h3>
+    <div class="form-group"><label>Node Name</label><input class="form-input" placeholder="NODE-003"/></div>
+    <div class="form-group"><label>IP Address</label><input class="form-input" placeholder="192.168.1.52"/></div>
+    <div class="form-group"><label>Registration Key</label><input class="form-input" placeholder="T26-XXXXXXXX-XXXX"/></div>
+    <div style="display:flex;gap:12px;margin-top:8px">
+      <button class="auth-btn" onclick="closeModal()" style="flex:1">Register Node</button>
+      <button class="btn-ghost-sm" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="main.js"></script>
+<script>
+// Page routing
+function showPage(name) {
+  document.querySelectorAll('.dash-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ds-item').forEach(i => i.classList.remove('active'));
+  const page = document.getElementById('page-'+name);
+  if(page) page.classList.add('active');
+  const nav = document.querySelector(`[data-page="${name}"]`);
+  if(nav) nav.classList.add('active');
+  const titles = {overview:'Overview',livefeed:'Live Feeds',incidents:'Incidents',analytics:'Analytics',
+    perimeter:'Perimeter Detection',ppe:'PPE Safety Detection',intrusion:'Hi-Sec Intrusion',
+    nodes:'Edge Nodes',subscription:'Subscription'};
+  document.getElementById('page-title').textContent = titles[name]||name;
+  if(name==='livefeed') initCameraFeeds();
+  if(name==='analytics') initAnalyticsCharts();
+  if(name==='perimeter') initPerimeterFeed();
+}
+
+document.querySelectorAll('.ds-item').forEach(item => {
+  item.addEventListener('click', e => {
+    e.preventDefault();
+    const page = item.dataset.page;
+    if(page) showPage(page);
+  });
+});
+
+function setGrid(cols, btn) {
+  document.querySelectorAll('.lc-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const grid = document.getElementById('camera-grid');
+  grid.style.gridTemplateColumns = cols===1 ? '1fr' : `repeat(${cols},1fr)`;
+}
+
+let aiEnabled = true;
+function toggleAI() {
+  aiEnabled = !aiEnabled;
+  const btn = document.getElementById('ai-toggle');
+  btn.innerHTML = `<span class="toggle-dot ${aiEnabled?'':'off'}"></span> AI Overlay ${aiEnabled?'ON':'OFF'}`;
+}
+
+function closeNotif() { document.getElementById('notif-panel').classList.add('hidden'); }
+function addNodePrompt() { document.getElementById('add-node-modal').classList.remove('hidden'); }
+function closeModal() { document.getElementById('add-node-modal').classList.add('hidden'); }
+
+document.getElementById('notif-btn').onclick = () => {
+  document.getElementById('notif-panel').classList.toggle('hidden');
+};
+
+function filterInc(type, btn) {
+  document.querySelectorAll('.inc-filter').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.inc-row').forEach(r => {
+    r.style.display = (type==='all'||r.dataset.type===type) ? 'flex' : 'none';
+  });
+}
+
+// Live clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('dtb-time').textContent = now.toTimeString().slice(0,8)+' UTC+0';
+}
+setInterval(updateClock, 1000); updateClock();
+</script>
 </body>
 </html>
