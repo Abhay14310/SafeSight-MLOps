@@ -882,17 +882,41 @@ function initBackendIntegration() {
     return;
   }
 
-  // Display username
+  // Display username & full profile
   const userDisp = document.querySelector(".ds-username");
-  if (userDisp) userDisp.textContent = username || "Unknown";
+  if (userDisp) userDisp.textContent = localStorage.getItem('displayName') || username || "Unknown";
+
+  const orgDisp = document.querySelector(".ds-org");
+  if (orgDisp) {
+    const org = localStorage.getItem('organization') || 'My Organization';
+    const tier = (localStorage.getItem('tier') || 'core').toUpperCase();
+    orgDisp.textContent = `${org} · ${tier}`;
+  }
+
+  // Set avatar initials
+  const avatar = document.querySelector(".ds-avatar");
+  if (avatar) {
+    const name = localStorage.getItem('displayName') || username || 'U';
+    const parts = name.trim().split(' ');
+    avatar.textContent = parts.length > 1
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      : name.slice(0, 2).toUpperCase();
+  }
+
+  // Update top-bar tier badge dynamically
+  const tierBadge = document.querySelector('.dtb-tier-badge');
+  if (tierBadge) {
+    const tier = (localStorage.getItem('tier') || 'core').toUpperCase();
+    tierBadge.textContent = `${tier} TIER`;
+    tierBadge.className = `dtb-tier-badge ${tier.toLowerCase()}-badge mono`;
+  }
 
   // Logout
   const logoutBtn = document.querySelector(".ds-logout");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", (e) => {
       e.preventDefault();
-      localStorage.removeItem("token");
-      localStorage.removeItem("username");
+      ['token','username','displayName','organization','tier'].forEach(k => localStorage.removeItem(k));
       window.location.href = "login.html";
     });
   }
@@ -900,6 +924,79 @@ function initBackendIntegration() {
   if (typeof io === 'undefined') return;
 
   const socket = io({ auth: { token } });
+
+  // --- Load real stats from MongoDB into Overview cards ---
+  async function loadRealStats() {
+    try {
+      const res = await fetch('/api/alerts/stats', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+      const stats = await res.json();
+
+      // Animate stat cards with real numbers
+      const todayCard = document.querySelector('.sc-card:nth-child(1) .sc-val');
+      const critCard  = document.querySelector('.sc-card:nth-child(3) .sc-val');
+
+      function animateTo(el, target) {
+        if (!el || isNaN(target)) return;
+        el.dataset.target = target;
+        const dur = 1200, start = performance.now();
+        function tick(now) {
+          const p = Math.min((now - start) / dur, 1);
+          const ease = 1 - Math.pow(1 - p, 3);
+          el.textContent = Math.floor(target * ease).toLocaleString();
+          if (p < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }
+
+      animateTo(todayCard, stats.today || 0);
+      animateTo(critCard,  stats.critical || 0);
+
+      // Update incidents count badge on sidebar
+      const incBadge = document.querySelector('[data-page="incidents"] .ds-badge');
+      if (incBadge) incBadge.textContent = stats.today || 0;
+
+    } catch(e) { console.warn('Could not load stats:', e); }
+  }
+  loadRealStats();
+
+  // --- Load historical alerts from MongoDB on startup ---
+
+  async function loadHistoricalAlerts() {
+    try {
+      const res = await fetch('/api/alerts?limit=20', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+      const alerts = await res.json();
+      if (alerts && alerts.length > 0) {
+        const alertsList = document.getElementById("incidents-list");
+        const fullList = document.getElementById("inc-full-list");
+        [alertsList, fullList].forEach(list => {
+          if (!list) return;
+          list.innerHTML = '';
+          alerts.forEach(a => {
+            const time = new Date(a.timestamp).toLocaleTimeString('en-US', { hour12: false }).slice(0, 8);
+            const conf = a.confidence ? `${(a.confidence * 100).toFixed(1)}%` : 'N/A';
+            list.insertAdjacentHTML('beforeend', `
+              <div class="inc-row" data-type="${a.severity}">
+                <div class="inc-sev sev-${a.severity}"></div>
+                <div class="inc-content">
+                  <div class="inc-title">${a.label}</div>
+                  <div class="inc-meta">${a.zone} · CONF: ${conf}</div>
+                </div>
+                <div class="inc-cam">${a.camera}</div>
+                <div class="inc-time mono">${time}</div>
+                <div class="inc-action"><button class="btn-ghost-sm">Review</button></div>
+              </div>`);
+          });
+        });
+      }
+    } catch (e) { console.warn('Could not load historical alerts:', e); }
+  }
+  loadHistoricalAlerts();
 
   socket.on("connect_error", (err) => {
     if (err.message.includes("Authentication error")) {
@@ -929,47 +1026,64 @@ function initBackendIntegration() {
     }
   });
 
+  let _liveAlertCount = 0;
+
   socket.on("new-alert", (alertData) => {
-    const label = alertData.label || "SECURITY BREACH";
+    const label      = alertData.label || "SECURITY BREACH";
+    const severity   = alertData.severity || "critical";
     const confidence = alertData.confidence ? `${(alertData.confidence * 100).toFixed(1)}%` : "N/A";
-    const time = new Date().toLocaleTimeString('en-US',{hour12:false}).slice(0,8);
+    const camera     = alertData.camera || "CAM-01";
+    const zone       = alertData.zone || "Zone A";
+    const time       = new Date(alertData.timestamp || Date.now()).toLocaleTimeString('en-US',{hour12:false}).slice(0,8);
 
     const incHtml = `
-    <div class="inc-row" data-type="critical">
-      <div class="inc-sev sev-critical"></div>
+    <div class="inc-row" data-type="${severity}" data-id="${alertData._id || ''}">
+      <div class="inc-sev sev-${severity}"></div>
       <div class="inc-content">
         <div class="inc-title">${label}</div>
-        <div class="inc-meta">Zone A · CONF: ${confidence}</div>
+        <div class="inc-meta">${zone} · CONF: ${confidence}</div>
       </div>
-      <div class="inc-cam">CAM-01</div>
+      <div class="inc-cam">${camera}</div>
       <div class="inc-time mono">${time}</div>
-      <div class="inc-action"><button class="btn-ghost-sm">Review</button></div>
+      <div class="inc-action"><button class="btn-ghost-sm review-btn" data-id="${alertData._id || ''}">Review</button></div>
     </div>`;
 
     if (alertsList) {
       alertsList.insertAdjacentHTML('afterbegin', incHtml);
       if (alertsList.children.length > 5) alertsList.lastElementChild.remove();
     }
-    if (fullList) {
-      fullList.insertAdjacentHTML('afterbegin', incHtml);
-    }
-    
-    // Also add to notifications
+    if (fullList) fullList.insertAdjacentHTML('afterbegin', incHtml);
+
+    // Live increment stat card counter
+    _liveAlertCount++;
+    const todayCard = document.querySelector('.sc-card:nth-child(1) .sc-val');
+    if (todayCard) todayCard.textContent = (parseInt(todayCard.textContent.replace(/,/g,''))||0) + 1;
+
+    // Notification bell
     const npList = document.getElementById('np-list');
     if (npList) {
-      const notifHtml = `
+      npList.insertAdjacentHTML('afterbegin', `
       <div class="np-item">
-        <div class="np-dot" style="background:#F43F5E"></div>
+        <div class="np-dot" style="background:${severity==='critical'?'#F43F5E':severity==='warning'?'#F59E0B':'#38BDF8'}"></div>
         <div class="np-content">
-          <div class="np-title">⚠ ${label} DETECTED</div>
+          <div class="np-title">${severity === 'critical' ? '⚠' : 'ℹ'} ${label}</div>
           <div class="np-time mono">${time}</div>
         </div>
-      </div>`;
-      npList.insertAdjacentHTML('afterbegin', notifHtml);
-      const dot = document.querySelector('.notif-dot');
-      if (dot) dot.style.display = 'block';
+      </div>`);
     }
+
+    // Update bell badge count
+    const dot = document.querySelector('.notif-dot');
+    if (dot) {
+      dot.style.display = 'block';
+      dot.setAttribute('data-count', (_liveAlertCount).toString());
+    }
+
+    // Update sidebar incidents badge
+    const incBadge = document.querySelector('[data-page="incidents"] .ds-badge');
+    if (incBadge) incBadge.textContent = (parseInt(incBadge.textContent)||0) + 1;
   });
+
 
   socket.on("connect", () => {
     console.log("Connected to SafeSight VMS Controller");
@@ -1028,4 +1142,403 @@ function initBackendIntegration() {
       }
     }
   });
+
+  // Update AI engine status card when system-status fires
+  socket.on("system-status", (status) => {
+    const label = document.getElementById('ai-engine-status-label');
+    const card  = document.getElementById('ai-engine-node');
+    const hb    = document.getElementById('ai-last-heartbeat');
+    if (label) {
+      label.textContent = status.ai ? '● ONLINE' : '● OFFLINE';
+      label.style.color = status.ai ? 'var(--emerald)' : 'var(--rose)';
+    }
+    if (card) {
+      card.classList.toggle('online', !!status.ai);
+      card.classList.toggle('offline', !status.ai);
+    }
+    if (hb) hb.textContent = status.ai ? new Date().toLocaleTimeString() : 'Never';
+  });
 }
+
+// ── API Key Management ─────────────────────────────────────────────────────
+async function loadApiKeys() {
+  const token = localStorage.getItem('token');
+  const container = document.getElementById('api-keys-list');
+  if (!container) return;
+  try {
+    const res = await fetch('/api/keys', { headers: { 'Authorization': `Bearer ${token}` } });
+    const keys = await res.json();
+    if (!keys.length) {
+      container.innerHTML = '<div style="color:var(--text-muted);font-family:\'JetBrains Mono\';font-size:13px">No API keys found. Create one above.</div>';
+      return;
+    }
+    container.innerHTML = keys.map(k => `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px">
+          <div style="font-weight:600;color:var(--text-primary);margin-bottom:4px">${k.label}</div>
+          <div style="font-family:'JetBrains Mono';font-size:12px;color:var(--sky);background:rgba(56,189,248,0.08);padding:6px 10px;border-radius:6px;display:inline-block;cursor:pointer;user-select:all;" title="Click to copy" onclick="navigator.clipboard.writeText('${k.key}').then(()=>this.textContent='✅ Copied!').catch(()=>{});setTimeout(()=>this.textContent='${k.key.slice(0,8)}...${k.key.slice(-6)}',2000)">${k.key.slice(0,8)}...${k.key.slice(-6)}</div>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono';text-align:right">
+          <div>Created: ${new Date(k.createdAt).toLocaleDateString()}</div>
+          <div>Last used: ${k.lastUsed ? new Date(k.lastUsed).toLocaleString() : 'Never'}</div>
+        </div>
+        <button onclick="deleteApiKey('${k._id}')" style="background:rgba(244,63,94,0.1);color:#F43F5E;border:1px solid rgba(244,63,94,0.3);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px;white-space:nowrap">Delete</button>
+      </div>`).join('');
+  } catch(e) {
+    container.innerHTML = '<div style="color:var(--rose)">Failed to load API keys</div>';
+  }
+}
+
+async function createApiKey() {
+  const token = localStorage.getItem('token');
+  const label = prompt('Name this API key (e.g. "Pi Camera Node 1"):');
+  if (!label) return;
+  try {
+    const res = await fetch('/api/keys', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert(`✅ API Key created!\n\nKey: ${data.key.key}\n\nCopy this and set it as:\nSAFESIGHT_API_KEY=${data.key.key}`);
+      loadApiKeys();
+    }
+  } catch(e) { alert('Failed to create key'); }
+}
+
+async function deleteApiKey(id) {
+  if (!confirm('Delete this API key? The AI engine using it will stop being able to send data.')) return;
+  const token = localStorage.getItem('token');
+  try {
+    await fetch(`/api/keys/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    loadApiKeys();
+  } catch(e) { alert('Failed to delete'); }
+}
+
+// ── Review Modal ──────────────────────────────────────────────────────────────
+let _reviewAlertId   = null;
+let _reviewAlertData = null;
+
+function openReviewModal(alertId, alertData) {
+  _reviewAlertId   = alertId;
+  _reviewAlertData = alertData;
+  const modal = document.getElementById('review-modal');
+  if (!modal) return;
+
+  document.getElementById('rm-label').textContent  = alertData.label || '—';
+  document.getElementById('rm-camera').textContent = alertData.camera || 'CAM-01';
+  document.getElementById('rm-zone').textContent   = alertData.zone || 'Zone A';
+  document.getElementById('rm-conf').textContent   = alertData.confidence
+    ? `${(alertData.confidence * 100).toFixed(1)}%` : 'N/A';
+
+  const sev = alertData.severity || 'critical';
+  const sevEl = document.getElementById('rm-sev');
+  sevEl.textContent = sev.toUpperCase();
+  sevEl.style.color = sev === 'critical' ? '#F43F5E' : sev === 'warning' ? '#F59E0B' : '#38BDF8';
+
+  document.getElementById('rm-time').textContent = alertData.timestamp
+    ? new Date(alertData.timestamp).toLocaleString('en-IN') : '—';
+
+  const statusEl = document.getElementById('rm-status');
+  if (alertData.acknowledged) {
+    statusEl.textContent = `✅ ${alertData.resolution || 'Reviewed'}`;
+    statusEl.style.color = 'var(--emerald)';
+    document.getElementById('review-modal-actions').style.display = 'none';
+    document.getElementById('review-success').classList.remove('hidden');
+  } else {
+    statusEl.textContent = '● OPEN';
+    statusEl.style.color = 'var(--rose)';
+    document.getElementById('review-modal-actions').style.display = 'flex';
+    document.getElementById('review-success').classList.add('hidden');
+  }
+  modal.classList.remove('hidden');
+}
+
+function closeReviewModal() {
+  document.getElementById('review-modal')?.classList.add('hidden');
+  _reviewAlertId = null; _reviewAlertData = null;
+}
+
+async function submitReview(resolution) {
+  if (!_reviewAlertId) return;
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch(`/api/alerts/${_reviewAlertId}/review`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resolution })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('review-modal-actions').style.display = 'none';
+      document.getElementById('review-success').classList.remove('hidden');
+      document.querySelectorAll(`.inc-row[data-id="${_reviewAlertId}"]`).forEach(row => {
+        row.style.opacity = '0.5';
+        const btn = row.querySelector('.review-btn');
+        if (btn) { btn.textContent = resolution === 'resolved' ? '✅ Resolved' : '⚠ FP'; btn.disabled = true; }
+      });
+      setTimeout(closeReviewModal, 1800);
+    }
+  } catch(e) { alert('Review failed'); }
+}
+
+// Event delegation for review buttons (works for dynamically added rows)
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.review-btn');
+  if (!btn) return;
+  const row = btn.closest('.inc-row');
+  if (!row) return;
+  const id = row.dataset.id || btn.dataset.id;
+  if (!id) { alert('No alert ID logged yet — wait for a real detection.'); return; }
+  const alertData = {
+    _id:          id,
+    label:        row.querySelector('.inc-title')?.textContent || '—',
+    camera:       row.querySelector('.inc-cam')?.textContent || 'CAM-01',
+    zone:         row.querySelector('.inc-meta')?.textContent?.split('·')[0]?.trim() || 'Zone A',
+    confidence:   parseFloat(row.querySelector('.inc-meta')?.textContent?.match(/[\d.]+%/)?.[0]) / 100 || 0,
+    severity:     row.dataset.type || 'critical',
+    timestamp:    new Date().toISOString(),
+    acknowledged: btn.disabled
+  };
+  openReviewModal(id, alertData);
+});
+
+// ── Working Search Bar ─────────────────────────────────────────────────────────
+(function initSearch() {
+  const input = document.querySelector('.dtb-search input');
+  if (!input) return;
+
+  input.addEventListener('input', () => {
+    const q = input.value.toLowerCase().trim();
+    // Filter all visible incident rows
+    document.querySelectorAll('.inc-row').forEach(row => {
+      const text = row.textContent.toLowerCase();
+      row.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
+    // If clearing, navigate to incidents page for context
+    if (q.length > 0 && document.getElementById('page-incidents')) {
+      showPage('incidents');
+    }
+  });
+
+  // Clear on Escape
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      input.value = '';
+      document.querySelectorAll('.inc-row').forEach(row => row.style.display = '');
+    }
+  });
+})();
+
+// ── Notification Bell Badge Count ─────────────────────────────────────────────
+(function initNotifBadge() {
+  const dot = document.querySelector('.notif-dot');
+  if (!dot) return;
+
+  // Style the dot as a badge
+  Object.assign(dot.style, {
+    position: 'absolute', top: '-4px', right: '-4px',
+    background: '#F43F5E', borderRadius: '50%',
+    minWidth: '18px', height: '18px',
+    display: 'none', alignItems: 'center', justifyContent: 'center',
+    fontSize: '10px', fontWeight: '700', color: '#fff',
+    fontFamily: "'JetBrains Mono', monospace", padding: '0 3px',
+    lineHeight: '18px', textAlign: 'center'
+  });
+
+  // Ensure bell button is position:relative
+  const bellBtn = document.getElementById('notif-btn');
+  if (bellBtn) bellBtn.style.position = 'relative';
+
+  // Reset on open
+  const origClose = window.closeNotif;
+  window.closeNotif = function() {
+    if (origClose) origClose();
+    _liveAlertCount = 0;
+    if (dot) { dot.style.display = 'none'; dot.textContent = ''; }
+  };
+})();
+
+// ── Profile Settings Page ──────────────────────────────────────────────────────
+async function loadProfilePage() {
+  const token = localStorage.getItem('token');
+  try {
+    const res  = await fetch('/api/me', { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) return;
+    const user = await res.json();
+
+    // Populate inputs
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
+    set('prof-displayName',  user.displayName  || user.username);
+    set('prof-organization', user.organization || '');
+    set('prof-email',        user.email        || '');
+
+    // Account details
+    const uEl = document.getElementById('prof-username');
+    const tEl = document.getElementById('prof-tier');
+    if (uEl) uEl.textContent = user.username || '—';
+    if (tEl) {
+      const tier = (user.tier || 'core').toUpperCase();
+      tEl.textContent = tier;
+      tEl.style.color = tier === 'ELITE' ? '#a78bfa' : tier === 'PRO' ? '#38BDF8' : '#10b981';
+    }
+  } catch (e) { console.warn('Profile load error:', e); }
+}
+
+async function saveProfile() {
+  const token = localStorage.getItem('token');
+  const body  = {
+    displayName:  document.getElementById('prof-displayName')?.value?.trim(),
+    organization: document.getElementById('prof-organization')?.value?.trim(),
+    email:        document.getElementById('prof-email')?.value?.trim(),
+  };
+  const msgEl = document.getElementById('prof-save-msg');
+  try {
+    const res  = await fetch('/api/me', {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.success) {
+      // Update localStorage + sidebar display
+      if (body.displayName) {
+        localStorage.setItem('displayName', body.displayName);
+        const nameEl = document.querySelector('.ds-username');
+        if (nameEl) nameEl.textContent = body.displayName;
+        const avatar = document.querySelector('.ds-avatar');
+        if (avatar) {
+          const parts = body.displayName.trim().split(' ');
+          avatar.textContent = parts.length > 1
+            ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase()
+            : body.displayName.slice(0,2).toUpperCase();
+        }
+      }
+      if (body.organization) {
+        localStorage.setItem('organization', body.organization);
+        const orgEl = document.querySelector('.ds-org');
+        if (orgEl) orgEl.textContent = `${body.organization} · ${(localStorage.getItem('tier')||'core').toUpperCase()}`;
+      }
+      if (msgEl) { msgEl.textContent = '✅ Saved!'; msgEl.style.opacity = '1'; setTimeout(() => msgEl.style.opacity = '0', 2500); }
+    } else {
+      if (msgEl) { msgEl.textContent = '❌ ' + (data.error||'Failed'); msgEl.style.color = '#F43F5E'; msgEl.style.opacity = '1'; setTimeout(() => msgEl.style.opacity = '0', 3000); }
+    }
+  } catch (e) {
+    if (msgEl) { msgEl.textContent = '❌ Network error'; msgEl.style.color = '#F43F5E'; msgEl.style.opacity = '1'; setTimeout(() => msgEl.style.opacity = '0', 3000); }
+  }
+}
+
+async function changePassword() {
+  const token    = localStorage.getItem('token');
+  const curPass  = document.getElementById('prof-cur-pass')?.value;
+  const newPass  = document.getElementById('prof-new-pass')?.value;
+  const confPass = document.getElementById('prof-conf-pass')?.value;
+  const msgEl    = document.getElementById('prof-pass-msg');
+
+  const show = (msg, ok) => {
+    if (!msgEl) return;
+    msgEl.textContent = msg;
+    msgEl.style.color = ok ? 'var(--emerald)' : '#F43F5E';
+    msgEl.style.opacity = '1';
+    setTimeout(() => msgEl.style.opacity = '0', 3500);
+  };
+
+  if (!curPass || !newPass || !confPass) return show('❌ All fields required', false);
+  if (newPass !== confPass) return show('❌ New passwords do not match', false);
+  if (newPass.length < 8)   return show('❌ Min 8 characters', false);
+
+  try {
+    const res  = await fetch('/api/me/change-password', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword: curPass, newPassword: newPass })
+    });
+    const data = await res.json();
+    if (data.success) {
+      show('✅ Password updated!', true);
+      ['prof-cur-pass','prof-new-pass','prof-conf-pass'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+    } else {
+      show('❌ ' + (data.error || 'Failed'), false);
+    }
+  } catch (e) { show('❌ Network error', false); }
+}
+
+function exportCSV() {
+  const token = localStorage.getItem('token');
+  // Create a temp anchor to trigger download
+  const a = document.createElement('a');
+  a.href = `/api/alerts/export`;
+  a.download = 'safesight-incidents.csv';
+  // Fetch with auth header, create blob URL
+  fetch('/api/alerts/export', { headers: { 'Authorization': `Bearer ${token}` } })
+    .then(r => r.blob())
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      a.href = url;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    })
+    .catch(() => alert('Export failed'));
+}
+
+// ── Session Expiry Warning (#17) ──────────────────────────────────────────────
+(function initSessionExpiryWarning() {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  // Decode JWT payload (no verification — just for client-side display)
+  try {
+    const payload  = JSON.parse(atob(token.split('.')[1]));
+    const expiresAt = payload.exp * 1000; // ms
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.id = 'session-toast';
+    Object.assign(toast.style, {
+      position: 'fixed', bottom: '24px', right: '24px',
+      background: 'linear-gradient(135deg,#1e293b,#0f172a)',
+      border: '1px solid #F59E0B', borderRadius: '12px',
+      padding: '16px 20px', color: '#F59E0B',
+      fontFamily: "'JetBrains Mono', monospace", fontSize: '13px',
+      zIndex: '9999', display: 'none', maxWidth: '320px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+      lineHeight: '1.6'
+    });
+    toast.innerHTML = `
+      ⏱ <strong>Session expiring soon</strong><br>
+      <span id="session-countdown" style="color:#e2e8f0"></span><br>
+      <button onclick="location.reload()" style="margin-top:8px;background:#F59E0B;color:#0f172a;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-weight:700;font-size:12px">Renew Session</button>
+    `;
+    document.body.appendChild(toast);
+
+    // Check every 30s
+    function checkExpiry() {
+      const msLeft = expiresAt - Date.now();
+      if (msLeft <= 0) {
+        // Session expired — force logout
+        ['token','username','displayName','organization','tier'].forEach(k => localStorage.removeItem(k));
+        window.location.href = 'login.html';
+        return;
+      }
+      if (msLeft < 15 * 60 * 1000) { // < 15 minutes
+        const mins = Math.floor(msLeft / 60000);
+        const secs = Math.floor((msLeft % 60000) / 1000);
+        toast.style.display = 'block';
+        const cd = document.getElementById('session-countdown');
+        if (cd) cd.textContent = `Expires in ${mins}m ${secs}s`;
+      } else {
+        toast.style.display = 'none';
+      }
+    }
+
+    checkExpiry();
+    setInterval(checkExpiry, 30000);
+  } catch(e) { /* malformed token — ignore */ }
+})();
+

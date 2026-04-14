@@ -35,8 +35,8 @@
     <div class="auth-card">
       <!-- Tabs -->
       <div class="auth-tabs">
-        <button class="atab active" id="tab-login" onclick="switchTab('login')">Sign In</button>
-        <button class="atab" id="tab-register" onclick="switchTab('register')">Register</button>
+        <button class="atab active" id="tab-login">Sign In</button>
+        <button class="atab" id="tab-register">Register</button>
       </div>
 
       <!-- Login Form -->
@@ -50,18 +50,8 @@
           <input type="password" placeholder="••••••••••••" class="form-input" id="login-pass"/>
           <a href="#" class="forgot-link">Forgot password?</a>
         </div>
-        <div class="form-group">
-          <label>MFA Code</label>
-          <div class="otp-grid">
-            <input type="text" maxlength="1" class="otp-input" oninput="otpNext(this)"/>
-            <input type="text" maxlength="1" class="otp-input" oninput="otpNext(this)"/>
-            <input type="text" maxlength="1" class="otp-input" oninput="otpNext(this)"/>
-            <input type="text" maxlength="1" class="otp-input" oninput="otpNext(this)"/>
-            <input type="text" maxlength="1" class="otp-input" oninput="otpNext(this)"/>
-            <input type="text" maxlength="1" class="otp-input" oninput="otpNext(this)"/>
-          </div>
-        </div>
-        <button class="auth-btn" onclick="doLogin()">
+        <div id="login-error" style="color:#F43F5E;font-size:13px;font-family:'JetBrains Mono',monospace;margin-bottom:8px;display:none"></div>
+        <button class="auth-btn" id="login-btn">
           <span id="login-btn-text">Access Dashboard</span>
           <div id="login-spinner" class="btn-spinner hidden"></div>
         </button>
@@ -72,42 +62,44 @@
       <div id="form-register" class="auth-form hidden">
         <div class="form-group">
           <label>Organization Name</label>
-          <input type="text" placeholder="ACME Corporation" class="form-input"/>
+          <input type="text" id="reg-org" placeholder="ACME Corporation" class="form-input"/>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>First Name</label>
-            <input type="text" placeholder="John" class="form-input"/>
+            <input type="text" id="reg-first" placeholder="John" class="form-input"/>
           </div>
           <div class="form-group">
             <label>Last Name</label>
-            <input type="text" placeholder="Doe" class="form-input"/>
+            <input type="text" id="reg-last" placeholder="Doe" class="form-input"/>
           </div>
         </div>
         <div class="form-group">
-          <label>Username / Email</label>
-          <input type="text" placeholder="john@company.com" class="form-input" id="reg-email"/>
+          <label>Username</label>
+          <input type="text" id="reg-username" placeholder="john_doe" class="form-input"/>
         </div>
         <div class="form-group">
-          <label>Password</label>
-          <input type="password" placeholder="Min. 12 characters" class="form-input" id="reg-pass" oninput="checkPassStrength(this)"/>
+          <label>Password <span style="color:var(--text-muted,#94a3b8);font-size:11px">(min 8 characters)</span></label>
+          <input type="password" id="reg-pass" placeholder="Min. 8 characters" class="form-input"/>
           <div class="pass-strength">
             <div class="ps-bar" id="ps-bar"></div>
           </div>
         </div>
         <div class="form-group">
           <label>Subscription Tier</label>
-          <select class="form-input form-select">
-            <option value="">Select a plan...</option>
+          <select id="reg-tier" class="form-input form-select">
             <option value="core">Sentinel Core — $299/mo</option>
             <option value="pro">Guardian Pro — $799/mo</option>
             <option value="elite">Fortress Elite — $1,999/mo</option>
           </select>
         </div>
-        <button class="auth-btn" onclick="doRegister()">
-          <span>Create Account</span>
+        <div id="reg-error" style="color:#F43F5E;font-size:13px;font-family:'JetBrains Mono',monospace;margin-bottom:8px;display:none"></div>
+        <div id="reg-success" style="color:#10b981;font-size:13px;font-family:'JetBrains Mono',monospace;margin-bottom:8px;display:none"></div>
+        <button class="auth-btn" id="reg-btn">
+          <span id="reg-btn-text">Create Account</span>
+          <div id="reg-spinner" class="btn-spinner hidden"></div>
         </button>
-        <p class="auth-note mono">By registering, you agree to our Terms & Privacy Policy</p>
+        <p class="auth-note mono">By registering, you agree to our Terms &amp; Privacy Policy</p>
       </div>
     </div>
   </div>
@@ -115,41 +107,76 @@
 
 <script src="main.js"></script>
 <script>
+// UI Tab Logic
 function switchTab(tab) {
-  document.getElementById('tab-login').classList.toggle('active', tab==='login');
-  document.getElementById('tab-register').classList.toggle('active', tab==='register');
-  document.getElementById('form-login').classList.toggle('hidden', tab!=='login');
-  document.getElementById('form-register').classList.toggle('hidden', tab!=='register');
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+  document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
 }
-function otpNext(el) {
-  if(el.value.length===1) { const n=el.nextElementSibling; if(n&&n.classList.contains('otp-input')) n.focus(); }
+
+document.getElementById('tab-login').addEventListener('click', () => switchTab('login'));
+document.getElementById('tab-register').addEventListener('click', () => switchTab('register'));
+
+// Password Strength
+document.getElementById('reg-pass').addEventListener('input', function() {
+  const v = this.value; 
+  let s = 0;
+  if (v.length > 8) s++; 
+  if (v.length > 12) s++; 
+  if (/[A-Z]/.test(v)) s++; 
+  if (/[0-9]/.test(v)) s++; 
+  if (/[^a-zA-Z0-9]/.test(v)) s++;
+  const bar = document.getElementById('ps-bar');
+  const colors = ['#f43f5e', '#f59e0b', '#f59e0b', '#10b981', '#38bdf8'];
+  if (bar) {
+    bar.style.width = (s * 20) + '%'; 
+    bar.style.background = colors[s - 1] || '#f43f5e';
+  }
+});
+
+// Error Helpers
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  if (el) { el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
 }
-function checkPassStrength(el) {
-  const v=el.value; let s=0;
-  if(v.length>8)s++; if(v.length>12)s++; if(/[A-Z]/.test(v))s++; if(/[0-9]/.test(v))s++; if(/[^a-zA-Z0-9]/.test(v))s++;
-  const bar=document.getElementById('ps-bar');
-  const colors=['#f43f5e','#f59e0b','#f59e0b','#10b981','#38bdf8'];
-  bar.style.width=(s*20)+'%'; bar.style.background=colors[s-1]||'#f43f5e';
+
+function showRegError(msg) {
+  const el = document.getElementById('reg-error');
+  const ok = document.getElementById('reg-success');
+  if (el) { el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
+  if (ok) ok.style.display = 'none';
 }
-async function doLogin() {
+
+function showRegSuccess(msg) {
+  const el = document.getElementById('reg-success');
+  const err = document.getElementById('reg-error');
+  if (el) { el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
+  if (err) err.style.display = 'none';
+}
+
+// Authentication Handlers
+document.getElementById('login-btn').addEventListener('click', async () => {
   const btn = document.getElementById('login-btn-text');
   const sp = document.getElementById('login-spinner');
-  const email = document.getElementById('login-email').value;
+  const username = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-pass').value;
 
-  if (!email || !pass) {
-    alert('Please enter both username and password.');
+  showLoginError('');
+
+  if (!username || !pass) {
+    showLoginError('⚠ Please enter both username and password.');
     return;
   }
 
   btn.textContent = 'Verifying...';
-  sp.classList.remove('hidden');
+  if (sp) sp.classList.remove('hidden');
 
   try {
     const response = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: email, password: pass })
+      body: JSON.stringify({ username, password: pass })
     });
 
     const data = await response.json();
@@ -157,47 +184,71 @@ async function doLogin() {
     if (response.ok && data.success && data.token) {
       localStorage.setItem('token', data.token);
       localStorage.setItem('username', data.username);
+      localStorage.setItem('displayName', data.displayName || data.username);
+      localStorage.setItem('organization', data.organization || 'My Organization');
+      localStorage.setItem('tier', data.tier || 'core');
       window.location.href = 'dashboard.html';
     } else {
-      alert(data.error || 'Authentication failed.');
+      showLoginError('⚠ ' + (data.error || 'Authentication failed.'));
       btn.textContent = 'Access Dashboard';
-      sp.classList.add('hidden');
+      if (sp) sp.classList.add('hidden');
     }
   } catch (err) {
-    alert('Server connection lost.');
+    showLoginError('⚠ Server connection lost. Is Docker running?');
     btn.textContent = 'Access Dashboard';
-    sp.classList.add('hidden');
+    if (sp) sp.classList.add('hidden');
   }
-}
-async function doRegister() {
-  const email = document.getElementById('reg-email').value;
-  const pass = document.getElementById('reg-pass').value;
+});
 
-  if (!email || !pass) {
-    alert('Please enter a username and password to register.');
-    return;
-  }
+document.getElementById('reg-btn').addEventListener('click', async () => {
+  const username = document.getElementById('reg-username').value.trim();
+  const pass     = document.getElementById('reg-pass').value;
+  const org      = document.getElementById('reg-org').value.trim();
+  const first    = document.getElementById('reg-first').value.trim();
+  const last     = document.getElementById('reg-last').value.trim();
+  const tier     = document.getElementById('reg-tier').value || 'core';
+  const btnText  = document.getElementById('reg-btn-text');
+  const spinner  = document.getElementById('reg-spinner');
+
+  showRegError('');
+
+  if (!username) return showRegError('⚠ Username is required.');
+  if (!pass)     return showRegError('⚠ Password is required.');
+  if (pass.length < 8) return showRegError('⚠ Password must be at least 8 characters.');
+
+  const displayName = [first, last].filter(Boolean).join(' ') || username;
+
+  if (btnText) btnText.textContent = 'Creating...';
+  if (spinner) spinner.classList.remove('hidden');
 
   try {
     const response = await fetch('/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: email, password: pass })
+      body: JSON.stringify({ username, password: pass, displayName, organization: org, tier })
     });
 
     const data = await response.json();
 
+    if (btnText) btnText.textContent = 'Create Account';
+    if (spinner) spinner.classList.add('hidden');
+
     if (response.ok && data.success) {
-      alert('Registration successful! You can now log in.');
-      switchTab('login');
-      document.getElementById('login-email').value = email;
+      showRegSuccess('✅ Account created! Switching to login...');
+      setTimeout(() => {
+        switchTab('login');
+        const loginInput = document.getElementById('login-email');
+        if (loginInput) loginInput.value = username;
+      }, 1200);
     } else {
-      alert(data.error || 'Registration failed.');
+      showRegError('⚠ ' + (data.error || 'Registration failed.'));
     }
   } catch (err) {
-    alert('Server connection lost.');
+    if (btnText) btnText.textContent = 'Create Account';
+    if (spinner) spinner.classList.add('hidden');
+    showRegError('⚠ Server connection lost. Is Docker running?');
   }
-}
+});
 </script>
 </body>
 </html>

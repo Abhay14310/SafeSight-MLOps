@@ -60,6 +60,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
       <span>Subscription</span>
     </a>
+    <a href="#" class="ds-item" data-page="profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <span>Profile</span>
+    </a>
   </nav>
   <div class="ds-footer">
     <div class="ds-user">
@@ -339,47 +343,36 @@
 
   <!-- ── PAGE: EDGE NODES ── -->
   <div id="page-nodes" class="dash-page">
-    <div class="nodes-grid">
-      <div class="node-card online">
+
+    <!-- Real-time AI Engine Status -->
+    <div class="nodes-grid" id="ai-engine-status-row">
+      <div class="node-card" id="ai-engine-node">
         <div class="node-header">
-          <span class="node-id mono">NODE-001</span>
-          <span class="node-status online">● ONLINE</span>
+          <span class="node-id mono">AI-ENGINE · Local</span>
+          <span class="node-status mono" id="ai-engine-status-label" style="color:var(--text-muted)">● CHECKING...</span>
         </div>
         <div class="node-info">
-          <div class="ni-row"><span>IP Address</span><span class="mono">192.168.1.50</span></div>
-          <div class="ni-row"><span>Firmware</span><span class="mono">T26-FW-2.6.1</span></div>
-          <div class="ni-row"><span>Cameras</span><span class="mono">4 / 8 connected</span></div>
-          <div class="ni-row"><span>CPU Load</span><span class="mono" style="color:var(--emerald)">24%</span></div>
-          <div class="ni-row"><span>NPU Load</span><span class="mono" style="color:var(--amber)">68%</span></div>
-          <div class="ni-row"><span>Last Seen</span><span class="mono">Now</span></div>
+          <div class="ni-row"><span>Type</span><span class="mono">Python Edge Engine</span></div>
+          <div class="ni-row"><span>Model</span><span class="mono">YOLOv8n-pose</span></div>
+          <div class="ni-row"><span>Last Heartbeat</span><span class="mono" id="ai-last-heartbeat">—</span></div>
         </div>
         <div class="node-actions">
-          <button class="btn-ghost-sm">Configure</button>
-          <button class="btn-ghost-sm">Reboot</button>
+          <button class="btn-ghost-sm" onclick="toggleAI()">Toggle Uplink</button>
         </div>
       </div>
-      <div class="node-card offline">
-        <div class="node-header">
-          <span class="node-id mono">NODE-002</span>
-          <span class="node-status offline">● OFFLINE</span>
-        </div>
-        <div class="node-info">
-          <div class="ni-row"><span>IP Address</span><span class="mono">192.168.1.51</span></div>
-          <div class="ni-row"><span>Firmware</span><span class="mono">T26-FW-2.5.8</span></div>
-          <div class="ni-row"><span>Cameras</span><span class="mono">0 / 4 connected</span></div>
-          <div class="ni-row"><span>Last Seen</span><span class="mono" style="color:var(--rose)">2h ago</span></div>
-        </div>
-        <div class="node-actions">
-          <button class="btn-ghost-sm">Diagnose</button>
-          <button class="btn-ghost-sm">Update FW</button>
-        </div>
+    </div>
+
+    <!-- API Key Management -->
+    <div style="margin-top:24px">
+      <div class="it-header">
+        <h3>🔑 API Keys — Edge Node Authentication</h3>
+        <button class="btn-ghost-sm" onclick="createApiKey()">+ New Key</button>
       </div>
-      <div class="node-card add-node" onclick="addNodePrompt()">
-        <div class="add-node-inner">
-          <span class="add-plus">+</span>
-          <span>Add Edge Node</span>
-          <span class="mono" style="font-size:11px;color:var(--text-muted)">Connect new hardware</span>
-        </div>
+      <p style="color:var(--text-muted);font-size:13px;margin:8px 0 16px;font-family:'JetBrains Mono'">
+        Set <code style="background:rgba(56,189,248,0.1);padding:2px 6px;border-radius:4px">SAFESIGHT_API_KEY=&lt;key&gt;</code> as an environment variable when running <code style="background:rgba(56,189,248,0.1);padding:2px 6px;border-radius:4px">detection.py</code>
+      </p>
+      <div id="api-keys-list" style="display:flex;flex-direction:column;gap:12px;">
+        <div style="color:var(--text-muted);font-family:'JetBrains Mono';font-size:13px">Loading keys...</div>
       </div>
     </div>
   </div>
@@ -422,6 +415,69 @@
       </div>
     </div>
   </div>
+  <!-- ── PAGE: PROFILE ── -->
+  <div id="page-profile" class="dash-page">
+    <div style="max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:24px">
+
+      <!-- Profile Info Card -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px">
+        <h3 style="margin:0 0 20px;color:var(--text-primary)">👤 Profile Information</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="form-group">
+            <label>Display Name</label>
+            <input id="prof-displayName" class="form-input" placeholder="John Doe"/>
+          </div>
+          <div class="form-group">
+            <label>Organization</label>
+            <input id="prof-organization" class="form-input" placeholder="My Organization"/>
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Email (for alerts)</label>
+            <input id="prof-email" class="form-input" type="email" placeholder="you@example.com"/>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
+          <button onclick="saveProfile()" class="auth-btn" style="font-size:14px;padding:10px 24px">Save Changes</button>
+          <span id="prof-save-msg" style="font-family:'JetBrains Mono';font-size:13px;color:var(--emerald);opacity:0;transition:opacity .3s"></span>
+        </div>
+      </div>
+
+      <!-- Change Password Card -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px">
+        <h3 style="margin:0 0 20px;color:var(--text-primary)">🔒 Change Password</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Current Password</label>
+            <input id="prof-cur-pass" class="form-input" type="password" placeholder="••••••••"/>
+          </div>
+          <div class="form-group">
+            <label>New Password</label>
+            <input id="prof-new-pass" class="form-input" type="password" placeholder="Min 8 characters"/>
+          </div>
+          <div class="form-group">
+            <label>Confirm New Password</label>
+            <input id="prof-conf-pass" class="form-input" type="password" placeholder="Repeat new password"/>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
+          <button onclick="changePassword()" class="auth-btn" style="font-size:14px;padding:10px 24px;background:linear-gradient(135deg,#0f172a,#1e293b);border:1px solid var(--border)">Update Password</button>
+          <span id="prof-pass-msg" style="font-family:'JetBrains Mono';font-size:13px;opacity:0;transition:opacity .3s"></span>
+        </div>
+      </div>
+
+      <!-- Account Info Card -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px">
+        <h3 style="margin:0 0 20px;color:var(--text-primary)">🏷️ Account Details</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div><span style="color:var(--text-muted);font-size:12px">USERNAME</span><div id="prof-username" class="mono" style="color:var(--sky);margin-top:4px"></div></div>
+          <div><span style="color:var(--text-muted);font-size:12px">TIER</span><div id="prof-tier" class="mono" style="margin-top:4px"></div></div>
+          <div><span style="color:var(--text-muted);font-size:12px">API KEYS</span><div class="mono" style="color:var(--amber);margin-top:4px"><a href="#" onclick="showPage('nodes')" style="color:inherit">Manage in Edge Nodes →</a></div></div>
+          <div><span style="color:var(--text-muted);font-size:12px">EXPORT INCIDENTS</span><div style="margin-top:4px"><a href="#" onclick="exportCSV()" class="btn-ghost-sm" style="font-size:12px">Download CSV ↓</a></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
 
 </main>
 
@@ -446,6 +502,36 @@
   </div>
 </div>
 
+<!-- ── Incident Review Modal ── -->
+<div id="review-modal" class="hidden">
+  <div class="modal-overlay" onclick="closeReviewModal()"></div>
+  <div class="modal-card" style="max-width:480px;width:90%">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h3 style="margin:0">📋 Incident Review</h3>
+      <button onclick="closeReviewModal()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div id="review-modal-body" style="margin-bottom:20px">
+      <div class="form-group">
+        <label>Event</label>
+        <div id="rm-label" style="color:var(--text-primary);font-weight:600;font-size:15px"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div><span style="color:var(--text-muted);font-size:12px">CAMERA</span><div id="rm-camera" class="mono" style="color:var(--sky);margin-top:2px"></div></div>
+        <div><span style="color:var(--text-muted);font-size:12px">ZONE</span><div id="rm-zone" class="mono" style="color:var(--sky);margin-top:2px"></div></div>
+        <div><span style="color:var(--text-muted);font-size:12px">CONFIDENCE</span><div id="rm-conf" class="mono" style="color:var(--emerald);margin-top:2px"></div></div>
+        <div><span style="color:var(--text-muted);font-size:12px">SEVERITY</span><div id="rm-sev" class="mono" style="margin-top:2px"></div></div>
+        <div><span style="color:var(--text-muted);font-size:12px">TIME</span><div id="rm-time" class="mono" style="color:var(--text-muted);margin-top:2px;font-size:12px"></div></div>
+        <div><span style="color:var(--text-muted);font-size:12px">STATUS</span><div id="rm-status" class="mono" style="margin-top:2px"></div></div>
+      </div>
+    </div>
+    <div id="review-modal-actions" style="display:flex;gap:10px;flex-wrap:wrap">
+      <button onclick="submitReview('resolved')" class="auth-btn" style="flex:1;background:linear-gradient(135deg,#10b981,#047857);border:none">✅ Mark Resolved</button>
+      <button onclick="submitReview('false_positive')" class="btn-ghost-sm" style="flex:1;color:var(--amber);border-color:var(--amber)">⚠ False Positive</button>
+    </div>
+    <div id="review-success" class="hidden" style="text-align:center;padding:16px;color:var(--emerald);font-family:'JetBrains Mono';font-size:14px">✅ Incident reviewed and logged.</div>
+  </div>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script src="main.js"></script>
 <script>
@@ -464,6 +550,8 @@ function showPage(name) {
   if(name==='livefeed') initCameraFeeds();
   if(name==='analytics') initAnalyticsCharts();
   if(name==='perimeter') initPerimeterFeed();
+  if(name==='nodes') loadApiKeys();
+  if(name==='profile') loadProfilePage();
 }
 
 document.querySelectorAll('.ds-item').forEach(item => {

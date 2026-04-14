@@ -294,6 +294,9 @@ class Config:
     # Dashboard
     dashboard_url:      str   = os.environ.get("DASHBOARD_URL", "http://localhost:3000/api/alert")
 
+    # Authentication (set via SAFESIGHT_API_KEY env var)
+    api_key:            str   = os.environ.get("SAFESIGHT_API_KEY", "")
+
     # Camera
     camera_index:       int   = int(os.environ.get("CAMERA_INDEX", "0"))
     frame_width:        int   = 1280
@@ -326,6 +329,13 @@ class Config:
     @property
     def base_url(self) -> str:
         return self.dashboard_url.replace("/api/alert", "")
+
+    @property
+    def auth_headers(self) -> dict:
+        """Returns header dict to authorise against the SafeSight Node.js server."""
+        if self.api_key:
+            return {"X-API-Key": self.api_key}
+        return {}
 
 
 CFG = Config()
@@ -572,6 +582,7 @@ class DashboardSender:
         while True:
             try:
                 SESSION.post(f"{CFG.base_url}/api/heartbeat",
+                             headers=CFG.auth_headers,
                              timeout=CFG.request_timeout_s)
             except Exception:
                 pass
@@ -938,11 +949,32 @@ class AIEngine:
                 x1,y1,x2,y2 = det_info["bbox"]
                 Annotator.draw_person(frame, x1,y1,x2,y2, track, det_info["confidence"])
 
-                # Build alert payload
+                # Build alert payload with proper severity
                 if should_alert:
+                    # Map state → severity for the SaaS backend
+                    severity_map = {
+                        PersonState.STANDING:  "info",
+                        PersonState.FALLING:   "warning",
+                        PersonState.FALLEN:    "critical",
+                        PersonState.EMERGENCY: "critical",
+                    }
+                    severity = severity_map.get(track.state, "warning")
+
+                    # Human-readable label
+                    label_map = {
+                        PersonState.STANDING:  f"Person Detected #{track.track_id}",
+                        PersonState.FALLING:   f"⚠ Person Falling #{track.track_id}",
+                        PersonState.FALLEN:    f"🔴 Person on Ground #{track.track_id}",
+                        PersonState.EMERGENCY: f"🆘 EMERGENCY — Person Down #{track.track_id} ({det_info['fall_duration']:.0f}s)",
+                    }
+                    label = label_map.get(track.state, track.state.value)
+
                     alerts.append({
-                        "label":         f"{track.state.value} - Person #{track.track_id}",
+                        "label":         label,
                         "confidence":    det_info["confidence"],
+                        "severity":      severity,
+                        "camera":        f"CAM-0{CFG.camera_index + 1}",
+                        "zone":          f"Zone {chr(65 + CFG.camera_index)}",
                         "state":         track.state.value,
                         "track_id":      track.track_id,
                         "fall_duration": det_info["fall_duration"],
@@ -950,8 +982,7 @@ class AIEngine:
                         "timestamp":     time.strftime('%Y-%m-%dT%H:%M:%S'),
                     })
                     log.warning(
-                        f"{STATE_EMOJI[track.state]} ALERT → state={track.state.value} "
-                        f"id={track.track_id} duration={det_info['fall_duration']:.1f}s"
+                        f"{STATE_EMOJI[track.state]} ALERT [{severity.upper()}] → {label}"
                     )
 
         # ── Prune stale tracks (person left frame) ────────────────────
