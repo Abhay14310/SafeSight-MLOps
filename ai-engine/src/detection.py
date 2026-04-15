@@ -189,7 +189,7 @@
 ║  (portrait orientation, aspect_ratio = width/height < 0.75).        ║
 ║                                                                      ║
 ║  When a person falls:                                               ║
-║    • The bbox rotates: width > height → aspect_ratio > 0.85         ║
+║    • The bbox rotates: width > height → aspect_ratio > 1.20         ║
 ║    • We also check velocity: if bbox centroid Y dropped fast,       ║
 ║      it's an active fall event (dynamic), not just someone lying.   ║
 ║    • We then apply a TEMPORAL FILTER: must stay "wide" for N        ║
@@ -309,10 +309,12 @@ class Config:
     alert_interval:     int   = 1            # Run YOLO every frame when alert active
 
     # Fall detection thresholds
-    fall_aspect_ratio:  float = 0.85         # bbox W/H > this → suspect fallen pose
-    fall_confirm_frames:int   = 8            # Must stay "wide" for N frames before FALLING state
+    fall_aspect_ratio:  float = 1.2          # bbox W/H > this → suspect fallen pose (wider than tall)
+    fall_confirm_frames:int   = 18           # Must stay "wide" for N frames before FALLING state (~0.6-0.9s)
     fallen_duration_s:  float = 3.0          # Seconds in FALLING before → FALLEN state
     emergency_duration_s: float = 10.0       # Seconds in FALLEN before → EMERGENCY state
+    min_bbox_area:      int   = 5000         # Ignore tiny far-away detections (unreliable aspect ratio)
+    recovery_frames:    int   = 15           # Must be "tall" for N frames to recover from FALLEN/EMERGENCY
 
     # Alert cooldown per track (seconds)
     alert_cooldown_s:   float = 5.0
@@ -399,6 +401,7 @@ class PersonTrack:
     last_centroid:      Optional[Tuple[int,int]] = None
     centroid_history:   deque          = field(default_factory=lambda: deque(maxlen=10))
     fall_frames_count:  int            = 0       # Consecutive "wide" frames
+    recovery_count:     int            = 0       # Consecutive "tall" frames (for recovery from FALLEN)
 
     @property
     def fall_duration(self) -> float:
@@ -420,8 +423,8 @@ class PersonTrack:
         FALL DETECTION ALGORITHM:
         ──────────────────────────
         1. Compute aspect ratio = bbox_width / bbox_height.
-           Normal standing person: ~0.35–0.60  (taller than wide)
-           Fallen person:          ~0.85–2.00  (wider than tall)
+           Normal standing person: ~0.35–0.70  (taller than wide)
+           Fallen person:          ~1.20–3.00  (clearly wider than tall)
 
         2. Append to rolling history (last 15 frames).
 
@@ -432,9 +435,7 @@ class PersonTrack:
            STANDING  → FALLING   : fall candidate detected
            FALLING   → FALLEN    : held for fallen_duration_s
            FALLEN    → EMERGENCY : held for emergency_duration_s
-           ANY       → STANDING  : aspect ratio normal again AND
-                                   was in FALLING (not yet FALLEN —
-                                   can't recover instantly from FALLEN)
+           ANY       → STANDING  : aspect ratio normal for recovery_frames
         """
         now = time.time()
         self.aspect_history.append(aspect_ratio)
@@ -443,11 +444,14 @@ class PersonTrack:
         is_wide = aspect_ratio > CFG.fall_aspect_ratio
         if is_wide:
             self.fall_frames_count += 1
+            self.recovery_count = 0       # Reset recovery if still wide
         else:
-            # Decay quickly if back to normal pose
-            self.fall_frames_count = max(0, self.fall_frames_count - 2)
+            # Decay faster than accumulation to avoid false triggers
+            self.fall_frames_count = max(0, self.fall_frames_count - 3)
+            self.recovery_count += 1      # Track consecutive "tall" frames
 
         fall_candidate = self.fall_frames_count >= CFG.fall_confirm_frames
+        is_recovered = self.recovery_count >= CFG.recovery_frames
         should_alert = False
 
         # ── State machine transitions ──────────────────────────────
@@ -464,6 +468,7 @@ class PersonTrack:
                 self.state = PersonState.STANDING
                 self.fall_confirmed_at = None
                 self.fall_frames_count = 0
+                self.recovery_count = 0
                 log.info(f"🟢 Track {self.track_id:>3} → STANDING (recovered from FALLING)")
             elif (now - self.fall_confirmed_at) >= CFG.fallen_duration_s:
                 self.state = PersonState.FALLEN
@@ -472,15 +477,30 @@ class PersonTrack:
                 should_alert = True
 
         elif self.state == PersonState.FALLEN:
-            if (now - self.fallen_at) >= CFG.emergency_duration_s:
+            if is_recovered:
+                # Person stood back up — reset
+                self.state = PersonState.STANDING
+                self.fallen_at = None
+                self.fall_confirmed_at = None
+                self.fall_frames_count = 0
+                self.recovery_count = 0
+                log.info(f"🟢 Track {self.track_id:>3} → STANDING (recovered from FALLEN)")
+            elif (now - self.fallen_at) >= CFG.emergency_duration_s:
                 self.state = PersonState.EMERGENCY
                 log.critical(f"🆘 Track {self.track_id:>3} → EMERGENCY (on ground {self.fall_duration:.0f}s)")
                 should_alert = True
 
         elif self.state == PersonState.EMERGENCY:
-            # Once EMERGENCY — stay until manually reset or track lost
-            # Re-alert every cooldown period
-            if self.needs_alert:
+            if is_recovered:
+                # Person stood back up from emergency — reset
+                self.state = PersonState.STANDING
+                self.fallen_at = None
+                self.fall_confirmed_at = None
+                self.fall_frames_count = 0
+                self.recovery_count = 0
+                log.info(f"🟢 Track {self.track_id:>3} → STANDING (recovered from EMERGENCY)")
+            elif self.needs_alert:
+                # Still on ground — re-alert every cooldown period
                 should_alert = True
 
         # Record alert time to enforce cooldown
@@ -871,6 +891,11 @@ class AIEngine:
         if bh <= 0:
             return None, False, {}
 
+        # ── Skip tiny bounding boxes (unreliable aspect ratio) ────────
+        bbox_area = bw * bh
+        if bbox_area < CFG.min_bbox_area:
+            return None, False, {}
+
         aspect_ratio = bw / bh
         conf         = float(box.conf[0])
         cx, cy       = (x1 + x2) // 2, (y1 + y2) // 2
@@ -893,20 +918,42 @@ class AIEngine:
         pose_fall_signal = False
         if hasattr(results[0], 'keypoints') and results[0].keypoints is not None:
             try:
-                kps = results[0].keypoints.xy[0].cpu().numpy()
-                # COCO keypoints: 5=L-shoulder, 6=R-shoulder, 11=L-hip, 12=R-hip
-                if len(kps) > 12:
-                    shoulder_y = (kps[5][1] + kps[6][1]) / 2
-                    hip_y      = (kps[11][1] + kps[12][1]) / 2
-                    # If shoulders are BELOW hips (y increases downward) → fallen
-                    if shoulder_y > hip_y + 10:
-                        pose_fall_signal = True
-                        aspect_ratio = max(aspect_ratio, CFG.fall_aspect_ratio + 0.1)
+                # Find the correct keypoint index for this specific box
+                # The boxes and keypoints arrays are aligned by index
+                box_idx = None
+                for bi, b in enumerate(results[0].boxes):
+                    if b is box:
+                        box_idx = bi
+                        break
+
+                if box_idx is not None and box_idx < len(results[0].keypoints.xy):
+                    kps = results[0].keypoints.xy[box_idx].cpu().numpy()
+                    # COCO keypoints: 5=L-shoulder, 6=R-shoulder, 11=L-hip, 12=R-hip
+                    if len(kps) > 12:
+                        ls_y, rs_y = kps[5][1], kps[6][1]
+                        lh_y, rh_y = kps[11][1], kps[12][1]
+                        # Only use keypoints if they have valid (non-zero) coordinates
+                        if ls_y > 0 and rs_y > 0 and lh_y > 0 and rh_y > 0:
+                            shoulder_y = (ls_y + rs_y) / 2
+                            hip_y      = (lh_y + rh_y) / 2
+                            # Shoulders significantly BELOW hips → strong fall signal
+                            # Use a generous margin (30px) to avoid false triggers
+                            if shoulder_y > hip_y + 30:
+                                pose_fall_signal = True
             except Exception:
                 pass  # Keypoints unavailable for this detection
 
+        # ── Combine signals ──────────────────────────────────────────
+        # Pose signal only REINFORCES aspect ratio, doesn't override it.
+        # We boost the effective aspect ratio ONLY if both bbox is borderline
+        # AND pose confirms the fall posture.
+        effective_ar = aspect_ratio
+        if pose_fall_signal and aspect_ratio > (CFG.fall_aspect_ratio * 0.7):
+            # Bbox is somewhat wide AND pose confirms → boost signal
+            effective_ar = max(aspect_ratio, CFG.fall_aspect_ratio + 0.15)
+
         # Update state machine
-        should_alert = track.update_state(aspect_ratio, (cx, cy))
+        should_alert = track.update_state(effective_ar, (cx, cy))
 
         detection_info = {
             "track_id":     track_id,
@@ -952,6 +999,7 @@ class AIEngine:
                     continue
 
                 active_ids.add(track.track_id)
+                track._last_seen = self._frame_count  # Track when last seen for pruning
                 detections.append(det_info)
 
                 # Annotate
@@ -994,10 +1042,11 @@ class AIEngine:
                         f"{STATE_EMOJI[track.state]} ALERT [{severity.upper()}] → {label}"
                     )
 
-        # ── Prune stale tracks (person left frame) ────────────────────
+        # ── Prune stale tracks (person left frame for >90 frames) ────
         stale = [tid for tid in self._tracks if tid not in active_ids]
         for tid in stale:
-            if (self._frame_count - getattr(self._tracks[tid], '_last_seen', 0)) > 90:
+            last_seen = getattr(self._tracks[tid], '_last_seen', self._frame_count)
+            if (self._frame_count - last_seen) > 90:
                 del self._tracks[tid]
                 log.debug(f"   Pruned stale track ID={tid}")
 

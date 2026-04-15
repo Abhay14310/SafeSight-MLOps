@@ -980,11 +980,14 @@ function initBackendIntegration() {
           alerts.forEach(a => {
             const time = new Date(a.timestamp).toLocaleTimeString('en-US', { hour12: false }).slice(0, 8);
             const conf = a.confidence ? `${(a.confidence * 100).toFixed(1)}%` : 'N/A';
+            const stateBadge = a.state && a.state !== 'STANDING'
+              ? `<span class="inc-state-badge state-${(a.state||'').toLowerCase()}">${a.state}${a.fallDuration > 0 ? ` ${a.fallDuration.toFixed(1)}s` : ''}</span>`
+              : '';
             list.insertAdjacentHTML('beforeend', `
               <div class="inc-row" data-type="${a.severity}">
                 <div class="inc-sev sev-${a.severity}"></div>
                 <div class="inc-content">
-                  <div class="inc-title">${a.label}</div>
+                  <div class="inc-title">${a.label} ${stateBadge}</div>
                   <div class="inc-meta">${a.zone} · CONF: ${conf}</div>
                 </div>
                 <div class="inc-cam">${a.camera}</div>
@@ -1035,12 +1038,20 @@ function initBackendIntegration() {
     const camera     = alertData.camera || "CAM-01";
     const zone       = alertData.zone || "Zone A";
     const time       = new Date(alertData.timestamp || Date.now()).toLocaleTimeString('en-US',{hour12:false}).slice(0,8);
+    const state      = alertData.state || null;
+    const fallDur    = alertData.fallDuration || 0;
+
+    // Build a visual state badge for fall detections
+    let stateBadge = '';
+    if (state && state !== 'STANDING') {
+      stateBadge = `<span class="inc-state-badge state-${state.toLowerCase()}">${state}${fallDur > 0 ? ` ${fallDur.toFixed(1)}s` : ''}</span>`;
+    }
 
     const incHtml = `
     <div class="inc-row" data-type="${severity}" data-id="${alertData._id || ''}">
       <div class="inc-sev sev-${severity}"></div>
       <div class="inc-content">
-        <div class="inc-title">${label}</div>
+        <div class="inc-title">${label} ${stateBadge}</div>
         <div class="inc-meta">${zone} · CONF: ${confidence}</div>
       </div>
       <div class="inc-cam">${camera}</div>

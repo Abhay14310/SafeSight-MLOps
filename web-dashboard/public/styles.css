@@ -605,6 +605,23 @@ input, select, textarea { font-family: var(--fp); }
 .inc-time { font-family: var(--fm); font-size: 10px; color: var(--muted); white-space: nowrap; }
 .inc-action button { font-size: 11px; }
 
+/* Fall detection state badges */
+.inc-state-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--fm); font-size: 9px; letter-spacing: .1em; font-weight: 700;
+  padding: 2px 8px; border-radius: 4px; margin-left: 6px; vertical-align: middle;
+}
+.inc-state-badge.state-falling {
+  background: var(--am-dim); color: var(--amber); border: 1px solid rgba(245,158,11,.3);
+}
+.inc-state-badge.state-fallen {
+  background: var(--ro-dim); color: var(--rose); border: 1px solid rgba(244,63,94,.3);
+}
+.inc-state-badge.state-emergency {
+  background: var(--ro-dim); color: var(--rose); border: 1px solid rgba(244,63,94,.5);
+  animation: blink 1s infinite;
+}
+
 /* Live feeds */
 .live-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .lc-grid-btns { display: flex; gap: 4px; background: var(--slate); border: 1px solid var(--border2); border-radius: 8px; padding: 4px; }
