@@ -14,6 +14,17 @@ dist/
 downloads/
 eggs/
 .eggs/
+node_modules/
+npm-debug.log*
+
+# AI Weights
+*.pt
+yolov8n.pt
+
+# Environment / Secrets — NEVER commit these
+.env
+*.env
+!.env.example
 lib/
 lib64/
 parts/

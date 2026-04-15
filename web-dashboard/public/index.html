@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tasuke'26 — The New Standard in Protective AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<!-- ═══ CURSOR ═══ -->
+<div id="cursor"></div>
+<div id="cursor-trail"></div>
+
+<!-- ═══ LOADER ═══ -->
+<div id="loader">
+  <div class="loader-inner">
+    <div class="loader-logo">T<span>26</span></div>
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+    <div class="loader-text">INITIALIZING CYBER SENTINEL...</div>
+  </div>
+</div>
+
+<!-- ═══ NAV ═══ -->
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">T<span>26</span></a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#modules">Modules</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="login.html" class="btn-ghost-sm">Login</a>
+      <a href="login.html" class="btn-primary-sm">Get Access</a>
+    </div>
+    <button class="nav-burger" id="nav-burger">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div id="mobile-menu">
+  <a href="#features">Features</a>
+  <a href="#modules">Modules</a>
+  <a href="#pricing">Pricing</a>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="login.html" class="btn-primary-sm" style="margin-top:8px;display:inline-block">Get Access →</a>
+</div>
+
+<!-- ═══ HERO ═══ -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="live-dot"></span>
+      <span>LIVE THREAT MONITORING · ACTIVE</span>
+    </div>
+    <h1 class="hero-title">
+      <span class="line">Tasuke<sup>'26</sup></span>
+      <span class="line gradient-text">Protective AI</span>
+      <span class="line dim-line">Redefined.</span>
+    </h1>
+    <p class="hero-sub">Zero-latency intrusion detection. Autonomous countermeasures. Human-supervised AI that never sleeps — deployed at the edge, not the cloud.</p>
+    <div class="hero-cta">
+      <a href="login.html" class="btn-primary mag-btn">Request Access →</a>
+      <a href="dashboard.html" class="btn-outline mag-btn">View Dashboard</a>
+    </div>
+    <div class="hero-stats">
+      <div class="h-stat"><span class="h-num" data-val="99.97">0</span><span class="h-unit">%</span><p>Detection Accuracy</p></div>
+      <div class="h-divider"></div>
+      <div class="h-stat"><span class="h-num" data-val="12">0</span><span class="h-unit">ms</span><p>Response Latency</p></div>
+      <div class="h-divider"></div>
+      <div class="h-stat"><span class="h-num" data-val="4200">0</span><span class="h-unit">+</span><p>Deployments</p></div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="hv-frame">
+      <div class="hv-bar">
+        <span class="hv-dot r"></span><span class="hv-dot y"></span><span class="hv-dot g"></span>
+        <span class="hv-title">LIVE FEED · CAM-01 · Zone A</span>
+        <span class="hv-live">● REC</span>
+      </div>
+      <div class="hv-screen">
+        <canvas id="feed-canvas"></canvas>
+        <div class="hv-overlay">
+          <div class="bbox" style="left:18%;top:22%;width:24%;height:42%">
+            <span class="bbox-label">PERSON · 98.2%</span>
+          </div>
+          <div class="bbox threat" style="left:58%;top:30%;width:18%;height:36%">
+            <span class="bbox-label">⚠ THREAT · 94.1%</span>
+          </div>
+          <div class="hv-corner tl"></div>
+          <div class="hv-corner tr"></div>
+          <div class="hv-corner bl"></div>
+          <div class="hv-corner br"></div>
+        </div>
+      </div>
+      <div class="hv-footer">
+        <span class="mono">192.168.1.50 · ZONE-A · 4K HDR</span>
+        <span class="hv-status online">● ONLINE</span>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-cue">
+    <div class="scroll-wheel"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<!-- ═══ LOGOS / TRUST BAR ═══ -->
+<div id="trust-bar">
+  <div class="trust-inner">
+    <span class="trust-label mono">Trusted by</span>
+    <div class="trust-logos">
+      <div class="trust-item">APEX INDUSTRIES</div>
+      <div class="trust-item">VAULTEX FINANCE</div>
+      <div class="trust-item">MERIDIAN LOGISTICS</div>
+      <div class="trust-item">NOVA INFRASTRUCTURE</div>
+      <div class="trust-item">STEALTH DYNAMICS</div>
+      <div class="trust-item">IRONCLAD HOLDINGS</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FEATURES ═══ -->
+<section id="features">
+  <div class="section-label">CAPABILITIES</div>
+  <h2 class="section-title">Everything you need to stay<br/><em>ahead of every threat</em></h2>
+  <div class="features-grid">
+    <div class="feat-card" data-delay="0">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="curren         tColor" stroke-width="1.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h3>Zero-Trust Security</h3>
+      <p>Every identity continuously verified. Microsegmentation and cryptographic attestation guard every endpoint, every request.</p>
+      <div class="feat-tag">CORE</div>
+    </div>
+    <div class="feat-card" data-delay="1">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      </div>
+      <h3>Autonomous Response</h3>
+      <p>AI-triggered lockdowns, alerts, and countermeasures execute in milliseconds — before human awareness, with full audit trails.</p>
+      <div class="feat-tag">PRO</div>
+    </div>
+    <div class="feat-card" data-delay="2">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <h3>Predictive Analytics</h3>
+      <p>Behavioral graph models surface anomalies before incidents occur. Stop threats at intention, not execution.</p>
+      <div class="feat-tag">ELITE</div>
+    </div>
+    <div class="feat-card" data-delay="3">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      </div>
+      <h3>Unified Command View</h3>
+      <p>One pane of glass across all cameras, access logs, incident reports, and AI insights. Multi-site. Multi-zone.</p>
+      <div class="feat-tag">CORE</div>
+    </div>
+    <div class="feat-card" data-delay="4">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </div>
+      <h3>Identity Verification</h3>
+      <p>On-device facial, gait, and credential recognition with liveness detection. Sub-200ms. No cloud dependency.</p>
+      <div class="feat-tag">PRO</div>
+    </div>
+    <div class="feat-card" data-delay="5">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      </div>
+      <h3>Edge AI Processing</h3>
+      <p>All inference on the T26-NPU. Bandwidth-independent, privacy-preserving, impervious to cloud outages.</p>
+      <div class="feat-tag">CORE</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ MODULES ═══ -->
+<section id="modules">
+  <div class="section-label">AI MODULES</div>
+  <h2 class="section-title">Modular intelligence for<br/><em>every environment</em></h2>
+  <div class="modules-grid">
+    <div class="module-card tier-core">
+      <div class="module-badge">CORE</div>
+      <div class="module-icon">🛡️</div>
+      <h3>Perimeter Intrusion</h3>
+      <p>AI-powered perimeter monitoring with multi-zone alerting and virtual tripwires.</p>
+      <div class="module-meta"><span class="mono">T26-NPU · 4K · 120fps</span></div>
+      <a href="dashboard.html" class="module-link">Access Module →</a>
+    </div>
+    <div class="module-card tier-pro">
+      <div class="module-badge">PRO</div>
+      <div class="module-icon">⛑️</div>
+      <h3>PPE / Safety Detection</h3>
+      <p>Real-time hardhat, vest, and safety equipment compliance monitoring for industrial sites.</p>
+      <div class="module-meta"><span class="mono">YOLOv8 · 99.1% accuracy</span></div>
+      <a href="login.html" class="module-link">Requires Pro →</a>
+    </div>
+    <div class="module-card tier-elite">
+      <div class="module-badge">ELITE</div>
+      <div class="module-icon">🔐</div>
+      <h3>High-Security Intrusion</h3>
+      <p>Military-grade threat classification with sub-15ms response time and autonomous lockdown.</p>
+      <div class="module-meta"><span class="mono">T26-ELITE · Classified</span></div>
+      <a href="login.html" class="module-link">Requires Elite →</a>
+    </div>
+    <div class="module-card tier-pro">
+      <div class="module-badge">PRO</div>
+      <div class="module-icon">🧠</div>
+      <h3>Behaviour Analytics</h3>
+      <p>Graph neural network models that detect loitering, aggression, and crowd anomalies.</p>
+      <div class="module-meta"><span class="mono">GNN · Temporal analysis</span></div>
+      <a href="login.html" class="module-link">Requires Pro →</a>
+    </div>
+    <div class="module-card tier-core">
+      <div class="module-badge">CORE</div>
+      <div class="module-icon">👁️</div>
+      <h3>Motion & Presence</h3>
+      <p>Low-power continuous motion detection with adaptive sensitivity and scene learning.</p>
+      <div class="module-meta"><span class="mono">0.001 Lux · IR vision</span></div>
+      <a href="dashboard.html" class="module-link">Access Module →</a>
+    </div>
+    <div class="module-card tier-elite">
+      <div class="module-badge">ELITE</div>
+      <div class="module-icon">⚡</div>
+      <h3>Predictive Threat</h3>
+      <p>Pre-crime intent modeling using multi-modal behavioral signals and historical patterns.</p>
+      <div class="module-meta"><span class="mono">Custom AI · Elite only</span></div>
+      <a href="login.html" class="module-link">Requires Elite →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TECH SPEC ═══ -->
+<section id="tech">
+  <div class="tech-inner">
+    <div class="tech-content">
+      <div class="section-label">HARDWARE + AI</div>
+      <h2 class="section-title">Engineered at<br/><em>every layer</em></h2>
+      <p class="tech-sub">From silicon to software — Tasuke'26 fuses custom imaging hardware with on-device neural inference for sub-15ms detection with zero cloud dependency.</p>
+      <div class="spec-table">
+        <div class="spec-row"><span class="spec-key">Resolution</span><span class="spec-val">4K HDR · 120fps</span></div>
+        <div class="spec-row"><span class="spec-key">Night Vision</span><span class="spec-val">IR · 0.001 Lux</span></div>
+        <div class="spec-row"><span class="spec-key">AI Chip</span><span class="spec-val">T26-NPU · 42 TOPS</span></div>
+        <div class="spec-row"><span class="spec-key">Encryption</span><span class="spec-val">AES-256 · E2E</span></div>
+        <div class="spec-row"><span class="spec-key">Connectivity</span><span class="spec-val">PoE+ · WiFi 6E · LTE</span></div>
+        <div class="spec-row"><span class="spec-key">Storage</span><span class="spec-val">On-device · Encrypted</span></div>
+      </div>
+    </div>
+    <div class="tech-visual">
+      <canvas id="camera-canvas"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PRICING ═══ -->
+<section id="pricing">
+  <div class="section-label">SUBSCRIPTION TIERS</div>
+  <h2 class="section-title">Choose your<br/><em>protection level</em></h2>
+  <div class="pricing-grid">
+    <div class="pricing-card" id="pc-core">
+      <div class="pc-tier mono">TIER 01 · CORE</div>
+      <div class="pc-name">Sentinel Core</div>
+      <div class="pc-price">$299<span>/mo</span></div>
+      <div class="pc-desc">Essential AI protection for small-to-medium deployments.</div>
+      <ul class="pc-features">
+        <li class="yes">Perimeter Intrusion Detection</li>
+        <li class="yes">Motion & Presence Module</li>
+        <li class="yes">4-Camera Live Grid</li>
+        <li class="yes">Unified Command Dashboard</li>
+        <li class="yes">Edge AI Processing</li>
+        <li class="no">PPE / Industrial Safety</li>
+        <li class="no">Behaviour Analytics</li>
+        <li class="no">High-Security Intrusion</li>
+        <li class="no">Predictive Threat Modeling</li>
+      </ul>
+      <a href="login.html" class="pc-btn">Get Started</a>
+    </div>
+    <div class="pricing-card featured" id="pc-pro">
+      <div class="pc-recommended mono">RECOMMENDED</div>
+      <div class="pc-tier mono">TIER 02 · PRO</div>
+      <div class="pc-name">Guardian Pro</div>
+      <div class="pc-price">$799<span>/mo</span></div>
+      <div class="pc-desc">Advanced AI modules for enterprise and industrial environments.</div>
+      <ul class="pc-features">
+        <li class="yes">Everything in Core</li>
+        <li class="yes">PPE / Hardhat Detection</li>
+        <li class="yes">Behaviour Analytics</li>
+        <li class="yes">16-Camera Live Grid</li>
+        <li class="yes">Identity Verification</li>
+        <li class="yes">Autonomous Response</li>
+        <li class="no">High-Security Intrusion</li>
+        <li class="no">Predictive Threat Modeling</li>
+        <li class="no">Custom AI Models</li>
+      </ul>
+      <a href="login.html" class="pc-btn featured-btn">Get Started</a>
+    </div>
+    <div class="pricing-card" id="pc-elite">
+      <div class="pc-tier mono">TIER 03 · ELITE</div>
+      <div class="pc-name">Fortress Elite</div>
+      <div class="pc-price">$1,999<span>/mo</span></div>
+      <div class="pc-desc">Maximum protection for critical infrastructure and high-security facilities.</div>
+      <ul class="pc-features">
+        <li class="yes">Everything in Pro</li>
+        <li class="yes">High-Security Intrusion</li>
+        <li class="yes">Predictive Threat Modeling</li>
+        <li class="yes">Unlimited Cameras</li>
+        <li class="yes">Custom AI Models</li>
+        <li class="yes">Dedicated Edge Nodes</li>
+        <li class="yes">24/7 SOC Support</li>
+        <li class="yes">SLA: 99.99% Uptime</li>
+        <li class="yes">Air-gapped Deployment</li>
+      </ul>
+      <a href="login.html" class="pc-btn">Get Started</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER CTA ═══ -->
+<section id="footer-cta">
+  <h2>Ready to deploy the<br/>new standard?</h2>
+  <p>Join 4,200+ organizations secured by Tasuke'26 Cyber Sentinel.</p>
+  <a href="login.html" class="btn-primary mag-btn">Request Demo →</a>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer id="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="f-logo">T<span>26</span></div>
+      <p>The New Standard in Protective AI.<br/>Securing critical infrastructure worldwide.</p>
+    </div>
+    <div class="footer-links">
+      <div class="fl-col">
+        <h4>Product</h4>
+        <a href="#features">Features</a>
+        <a href="#modules">AI Modules</a>
+        <a href="#pricing">Pricing</a>
+        <a href="dashboard.html">Dashboard</a>
+      </div>
+      <div class="fl-col">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#">Security</a>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+      </div>
+      <div class="fl-col">
+        <h4>Support</h4>
+        <a href="#">Documentation</a>
+        <a href="#">API Reference</a>
+        <a href="#">Contact</a>
+        <a href="#">Status</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="mono">© 2026 Tasuke'26 Inc. All rights reserved.</span>
+    <div class="fb-right">
+      <span class="status-chip"><span class="live-dot"></span>All Systems Operational</span>
+    </div>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>
