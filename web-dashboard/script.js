@@ -197,14 +197,16 @@ app.get("/api/alerts/export", authMiddleware, async (req, res) => {
   try {
     const alerts = await Alert.find().sort({ timestamp: -1 }).limit(500);
     const rows = [
-      ['Timestamp', 'Label', 'Confidence', 'Camera', 'Zone', 'Severity'],
+      ['Timestamp', 'Label', 'Confidence', 'Camera', 'Zone', 'Severity', 'State', 'Fall Duration (s)'],
       ...alerts.map(a => [
         new Date(a.timestamp).toISOString(),
         a.label,
         a.confidence ? (a.confidence * 100).toFixed(1) + '%' : 'N/A',
         a.camera,
         a.zone,
-        a.severity
+        a.severity,
+        a.state || 'N/A',
+        a.fallDuration || 0
       ])
     ];
     const csv = rows.map(r => r.map(f => `"${String(f).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -417,15 +419,19 @@ io.on("connection", async (socket) => {
 // ── AI Engine Endpoints (API Key protected) ───────────────────────────────────
 app.post("/api/alert", apiKeyMiddleware, async (req, res) => {
   try {
-    const { label, confidence, camera, zone, severity } = req.body;
+    const { label, confidence, camera, zone, severity, state, fall_duration, track_id, timestamp } = req.body;
     const alert = await Alert.create({
-      label:      label || 'Unknown Detection',
-      confidence: confidence || 0,
-      camera:     camera || 'CAM-01',
-      zone:       zone || 'Zone A',
-      severity:   severity || 'critical'
+      label:        label || 'Unknown Detection',
+      confidence:   confidence || 0,
+      camera:       camera || 'CAM-01',
+      zone:         zone || 'Zone A',
+      severity:     severity || 'critical',
+      state:        state || null,
+      fallDuration: fall_duration || 0,
+      trackId:      track_id != null ? track_id : null,
+      timestamp:    timestamp ? new Date(timestamp) : new Date()
     });
-    console.log(`🚨 Alert: ${alert.label} (${(alert.confidence * 100).toFixed(1)}%)`);
+    console.log(`🚨 Alert: ${alert.label} [${alert.state || 'N/A'}] (${(alert.confidence * 100).toFixed(1)}%)`);
     io.emit("new-alert", alert);
 
     // Email notification for critical alerts (#7)

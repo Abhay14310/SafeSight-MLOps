@@ -22,6 +22,10 @@ const alertSchema = new mongoose.Schema({
     zone: { type: String, default: 'Zone A' },
     severity: { type: String, enum: ['critical', 'warning', 'info'], default: 'critical' },
     timestamp: { type: Date, default: Date.now },
+    // Fall detection metadata from AI engine
+    state: { type: String, enum: ['STANDING', 'FALLING', 'FALLEN', 'EMERGENCY', null], default: null },
+    fallDuration: { type: Number, default: 0 },
+    trackId: { type: Number, default: null },
     // Review status
     acknowledged: { type: Boolean, default: false },
     resolvedBy: { type: String, default: null },
