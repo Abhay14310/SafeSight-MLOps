@@ -569,12 +569,6 @@ function setGrid(cols, btn) {
   grid.style.gridTemplateColumns = cols===1 ? '1fr' : `repeat(${cols},1fr)`;
 }
 
-let aiEnabled = true;
-function toggleAI() {
-  aiEnabled = !aiEnabled;
-  const btn = document.getElementById('ai-toggle');
-  btn.innerHTML = `<span class="toggle-dot ${aiEnabled?'':'off'}"></span> AI Overlay ${aiEnabled?'ON':'OFF'}`;
-}
 
 function closeNotif() { document.getElementById('notif-panel').classList.add('hidden'); }
 function addNodePrompt() { document.getElementById('add-node-modal').classList.remove('hidden'); }

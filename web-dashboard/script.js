@@ -17,9 +17,9 @@ const io     = new Server(server, { cors: { origin: "*" } });
 
 // ── Initialize DB ────────────────────────────────────────────────────────────
 initDB().then(async () => {
-  // Restore camera active state from DB
-  const camConfig = await Config.findOne({ key: 'isCameraActive' }).catch(() => null);
-  if (camConfig) isCameraActive = !!camConfig.value;
+// Restore camera active state from DB (Disabled to ensure manual start)
+  // const camConfig = await Config.findOne({ key: 'isCameraActive' }).catch(() => null);
+  // if (camConfig) isCameraActive = !!camConfig.value;
 
   // Seed a default API key if none exists
   const keyCount = await ApiKey.countDocuments();

@@ -340,6 +340,12 @@ class Config:
 
 CFG = Config()
 
+if not CFG.api_key:
+    log.warning("⚠️  SAFESIGHT_API_KEY is not set! Communication with the dashboard will likely fail.")
+    log.warning("   Please set it using: set SAFESIGHT_API_KEY=your_key_here (Windows)")
+    log.warning("   Or create a .env file with: SAFESIGHT_API_KEY=your_key_here")
+
+
 
 # ─────────────────────────────────────────────────────────────────────
 # PERSON STATE MACHINE
@@ -562,6 +568,7 @@ class DashboardSender:
             SESSION.post(
                 f"{CFG.base_url}/api/video",
                 json={'frame': b64, 'metadata': metadata},
+                headers=CFG.auth_headers,
                 timeout=CFG.request_timeout_s,
             )
 
@@ -570,6 +577,7 @@ class DashboardSender:
                 SESSION.post(
                     f"{CFG.base_url}/api/alert",
                     json=alert,
+                    headers=CFG.auth_headers,
                     timeout=CFG.request_timeout_s,
                 )
         except Exception:
@@ -592,6 +600,7 @@ class DashboardSender:
         while True:
             try:
                 res = SESSION.get(f"{CFG.base_url}/api/camera-status",
+                                  headers=CFG.auth_headers,
                                   timeout=CFG.request_timeout_s)
                 if res.status_code == 200:
                     active = res.json().get("active", False)
