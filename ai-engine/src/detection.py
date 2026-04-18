@@ -357,11 +357,13 @@ class PersonState(Enum):
     State machine for each tracked person.
 
     STANDING  → normal, green box
+    SITTING   → sitting down, blue/amber box
     FALLING   → aspect ratio triggered, amber box + "FALLING?" label
     FALLEN    → confirmed fall (held for fallen_duration_s), red box
     EMERGENCY → person has been on ground for emergency_duration_s, flashing red
     """
     STANDING  = "STANDING"
+    SITTING   = "SITTING"
     FALLING   = "FALLING"
     FALLEN    = "FALLEN"
     EMERGENCY = "EMERGENCY"
@@ -370,6 +372,7 @@ class PersonState(Enum):
 # Maps state → BGR color for bounding box
 STATE_COLOR: Dict[PersonState, Tuple[int, int, int]] = {
     PersonState.STANDING:  (0,  210, 100),   # Green
+    PersonState.SITTING:   (220, 160, 50),   # Blue/Amber for sitting (BGR)
     PersonState.FALLING:   (0,  165, 255),   # Amber / Orange
     PersonState.FALLEN:    (0,  0,   220),   # Red
     PersonState.EMERGENCY: (0,  0,   255),   # Bright Red (flashing handled in draw)
@@ -377,6 +380,7 @@ STATE_COLOR: Dict[PersonState, Tuple[int, int, int]] = {
 
 STATE_EMOJI: Dict[PersonState, str] = {
     PersonState.STANDING:  "🟢",
+    PersonState.SITTING:   "🪑",
     PersonState.FALLING:   "🟡",
     PersonState.FALLEN:    "🔴",
     PersonState.EMERGENCY: "🆘",
@@ -401,6 +405,7 @@ class PersonTrack:
     last_centroid:      Optional[Tuple[int,int]] = None
     centroid_history:   deque          = field(default_factory=lambda: deque(maxlen=10))
     fall_frames_count:  int            = 0       # Consecutive "wide" frames
+    sit_frames_count:   int            = 0       # Consecutive "sitting" frames
     recovery_count:     int            = 0       # Consecutive "tall" frames (for recovery from FALLEN)
 
     @property
@@ -415,7 +420,7 @@ class PersonTrack:
         """True if alert cooldown has passed for this track."""
         return (time.time() - self.last_alert_sent) > CFG.alert_cooldown_s
 
-    def update_state(self, aspect_ratio: float, centroid: Tuple[int,int]) -> bool:
+    def update_state(self, aspect_ratio: float, centroid: Tuple[int,int], pose_sit_signal: bool = False) -> bool:
         """
         Feed a new observation and advance the state machine.
         Returns True if an alert should be fired.
@@ -450,6 +455,12 @@ class PersonTrack:
             self.fall_frames_count = max(0, self.fall_frames_count - 3)
             self.recovery_count += 1      # Track consecutive "tall" frames
 
+        if pose_sit_signal:
+            self.sit_frames_count += 1
+        else:
+            self.sit_frames_count = max(0, self.sit_frames_count - 2)
+
+        sit_candidate = self.sit_frames_count >= 5
         fall_candidate = self.fall_frames_count >= CFG.fall_confirm_frames
         is_recovered = self.recovery_count >= CFG.recovery_frames
         should_alert = False
@@ -461,6 +472,20 @@ class PersonTrack:
                 self.fall_confirmed_at = now
                 log.warning(f"🟡 Track {self.track_id:>3} → FALLING  (AR={aspect_ratio:.2f})")
                 should_alert = True
+            elif sit_candidate:
+                self.state = PersonState.SITTING
+                self.sit_frames_count = 5
+                log.info(f"🪑 Track {self.track_id:>3} → SITTING")
+
+        elif self.state == PersonState.SITTING:
+            if fall_candidate:
+                self.state = PersonState.FALLING
+                self.fall_confirmed_at = now
+                log.warning(f"🟡 Track {self.track_id:>3} → FALLING  (from sitting) (AR={aspect_ratio:.2f})")
+                should_alert = True
+            elif self.sit_frames_count == 0 and is_recovered:
+                self.state = PersonState.STANDING
+                log.info(f"🟢 Track {self.track_id:>3} → STANDING (stood up)")
 
         elif self.state == PersonState.FALLING:
             if not fall_candidate:
@@ -743,9 +768,10 @@ class Annotator:
 
         lines = [
             f"FPS: {fps:5.1f}   INF: {inference_ms:5.1f}ms",
-            f"Standing: {counts[PersonState.STANDING]}   "
-            f"Falling: {counts[PersonState.FALLING]}   "
-            f"Fallen: {counts[PersonState.FALLEN]+counts[PersonState.EMERGENCY]}",
+            f"Stand: {counts[PersonState.STANDING]}   "
+            f"Sit: {counts[PersonState.SITTING]}   "
+            f"Fall: {counts[PersonState.FALLING]}   "
+            f"Down: {counts[PersonState.FALLEN]+counts[PersonState.EMERGENCY]}",
         ]
         for i, line in enumerate(lines):
             cv2.putText(frame, line, (10, 38 + i * 20),
@@ -916,6 +942,7 @@ class AIEngine:
         # If we have keypoints, we can check if shoulders are below hips
         # (a much stronger signal than aspect ratio alone).
         pose_fall_signal = False
+        pose_sit_signal = False
         if hasattr(results[0], 'keypoints') and results[0].keypoints is not None:
             try:
                 # Find the correct keypoint index for this specific box
@@ -930,16 +957,33 @@ class AIEngine:
                     kps = results[0].keypoints.xy[box_idx].cpu().numpy()
                     # COCO keypoints: 5=L-shoulder, 6=R-shoulder, 11=L-hip, 12=R-hip
                     if len(kps) > 12:
-                        ls_y, rs_y = kps[5][1], kps[6][1]
-                        lh_y, rh_y = kps[11][1], kps[12][1]
+                        ls_x, ls_y = kps[5][0], kps[5][1]
+                        rs_x, rs_y = kps[6][0], kps[6][1]
+                        lh_x, lh_y = kps[11][0], kps[11][1]
+                        rh_x, rh_y = kps[12][0], kps[12][1]
+                        
                         # Only use keypoints if they have valid (non-zero) coordinates
                         if ls_y > 0 and rs_y > 0 and lh_y > 0 and rh_y > 0:
+                            shoulder_x = (ls_x + rs_x) / 2
                             shoulder_y = (ls_y + rs_y) / 2
+                            hip_x      = (lh_x + rh_x) / 2
                             hip_y      = (lh_y + rh_y) / 2
-                            # Shoulders significantly BELOW hips → strong fall signal
-                            # Use a generous margin (30px) to avoid false triggers
-                            if shoulder_y > hip_y + 30:
+                            
+                            torso_dx = shoulder_x - hip_x
+                            torso_dy = hip_y - shoulder_y # Positive if shoulder is ABOVE hip
+
+                            # 1. Fall logic: Upside down OR horizontally oriented torso
+                            if torso_dy < -30 or abs(torso_dx) > max(10.0, torso_dy * 1.5):
                                 pose_fall_signal = True
+                            
+                            # 2. Sit logic: Torso upright but thighs are horizontal
+                            elif len(kps) > 14:
+                                lk_y, rk_y = kps[13][1], kps[14][1]
+                                if lk_y > 0 and rk_y > 0:
+                                    knee_y = (lk_y + rk_y) / 2
+                                    thigh_dy = knee_y - hip_y
+                                    if torso_dy > 0 and thigh_dy < torso_dy * 0.5:
+                                        pose_sit_signal = True
             except Exception:
                 pass  # Keypoints unavailable for this detection
 
@@ -951,9 +995,13 @@ class AIEngine:
         if pose_fall_signal and aspect_ratio > (CFG.fall_aspect_ratio * 0.7):
             # Bbox is somewhat wide AND pose confirms → boost signal
             effective_ar = max(aspect_ratio, CFG.fall_aspect_ratio + 0.15)
+        elif pose_sit_signal:
+            # Dampen aspect ratio slightly if sitting to prevent false falls
+            if aspect_ratio < (CFG.fall_aspect_ratio * 1.5):
+                effective_ar = aspect_ratio * 0.5
 
         # Update state machine
-        should_alert = track.update_state(effective_ar, (cx, cy))
+        should_alert = track.update_state(effective_ar, (cx, cy), pose_sit_signal)
 
         detection_info = {
             "track_id":     track_id,
@@ -1011,6 +1059,7 @@ class AIEngine:
                     # Map state → severity for the SaaS backend
                     severity_map = {
                         PersonState.STANDING:  "info",
+                        PersonState.SITTING:   "info",
                         PersonState.FALLING:   "warning",
                         PersonState.FALLEN:    "critical",
                         PersonState.EMERGENCY: "critical",
@@ -1020,6 +1069,7 @@ class AIEngine:
                     # Human-readable label
                     label_map = {
                         PersonState.STANDING:  f"Person Detected #{track.track_id}",
+                        PersonState.SITTING:   f"Person Sitting #{track.track_id}",
                         PersonState.FALLING:   f"⚠ Person Falling #{track.track_id}",
                         PersonState.FALLEN:    f"🔴 Person on Ground #{track.track_id}",
                         PersonState.EMERGENCY: f"🆘 EMERGENCY — Person Down #{track.track_id} ({det_info['fall_duration']:.0f}s)",
