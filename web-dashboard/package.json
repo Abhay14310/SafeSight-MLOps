@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node script.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -24,5 +24,8 @@
   },
   "overrides": {
     "path-to-regexp": "^8.4.0"
+  },
+  "devDependencies": {
+    "jest": "^30.3.0"
   }
 }
