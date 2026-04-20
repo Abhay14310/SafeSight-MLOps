@@ -474,7 +474,8 @@ class PersonTrack:
                 should_alert = True
             elif sit_candidate:
                 self.state = PersonState.SITTING
-                self.sit_frames_count = 5
+                # Once confirmed sitting, we reset the count higher to avoid flickering back
+                self.sit_frames_count = 10 
                 log.info(f"🪑 Track {self.track_id:>3} → SITTING")
 
         elif self.state == PersonState.SITTING:
@@ -486,6 +487,9 @@ class PersonTrack:
             elif self.sit_frames_count == 0 and is_recovered:
                 self.state = PersonState.STANDING
                 log.info(f"🟢 Track {self.track_id:>3} → STANDING (stood up)")
+            elif sit_candidate:
+                # Keep sitting count topped up if still seeing sit signal
+                self.sit_frames_count = min(15, self.sit_frames_count + 1)
 
         elif self.state == PersonState.FALLING:
             if not fall_candidate:
@@ -938,15 +942,12 @@ class AIEngine:
 
         track = self._tracks[track_id]
 
-        # ── Pose-enhanced fall detection (if pose model loaded) ──────
-        # If we have keypoints, we can check if shoulders are below hips
-        # (a much stronger signal than aspect ratio alone).
+        # ── Pose-enhanced fall/sit detection (if pose model loaded) ──
         pose_fall_signal = False
-        pose_sit_signal = False
+        pose_sit_signal  = False
+        
         if hasattr(results[0], 'keypoints') and results[0].keypoints is not None:
             try:
-                # Find the correct keypoint index for this specific box
-                # The boxes and keypoints arrays are aligned by index
                 box_idx = None
                 for bi, b in enumerate(results[0].boxes):
                     if b is box:
@@ -954,38 +955,68 @@ class AIEngine:
                         break
 
                 if box_idx is not None and box_idx < len(results[0].keypoints.xy):
-                    kps = results[0].keypoints.xy[box_idx].cpu().numpy()
-                    # COCO keypoints: 5=L-shoulder, 6=R-shoulder, 11=L-hip, 12=R-hip
-                    if len(kps) > 12:
-                        ls_x, ls_y = kps[5][0], kps[5][1]
-                        rs_x, rs_y = kps[6][0], kps[6][1]
-                        lh_x, lh_y = kps[11][0], kps[11][1]
-                        rh_x, rh_y = kps[12][0], kps[12][1]
-                        
-                        # Only use keypoints if they have valid (non-zero) coordinates
-                        if ls_y > 0 and rs_y > 0 and lh_y > 0 and rh_y > 0:
-                            shoulder_x = (ls_x + rs_x) / 2
-                            shoulder_y = (ls_y + rs_y) / 2
-                            hip_x      = (lh_x + rh_x) / 2
-                            hip_y      = (lh_y + rh_y) / 2
-                            
-                            torso_dx = shoulder_x - hip_x
-                            torso_dy = hip_y - shoulder_y # Positive if shoulder is ABOVE hip
+                    # xy: [17, 2] array of keypoint coords
+                    # conf: [17] array of keypoint confidences
+                    kps_xy   = results[0].keypoints.xy[box_idx].cpu().numpy()
+                    kps_conf = results[0].keypoints.conf[box_idx].cpu().numpy() if hasattr(results[0].keypoints, 'conf') else None
 
-                            # 1. Fall logic: Upside down OR horizontally oriented torso
-                            if torso_dy < -30 or abs(torso_dx) > max(10.0, torso_dy * 1.5):
-                                pose_fall_signal = True
-                            
-                            # 2. Sit logic: Torso upright but thighs are horizontal
-                            elif len(kps) > 14:
-                                lk_y, rk_y = kps[13][1], kps[14][1]
-                                if lk_y > 0 and rk_y > 0:
-                                    knee_y = (lk_y + rk_y) / 2
-                                    thigh_dy = knee_y - hip_y
-                                    if torso_dy > 0 and thigh_dy < torso_dy * 0.5:
-                                        pose_sit_signal = True
-            except Exception:
-                pass  # Keypoints unavailable for this detection
+                    # Indices: 5:L-shoulder, 6:R-shoulder, 11:L-hip, 12:R-hip, 13:L-knee, 14:R-knee, 15:L-ankle, 16:R-ankle
+                    def get_avg_kp(indices):
+                        pts = []
+                        for i in indices:
+                            if i < len(kps_xy):
+                                x, y = kps_xy[i]
+                                c = kps_conf[i] if kps_conf is not None else 1.0
+                                if y > 0 and c > 0.4:  # Confidence gate
+                                    pts.append((x, y))
+                        if not pts: return None
+                        return np.mean(pts, axis=0)
+
+                    shoulder = get_avg_kp([5, 6])
+                    hip      = get_avg_kp([11, 12])
+                    knee     = get_avg_kp([13, 14])
+                    ankle    = get_avg_kp([15, 16])
+
+                    if shoulder is not None and hip is not None:
+                        shoulder_x, shoulder_y = shoulder
+                        hip_x, hip_y           = hip
+                        
+                        torso_dx = shoulder_x - hip_x
+                        torso_dy = hip_y - shoulder_y # Positive if shoulder is ABOVE hip
+
+                        # 1. Fall logic: Horizontal/Inverted torso
+                        if torso_dy < -20 or abs(torso_dx) > max(15.0, torso_dy * 1.6):
+                            pose_fall_signal = True
+                        
+                        # 2. Advanced Multi-Scenario Sitting Logic
+                        # Scenario A: Knees are high (Chair/Bench)
+                        if knee is not None:
+                            knee_y = knee[1]
+                            thigh_dy = knee_y - hip_y
+                            # Standing: thigh_dy ~ 1.0 * torso_dy
+                            # Sitting:  thigh_dy < 0.6 * torso_dy
+                            if torso_dy > 10 and thigh_dy < torso_dy * 0.65:
+                                pose_sit_signal = True
+                        
+                        # Scenario B: Ankles are high (Low chair/Floor/Ottoman)
+                        if not pose_sit_signal and ankle is not None:
+                            ankle_y = ankle[1]
+                            leg_dy = ankle_y - hip_y
+                            # Standing: leg_dy ~ 2.0 * torso_dy
+                            # Sitting:  leg_dy < 1.2 * torso_dy
+                            if torso_dy > 10 and leg_dy < torso_dy * 1.25:
+                                pose_sit_signal = True
+                        
+                        # Scenario C: Reclined sitting (Torso diagonal but not flat)
+                        if not pose_sit_signal and not pose_fall_signal:
+                            # If torso is significantly slanted (45-70 deg)
+                            # and bbox height is reduced
+                            if torso_dy > 0 and abs(torso_dx) > torso_dy * 0.8:
+                                pose_sit_signal = True
+
+            except Exception as e:
+                # log.debug(f"Pose parsing error: {e}")
+                pass
 
         # ── Combine signals ──────────────────────────────────────────
         # Pose signal only REINFORCES aspect ratio, doesn't override it.
