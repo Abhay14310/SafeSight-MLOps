@@ -80,4 +80,4 @@ Security is baked into every layer:
 *   **Integrity**: Audit logs track every action taken by users or machines.
 
 ---
-*Developed by **Abhay,bharati and snigdha** — 2026 Cyber Sentinel Project.*
+*Developed by **Bharati,snigdha and abhay** — 2026 Cyber Sentinel Project.*
