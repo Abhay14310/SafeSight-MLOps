@@ -9,6 +9,7 @@ const rateLimit    = require("express-rate-limit");
 const { v4: uuidv4 } = require("uuid");
 const morgan      = require("morgan");
 const bcrypt      = require("bcrypt");
+const crypto = require('crypto');
 
 // Modular Models
 const { 
