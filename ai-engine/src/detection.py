@@ -1153,8 +1153,8 @@ class AIEngine:
                 has_alert = bool(alerts)
                 if (self._frame_count % CFG.send_every_n_frames == 0) or has_alert:
                     metadata = {
-                        "frame_id":   self._frame_count,
-                        "timestamp":  time.strftime('%Y-%m-%dT%H:%M:%S'),
+                        "frame_id": self._frame_count,
+                        "timestamp": time.strftime('%Y-%m-%dT%H:%M:%S'),
                         "detections": detections,
                     }
                     self._sender.send_frame_and_alert(annotated, alerts, metadata)
