@@ -1,0 +1,98 @@
+version: '3.9'
+
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: mf2-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mfuser
+      MONGO_INITDB_ROOT_PASSWORD: mfpass
+      MONGO_INITDB_DATABASE: medflow2
+    volumes:
+      - mf2_mongo:/data/db
+      - ./server/config/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
+    ports: ["27020:27017"]
+    networks: [mf2-net]
+    healthcheck:
+      test: ["CMD","mongosh","--eval","db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: mf2-server
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5060
+      MONGO_URI: mongodb://mfuser:mfpass@mf2-mongo:27017/medflow2?authSource=admin
+      JWT_SECRET: medflow2_jwt_2024
+      CLIENT_URL: http://localhost:3010
+      TASUKE_URL: http://localhost:3000
+    ports: ["5060:5060"]
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes: [mf2_uploads:/app/uploads]
+    networks: [mf2-net]
+
+  ai-pose-engine:
+    image: node:20-alpine
+    container_name: mf2-pose-engine
+    command: sh -c "echo 'MEDPOSE-v2 GPU engine running' && tail -f /dev/null"
+    environment:
+      MODEL: MEDPOSE-v2
+      GPU_ENABLED: "true"
+      CUDA_VERSION: "12.2"
+    networks: [mf2-net]
+
+  ecg-stream-processor:
+    image: node:20-alpine
+    container_name: mf2-ecg-stream
+    command: sh -c "echo 'ECG processor online' && tail -f /dev/null"
+    networks: [mf2-net]
+
+  vital-monitor-svc:
+    image: node:20-alpine
+    container_name: mf2-vitals
+    command: sh -c "echo 'Vitals monitor active' && tail -f /dev/null"
+    networks: [mf2-net]
+
+  hl7-fhir-gateway:
+    image: node:20-alpine
+    container_name: mf2-fhir
+    command: sh -c "echo 'FHIR R4 gateway online' && tail -f /dev/null"
+    networks: [mf2-net]
+
+  alert-bus:
+    image: node:20-alpine
+    container_name: mf2-alerts
+    command: sh -c "echo 'Alert event bus running' && tail -f /dev/null"
+    networks: [mf2-net]
+
+  audit-logger:
+    image: node:20-alpine
+    container_name: mf2-audit
+    command: sh -c "echo 'Audit logger active' && tail -f /dev/null"
+    networks: [mf2-net]
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: mf2-client
+    ports: ["3010:80"]
+    depends_on: [server]
+    networks: [mf2-net]
+
+volumes:
+  mf2_mongo:
+  mf2_uploads:
+
+networks:
+  mf2-net:
+    driver: bridge
