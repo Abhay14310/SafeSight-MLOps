@@ -27,11 +27,11 @@
 #         frame_resized = cv2.resize(frame, (640, 480))
 #         _, buffer = cv2.imencode('.jpg', frame_resized, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
 #         base64_frame = base64.b64encode(buffer).decode('utf-8')
-        
+
 #         base_url = get_base_url()
 #         # Send Video Frame
 #         requests.post(f"{base_url}/api/video", json={'frame': base64_frame}, timeout=1)
-        
+
 #         # Send Alert
 #         if is_alert:
 #             alert_data = {"label": "Person Detected", "confidence": confidence}
@@ -68,7 +68,7 @@
 
 # threading.Thread(target=status_loop, daemon=True).start()
 
-# model = YOLO('yolov8n.pt') 
+# model = YOLO('yolov8n.pt')
 # cap = None
 
 # print("AI Engine Ready... Waiting for dashboard to START UPLINK.")
@@ -76,13 +76,13 @@
 # try:
 #     frame_count = 0
 #     last_alert_time = 0
-    
+
 #     while True:
 #         if is_camera_active:
 #             if cap is None or not cap.isOpened():
 #                 print("[INFO] Starting Camera Uplink...")
 #                 cap = cv2.VideoCapture(0)
-                
+
 #             success, frame = cap.read()
 #             if not success:
 #                 time.sleep(0.1)
@@ -97,7 +97,7 @@
 #             is_alert = False
 #             max_conf = 0.0
 #             current_time = time.time()
-            
+
 #             # Cooldown of 5 seconds for alerts
 #             if current_time - last_alert_time > 5:
 #                 for box in results[0].boxes:
@@ -105,7 +105,7 @@
 #                         is_alert = True
 #                         max_conf = float(box.conf[0])
 #                         break
-            
+
 #             if is_alert:
 #                 last_alert_time = current_time
 
@@ -114,7 +114,7 @@
 #                 threading.Thread(target=send_to_dashboard, args=(annotated_frame, is_alert, max_conf), daemon=True).start()
 
 #             frame_count += 1
-            
+
 #         else:
 #             if cap is not None and cap.isOpened():
 #                 print("[INFO] Pausing Camera Uplink...")
@@ -130,10 +130,6 @@
 #     cap.release()
 #     cv2.destroyAllWindows()
 #     print("[INFO] Webcam released and windows closed. Clean exit.")
-
-
-
-
 
 
 """
@@ -216,7 +212,6 @@ import os
 import time
 import threading
 import base64
-import json
 import logging
 import signal
 from concurrent.futures import ThreadPoolExecutor
@@ -256,20 +251,20 @@ except ImportError:
 class ColorFormatter(logging.Formatter):
     """ANSI color-coded log levels for a professional terminal feel."""
     COLORS = {
-        'DEBUG':    '\033[36m',   # Cyan
-        'INFO':     '\033[32m',   # Green
-        'WARNING':  '\033[33m',   # Amber
-        'ERROR':    '\033[31m',   # Red
+        'DEBUG': '\033[36m',   # Cyan
+        'INFO': '\033[32m',   # Green
+        'WARNING': '\033[33m',   # Amber
+        'ERROR': '\033[31m',   # Red
         'CRITICAL': '\033[35m',   # Magenta
     }
     RESET = '\033[0m'
-    BOLD  = '\033[1m'
+    BOLD = '\033[1m'
 
     def format(self, record: logging.LogRecord) -> str:
         color = self.COLORS.get(record.levelname, self.RESET)
-        ts    = time.strftime('%H:%M:%S')
+        ts = time.strftime('%H:%M:%S')
         label = f"{color}{self.BOLD}[{record.levelname:<8}]{self.RESET}"
-        msg   = super().format(record)
+        msg = super().format(record)
         return f"\033[90m{ts}\033[0m  {label}  {msg}"
 
 
@@ -292,38 +287,38 @@ log = get_logger("T26-AI")
 @dataclass
 class Config:
     # Dashboard
-    dashboard_url:      str   = os.environ.get("DASHBOARD_URL", "http://localhost:3000/api/alert")
+    dashboard_url: str = os.environ.get("DASHBOARD_URL", "http://localhost:3000/api/alert")
 
     # Authentication (set via SAFESIGHT_API_KEY env var)
-    api_key:            str   = os.environ.get("SAFESIGHT_API_KEY", "")
+    api_key: str = os.environ.get("SAFESIGHT_API_KEY", "")
 
     # Camera
-    camera_index:       int   = int(os.environ.get("CAMERA_INDEX", "0"))
-    frame_width:        int   = 1280
-    frame_height:       int   = 720
-    inference_size:     int   = 640          # YOLO input resolution
+    camera_index: int = int(os.environ.get("CAMERA_INDEX", "0"))
+    frame_width: int = 1280
+    frame_height: int = 720
+    inference_size: int = 640          # YOLO input resolution
 
     # Inference tuning
-    confidence_thresh:  float = 0.45         # Min YOLO confidence to keep a detection
-    inference_interval: int   = 2            # Run YOLO every N frames (quiet scene)
-    alert_interval:     int   = 1            # Run YOLO every frame when alert active
+    confidence_thresh: float = 0.45         # Min YOLO confidence to keep a detection
+    inference_interval: int = 2            # Run YOLO every N frames (quiet scene)
+    alert_interval: int = 1            # Run YOLO every frame when alert active
 
     # Fall detection thresholds
-    fall_aspect_ratio:  float = 1.2          # bbox W/H > this → suspect fallen pose (wider than tall)
-    fall_confirm_frames:int   = 18           # Must stay "wide" for N frames before FALLING state (~0.6-0.9s)
-    fallen_duration_s:  float = 3.0          # Seconds in FALLING before → FALLEN state
+    fall_aspect_ratio: float = 1.2          # bbox W/H > this → suspect fallen pose (wider than tall)
+    fall_confirm_frames: int = 18           # Must stay "wide" for N frames before FALLING state (~0.6-0.9s)
+    fallen_duration_s: float = 3.0          # Seconds in FALLING before → FALLEN state
     emergency_duration_s: float = 10.0       # Seconds in FALLEN before → EMERGENCY state
-    min_bbox_area:      int   = 5000         # Ignore tiny far-away detections (unreliable aspect ratio)
-    recovery_frames:    int   = 15           # Must be "tall" for N frames to recover from FALLEN/EMERGENCY
+    min_bbox_area: int = 5000         # Ignore tiny far-away detections (unreliable aspect ratio)
+    recovery_frames: int = 15           # Must be "tall" for N frames to recover from FALLEN/EMERGENCY
 
     # Alert cooldown per track (seconds)
-    alert_cooldown_s:   float = 5.0
+    alert_cooldown_s: float = 5.0
 
     # Networking
-    send_every_n_frames:int   = 3            # Dashboard frame send cadence (quiet)
-    jpeg_quality:       int   = 55           # Compression 0-100 (lower = smaller)
-    request_timeout_s:  float = 1.0
-    max_send_threads:   int   = 4            # ThreadPool bound
+    send_every_n_frames: int = 3            # Dashboard frame send cadence (quiet)
+    jpeg_quality: int = 55           # Compression 0-100 (lower = smaller)
+    request_timeout_s: float = 1.0
+    max_send_threads: int = 4            # ThreadPool bound
 
     # Heartbeat
     heartbeat_interval_s: float = 5.0
@@ -348,7 +343,6 @@ if not CFG.api_key:
     log.warning("   Or create a .env file with: SAFESIGHT_API_KEY=your_key_here")
 
 
-
 # ─────────────────────────────────────────────────────────────────────
 # PERSON STATE MACHINE
 # ─────────────────────────────────────────────────────────────────────
@@ -362,27 +356,27 @@ class PersonState(Enum):
     FALLEN    → confirmed fall (held for fallen_duration_s), red box
     EMERGENCY → person has been on ground for emergency_duration_s, flashing red
     """
-    STANDING  = "STANDING"
-    SITTING   = "SITTING"
-    FALLING   = "FALLING"
-    FALLEN    = "FALLEN"
+    STANDING = "STANDING"
+    SITTING = "SITTING"
+    FALLING = "FALLING"
+    FALLEN = "FALLEN"
     EMERGENCY = "EMERGENCY"
 
 
 # Maps state → BGR color for bounding box
 STATE_COLOR: Dict[PersonState, Tuple[int, int, int]] = {
-    PersonState.STANDING:  (0,  210, 100),   # Green
-    PersonState.SITTING:   (220, 160, 50),   # Blue/Amber for sitting (BGR)
-    PersonState.FALLING:   (0,  165, 255),   # Amber / Orange
-    PersonState.FALLEN:    (0,  0,   220),   # Red
-    PersonState.EMERGENCY: (0,  0,   255),   # Bright Red (flashing handled in draw)
+    PersonState.STANDING: (0, 210, 100),   # Green
+    PersonState.SITTING: (220, 160, 50),   # Blue/Amber for sitting (BGR)
+    PersonState.FALLING: (0, 165, 255),   # Amber / Orange
+    PersonState.FALLEN: (0, 0, 220),   # Red
+    PersonState.EMERGENCY: (0, 0, 255),   # Bright Red (flashing handled in draw)
 }
 
 STATE_EMOJI: Dict[PersonState, str] = {
-    PersonState.STANDING:  "🟢",
-    PersonState.SITTING:   "🪑",
-    PersonState.FALLING:   "🟡",
-    PersonState.FALLEN:    "🔴",
+    PersonState.STANDING: "🟢",
+    PersonState.SITTING: "🪑",
+    PersonState.FALLING: "🟡",
+    PersonState.FALLEN: "🔴",
     PersonState.EMERGENCY: "🆘",
 }
 
@@ -396,17 +390,17 @@ class PersonTrack:
     temporal filter — avoids false positives from momentary
     wide poses (crouching, bending, sitting).
     """
-    track_id:           int
-    state:              PersonState    = PersonState.STANDING
-    aspect_history:     deque          = field(default_factory=lambda: deque(maxlen=15))
-    fall_confirmed_at:  Optional[float] = None   # When FALLING state entered
-    fallen_at:          Optional[float] = None   # When FALLEN state entered
-    last_alert_sent:    float          = 0.0
-    last_centroid:      Optional[Tuple[int,int]] = None
-    centroid_history:   deque          = field(default_factory=lambda: deque(maxlen=10))
-    fall_frames_count:  int            = 0       # Consecutive "wide" frames
-    sit_frames_count:   int            = 0       # Consecutive "sitting" frames
-    recovery_count:     int            = 0       # Consecutive "tall" frames (for recovery from FALLEN)
+    track_id: int
+    state: PersonState = PersonState.STANDING
+    aspect_history: deque = field(default_factory=lambda: deque(maxlen=15))
+    fall_confirmed_at: Optional[float] = None   # When FALLING state entered
+    fallen_at: Optional[float] = None   # When FALLEN state entered
+    last_alert_sent: float = 0.0
+    last_centroid: Optional[Tuple[int, int]] = None
+    centroid_history: deque = field(default_factory=lambda: deque(maxlen=10))
+    fall_frames_count: int = 0       # Consecutive "wide" frames
+    sit_frames_count: int = 0       # Consecutive "sitting" frames
+    recovery_count: int = 0       # Consecutive "tall" frames (for recovery from FALLEN)
 
     @property
     def fall_duration(self) -> float:
@@ -420,7 +414,7 @@ class PersonTrack:
         """True if alert cooldown has passed for this track."""
         return (time.time() - self.last_alert_sent) > CFG.alert_cooldown_s
 
-    def update_state(self, aspect_ratio: float, centroid: Tuple[int,int], pose_sit_signal: bool = False) -> bool:
+    def update_state(self, aspect_ratio: float, centroid: Tuple[int, int], pose_sit_signal: bool = False) -> bool:
         """
         Feed a new observation and advance the state machine.
         Returns True if an alert should be fired.
@@ -570,11 +564,12 @@ class DashboardSender:
     Manages all outbound communication to the Tasuke'26 dashboard.
     Uses a bounded ThreadPoolExecutor so we never spawn >4 threads.
     """
+
     def __init__(self):
         self._pool = ThreadPoolExecutor(max_workers=CFG.max_send_threads,
                                         thread_name_prefix="t26-send")
         self._camera_active = False
-        self._status_lock   = threading.Lock()
+        self._status_lock = threading.Lock()
 
         # Start background threads
         threading.Thread(target=self._heartbeat_loop, daemon=True,
@@ -590,9 +585,9 @@ class DashboardSender:
     # ── Outbound ──────────────────────────────────────────────────────
 
     def send_frame_and_alert(self,
-                              frame: np.ndarray,
-                              alerts: List[dict],
-                              metadata: dict) -> None:
+                             frame: np.ndarray,
+                             alerts: List[dict],
+                             metadata: dict) -> None:
         """
         Submit async send job to the thread pool.
         Caller never blocks — if pool is full, job is queued.
@@ -697,12 +692,12 @@ class Annotator:
             (x1, y2, +1, -1), (x2, y2, -1, -1),
         ]
         for cx, cy, dx, dy in corners:
-            cv2.line(frame, (cx, cy), (cx + cs*dx, cy),          color, thickness+1)
-            cv2.line(frame, (cx, cy), (cx,          cy + cs*dy), color, thickness+1)
+            cv2.line(frame, (cx, cy), (cx + cs * dx, cy), color, thickness + 1)
+            cv2.line(frame, (cx, cy), (cx, cy + cs * dy), color, thickness + 1)
 
         # ── Label strip ──────────────────────────────────────────────
         state_text = state.value
-        conf_text  = f"ID:{track.track_id}  {conf:.0%}"
+        conf_text = f"ID:{track.track_id}  {conf:.0%}"
 
         if state == PersonState.FALLEN:
             dur = track.fall_duration
@@ -712,7 +707,7 @@ class Annotator:
             state_text = f"EMERGENCY! {dur:.0f}s"
 
         label = f" {state_text}  {conf_text} "
-        font       = cv2.FONT_HERSHEY_SIMPLEX
+        font = cv2.FONT_HERSHEY_SIMPLEX
         font_scale = 0.52
         thickness_text = 1
         (lw, lh), _ = cv2.getTextSize(label, font, font_scale, thickness_text)
@@ -720,7 +715,7 @@ class Annotator:
         # Semi-transparent background strip
         strip_y1 = max(y1 - lh - 10, 0)
         strip_y2 = y1
-        overlay  = frame.copy()
+        overlay = frame.copy()
         cv2.rectangle(overlay, (x1, strip_y1), (x1 + lw + 4, strip_y2), color, -1)
         cv2.addWeighted(overlay, 0.75, frame, 0.25, 0, frame)
 
@@ -730,11 +725,11 @@ class Annotator:
 
         # ── Fall duration bar (filled progress under bbox) ───────────
         if state in (PersonState.FALLEN, PersonState.EMERGENCY):
-            dur    = min(track.fall_duration, CFG.emergency_duration_s)
-            pct    = dur / CFG.emergency_duration_s
-            bar_w  = x2 - x1
-            bar_h  = 5
-            bar_y  = y2 + 4
+            dur = min(track.fall_duration, CFG.emergency_duration_s)
+            pct = dur / CFG.emergency_duration_s
+            bar_w = x2 - x1
+            bar_h = 5
+            bar_y = y2 + 4
             cv2.rectangle(frame, (x1, bar_y), (x2, bar_y + bar_h), (40, 40, 40), -1)
             cv2.rectangle(frame, (x1, bar_y),
                           (x1 + int(bar_w * pct), bar_y + bar_h), color, -1)
@@ -771,7 +766,7 @@ class Annotator:
             f"Stand: {counts[PersonState.STANDING]}   "
             f"Sit: {counts[PersonState.SITTING]}   "
             f"Fall: {counts[PersonState.FALLING]}   "
-            f"Down: {counts[PersonState.FALLEN]+counts[PersonState.EMERGENCY]}",
+            f"Down: {counts[PersonState.FALLEN] + counts[PersonState.EMERGENCY]}",
         ]
         for i, line in enumerate(lines):
             cv2.putText(frame, line, (10, 38 + i * 20),
@@ -814,9 +809,9 @@ class AIEngine:
         # Falls back gracefully to detection-only if pose model unavailable
         self._model = self._load_model()
 
-        self._sender  = DashboardSender()
+        self._sender = DashboardSender()
         self._tracks: Dict[int, PersonTrack] = {}
-        self._cap:    Optional[cv2.VideoCapture] = None
+        self._cap: Optional[cv2.VideoCapture] = None
 
         # FPS tracking
         self._fps_history = deque(maxlen=30)
@@ -830,7 +825,7 @@ class AIEngine:
 
         # Graceful shutdown
         self._running = True
-        signal.signal(signal.SIGINT,  self._handle_shutdown)
+        signal.signal(signal.SIGINT, self._handle_shutdown)
         signal.signal(signal.SIGTERM, self._handle_shutdown)
 
         log.info(f"✅  Engine ready.  Dashboard: {CFG.base_url}")
@@ -859,7 +854,7 @@ class AIEngine:
     def _open_camera(self) -> None:
         log.info(f"📷  Opening camera index {CFG.camera_index} ...")
         self._cap = cv2.VideoCapture(CFG.camera_index)
-        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH,  CFG.frame_width)
+        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, CFG.frame_width)
         self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CFG.frame_height)
         self._cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimal buffer = low latency
         actual_w = int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -902,8 +897,8 @@ class AIEngine:
     # ── Per-detection processing ──────────────────────────────────────
 
     def _process_detection(self,
-                            box,
-                            results) -> Tuple[Optional[PersonTrack], bool, dict]:
+                           box,
+                           results) -> Tuple[Optional[PersonTrack], bool, dict]:
         """
         Extract bounding box + track_id from one YOLO detection.
         Update the PersonTrack state machine.
@@ -923,8 +918,8 @@ class AIEngine:
             return None, False, {}
 
         aspect_ratio = bw / bh
-        conf         = float(box.conf[0])
-        cx, cy       = (x1 + x2) // 2, (y1 + y2) // 2
+        conf = float(box.conf[0])
+        cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
 
         # Track ID (ByteTracker assigns stable integer IDs)
         track_id = int(box.id[0]) if box.id is not None else -1
@@ -961,21 +956,21 @@ class AIEngine:
                         rs_x, rs_y = kps[6][0], kps[6][1]
                         lh_x, lh_y = kps[11][0], kps[11][1]
                         rh_x, rh_y = kps[12][0], kps[12][1]
-                        
+
                         # Only use keypoints if they have valid (non-zero) coordinates
                         if ls_y > 0 and rs_y > 0 and lh_y > 0 and rh_y > 0:
                             shoulder_x = (ls_x + rs_x) / 2
                             shoulder_y = (ls_y + rs_y) / 2
-                            hip_x      = (lh_x + rh_x) / 2
-                            hip_y      = (lh_y + rh_y) / 2
-                            
+                            hip_x = (lh_x + rh_x) / 2
+                            hip_y = (lh_y + rh_y) / 2
+
                             torso_dx = shoulder_x - hip_x
-                            torso_dy = hip_y - shoulder_y # Positive if shoulder is ABOVE hip
+                            torso_dy = hip_y - shoulder_y  # Positive if shoulder is ABOVE hip
 
                             # 1. Fall logic: Upside down OR horizontally oriented torso
                             if torso_dy < -30 or abs(torso_dx) > max(10.0, torso_dy * 1.5):
                                 pose_fall_signal = True
-                            
+
                             # 2. Sit logic: Torso upright but thighs are horizontal
                             elif len(kps) > 14:
                                 lk_y, rk_y = kps[13][1], kps[14][1]
@@ -1004,12 +999,12 @@ class AIEngine:
         should_alert = track.update_state(effective_ar, (cx, cy), pose_sit_signal)
 
         detection_info = {
-            "track_id":     track_id,
-            "bbox":         [int(x1), int(y1), int(x2), int(y2)],
-            "state":        track.state.value,
-            "confidence":   round(conf, 3),
+            "track_id": track_id,
+            "bbox": [int(x1), int(y1), int(x2), int(y2)],
+            "state": track.state.value,
+            "confidence": round(conf, 3),
             "aspect_ratio": round(aspect_ratio, 3),
-            "pose_signal":  pose_fall_signal,
+            "pose_signal": pose_fall_signal,
             "fall_duration": round(track.fall_duration, 1),
         }
         return track, should_alert, detection_info
@@ -1035,8 +1030,8 @@ class AIEngine:
             self._last_results = self._run_inference(frame)
         inf_ms = (time.perf_counter() - t0) * 1000
 
-        results    = self._last_results
-        alerts     = []
+        results = self._last_results
+        alerts = []
         detections = []
         active_ids = set()
 
@@ -1051,42 +1046,42 @@ class AIEngine:
                 detections.append(det_info)
 
                 # Annotate
-                x1,y1,x2,y2 = det_info["bbox"]
-                Annotator.draw_person(frame, x1,y1,x2,y2, track, det_info["confidence"])
+                x1, y1, x2, y2 = det_info["bbox"]
+                Annotator.draw_person(frame, x1, y1, x2, y2, track, det_info["confidence"])
 
                 # Build alert payload with proper severity
                 if should_alert:
                     # Map state → severity for the SaaS backend
                     severity_map = {
-                        PersonState.STANDING:  "info",
-                        PersonState.SITTING:   "info",
-                        PersonState.FALLING:   "warning",
-                        PersonState.FALLEN:    "critical",
+                        PersonState.STANDING: "info",
+                        PersonState.SITTING: "info",
+                        PersonState.FALLING: "warning",
+                        PersonState.FALLEN: "critical",
                         PersonState.EMERGENCY: "critical",
                     }
                     severity = severity_map.get(track.state, "warning")
 
                     # Human-readable label
                     label_map = {
-                        PersonState.STANDING:  f"Person Detected #{track.track_id}",
-                        PersonState.SITTING:   f"Person Sitting #{track.track_id}",
-                        PersonState.FALLING:   f"⚠ Person Falling #{track.track_id}",
-                        PersonState.FALLEN:    f"🔴 Person on Ground #{track.track_id}",
+                        PersonState.STANDING: f"Person Detected #{track.track_id}",
+                        PersonState.SITTING: f"Person Sitting #{track.track_id}",
+                        PersonState.FALLING: f"⚠ Person Falling #{track.track_id}",
+                        PersonState.FALLEN: f"🔴 Person on Ground #{track.track_id}",
                         PersonState.EMERGENCY: f"🆘 EMERGENCY — Person Down #{track.track_id} ({det_info['fall_duration']:.0f}s)",
                     }
                     label = label_map.get(track.state, track.state.value)
 
                     alerts.append({
-                        "label":         label,
-                        "confidence":    det_info["confidence"],
-                        "severity":      severity,
-                        "camera":        f"CAM-0{CFG.camera_index + 1}",
-                        "zone":          f"Zone {chr(65 + CFG.camera_index)}",
-                        "state":         track.state.value,
-                        "track_id":      track.track_id,
+                        "label": label,
+                        "confidence": det_info["confidence"],
+                        "severity": severity,
+                        "camera": f"CAM-0{CFG.camera_index + 1}",
+                        "zone": f"Zone {chr(65 + CFG.camera_index)}",
+                        "state": track.state.value,
+                        "track_id": track.track_id,
                         "fall_duration": det_info["fall_duration"],
-                        "bbox":          det_info["bbox"],
-                        "timestamp":     time.strftime('%Y-%m-%dT%H:%M:%S'),
+                        "bbox": det_info["bbox"],
+                        "timestamp": time.strftime('%Y-%m-%dT%H:%M:%S'),
                     })
                     log.warning(
                         f"{STATE_EMOJI[track.state]} ALERT [{severity.upper()}] → {label}"
@@ -1109,8 +1104,8 @@ class AIEngine:
     # ── FPS ───────────────────────────────────────────────────────────
 
     def _current_fps(self) -> float:
-        now  = time.time()
-        dt   = now - self._last_frame_time
+        now = time.time()
+        dt = now - self._last_frame_time
         self._last_frame_time = now
         if dt > 0:
             self._fps_history.append(1.0 / dt)
