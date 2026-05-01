@@ -240,391 +240,41 @@ except ImportError:
     print("❌  ultralytics not found.  Run:  pip install ultralytics")
     sys.exit(1)
 
-# ── Requests ──
-try:
-    import requests
-    from requests.adapters import HTTPAdapter
-    from urllib3.util.retry import Retry
-except ImportError:
-    print("❌  requests not found.  Run:  pip install requests")
-    sys.exit(1)
+import requests
+import base64
+import threading
+import time
 
+import os
 
-# ─────────────────────────────────────────────────────────────────────
-# LOGGING SETUP — professional colored terminal output
-# ─────────────────────────────────────────────────────────────────────
-class ColorFormatter(logging.Formatter):
-    """ANSI color-coded log levels for a professional terminal feel."""
-    COLORS = {
-        'DEBUG':    '\033[36m',   # Cyan
-        'INFO':     '\033[32m',   # Green
-        'WARNING':  '\033[33m',   # Amber
-        'ERROR':    '\033[31m',   # Red
-        'CRITICAL': '\033[35m',   # Magenta
-    }
-    RESET = '\033[0m'
-    BOLD  = '\033[1m'
+def get_base_url():
+    alert_url = os.environ.get('DASHBOARD_URL', 'http://localhost:3000/api/alert')
+    return alert_url.replace('/api/alert', '')
 
-    def format(self, record: logging.LogRecord) -> str:
-        color = self.COLORS.get(record.levelname, self.RESET)
-        ts    = time.strftime('%H:%M:%S')
-        label = f"{color}{self.BOLD}[{record.levelname:<8}]{self.RESET}"
-        msg   = super().format(record)
-        return f"\033[90m{ts}\033[0m  {label}  {msg}"
+def send_to_dashboard(frame, is_alert, confidence):
+    try:
+        # Resize to save bandwidth
+        frame_resized = cv2.resize(frame, (640, 480))
+        _, buffer = cv2.imencode('.jpg', frame_resized, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
+        base64_frame = base64.b64encode(buffer).decode('utf-8')
+        
+        base_url = get_base_url()
+        # Send Video Frame
+        requests.post(f"{base_url}/api/video", json={'frame': base64_frame}, timeout=1)
+        
+        # Send Alert
+        if is_alert:
+            alert_data = {"label": "Person Detected", "confidence": confidence}
+            requests.post(f"{base_url}/api/alert", json=alert_data, timeout=1)
+    except Exception as e:
+        # Ignore connection errors if dashboard is not running
+        pass
 
-
-def get_logger(name: str) -> logging.Logger:
-    logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
-    if not logger.handlers:
-        h = logging.StreamHandler(sys.stdout)
-        h.setFormatter(ColorFormatter("%(message)s"))
-        logger.addHandler(h)
-    return logger
-
-
-log = get_logger("T26-AI")
-
-
-# ─────────────────────────────────────────────────────────────────────
-# CONFIGURATION — single source of truth, easy to tune
-# ─────────────────────────────────────────────────────────────────────
-@dataclass
-class Config:
-    # Dashboard
-    dashboard_url:      str   = os.environ.get("DASHBOARD_URL", "http://localhost:3000/api/alert")
-
-    # Authentication (set via SAFESIGHT_API_KEY env var)
-    api_key:            str   = os.environ.get("SAFESIGHT_API_KEY", "")
-
-    # Camera
-    camera_index:       int   = int(os.environ.get("CAMERA_INDEX", "0"))
-    frame_width:        int   = 1280
-    frame_height:       int   = 720
-    inference_size:     int   = 640          # YOLO input resolution
-
-    # Inference tuning
-    confidence_thresh:  float = 0.45         # Min YOLO confidence to keep a detection
-    inference_interval: int   = 2            # Run YOLO every N frames (quiet scene)
-    alert_interval:     int   = 1            # Run YOLO every frame when alert active
-
-    # Fall detection thresholds
-    fall_aspect_ratio:  float = 1.2          # bbox W/H > this → suspect fallen pose (wider than tall)
-    fall_confirm_frames:int   = 18           # Must stay "wide" for N frames before FALLING state (~0.6-0.9s)
-    fallen_duration_s:  float = 3.0          # Seconds in FALLING before → FALLEN state
-    emergency_duration_s: float = 10.0       # Seconds in FALLEN before → EMERGENCY state
-    min_bbox_area:      int   = 5000         # Ignore tiny far-away detections (unreliable aspect ratio)
-    recovery_frames:    int   = 15           # Must be "tall" for N frames to recover from FALLEN/EMERGENCY
-
-    # Alert cooldown per track (seconds)
-    alert_cooldown_s:   float = 5.0
-
-    # Networking
-    send_every_n_frames:int   = 3            # Dashboard frame send cadence (quiet)
-    jpeg_quality:       int   = 55           # Compression 0-100 (lower = smaller)
-    request_timeout_s:  float = 1.0
-    max_send_threads:   int   = 4            # ThreadPool bound
-
-    # Heartbeat
-    heartbeat_interval_s: float = 5.0
-
-    @property
-    def base_url(self) -> str:
-        return self.dashboard_url.replace("/api/alert", "")
-
-    @property
-    def auth_headers(self) -> dict:
-        """Returns header dict to authorise against the SafeSight Node.js server."""
-        if self.api_key:
-            return {"X-API-Key": self.api_key}
-        return {}
-
-
-CFG = Config()
-
-if not CFG.api_key:
-    log.warning("⚠️  SAFESIGHT_API_KEY is not set! Communication with the dashboard will likely fail.")
-    log.warning("   Please set it using: set SAFESIGHT_API_KEY=your_key_here (Windows)")
-    log.warning("   Or create a .env file with: SAFESIGHT_API_KEY=your_key_here")
-
-
-
-# ─────────────────────────────────────────────────────────────────────
-# PERSON STATE MACHINE
-# ─────────────────────────────────────────────────────────────────────
-class PersonState(Enum):
-    """
-    State machine for each tracked person.
-
-    STANDING  → normal, green box
-    SITTING   → sitting down, blue/amber box
-    FALLING   → aspect ratio triggered, amber box + "FALLING?" label
-    FALLEN    → confirmed fall (held for fallen_duration_s), red box
-    EMERGENCY → person has been on ground for emergency_duration_s, flashing red
-    """
-    STANDING  = "STANDING"
-    SITTING   = "SITTING"
-    FALLING   = "FALLING"
-    FALLEN    = "FALLEN"
-    EMERGENCY = "EMERGENCY"
-
-
-# Maps state → BGR color for bounding box
-STATE_COLOR: Dict[PersonState, Tuple[int, int, int]] = {
-    PersonState.STANDING:  (0,  210, 100),   # Green
-    PersonState.SITTING:   (220, 160, 50),   # Blue/Amber for sitting (BGR)
-    PersonState.FALLING:   (0,  165, 255),   # Amber / Orange
-    PersonState.FALLEN:    (0,  0,   220),   # Red
-    PersonState.EMERGENCY: (0,  0,   255),   # Bright Red (flashing handled in draw)
-}
-
-STATE_EMOJI: Dict[PersonState, str] = {
-    PersonState.STANDING:  "🟢",
-    PersonState.SITTING:   "🪑",
-    PersonState.FALLING:   "🟡",
-    PersonState.FALLEN:    "🔴",
-    PersonState.EMERGENCY: "🆘",
-}
-
-
-@dataclass
-class PersonTrack:
-    """
-    All temporal state for one tracked person.
-
-    We use a deque of recent aspect ratios to implement the
-    temporal filter — avoids false positives from momentary
-    wide poses (crouching, bending, sitting).
-    """
-    track_id:           int
-    state:              PersonState    = PersonState.STANDING
-    aspect_history:     deque          = field(default_factory=lambda: deque(maxlen=15))
-    fall_confirmed_at:  Optional[float] = None   # When FALLING state entered
-    fallen_at:          Optional[float] = None   # When FALLEN state entered
-    last_alert_sent:    float          = 0.0
-    last_centroid:      Optional[Tuple[int,int]] = None
-    centroid_history:   deque          = field(default_factory=lambda: deque(maxlen=10))
-    fall_frames_count:  int            = 0       # Consecutive "wide" frames
-    sit_frames_count:   int            = 0       # Consecutive "sitting" frames
-    recovery_count:     int            = 0       # Consecutive "tall" frames (for recovery from FALLEN)
-
-    @property
-    def fall_duration(self) -> float:
-        """How long this person has been in FALLEN/EMERGENCY state."""
-        if self.fallen_at is not None:
-            return time.time() - self.fallen_at
-        return 0.0
-
-    @property
-    def needs_alert(self) -> bool:
-        """True if alert cooldown has passed for this track."""
-        return (time.time() - self.last_alert_sent) > CFG.alert_cooldown_s
-
-    def update_state(self, aspect_ratio: float, centroid: Tuple[int,int], pose_sit_signal: bool = False) -> bool:
-        """
-        Feed a new observation and advance the state machine.
-        Returns True if an alert should be fired.
-
-        FALL DETECTION ALGORITHM:
-        ──────────────────────────
-        1. Compute aspect ratio = bbox_width / bbox_height.
-           Normal standing person: ~0.35–0.70  (taller than wide)
-           Fallen person:          ~1.20–3.00  (clearly wider than tall)
-
-        2. Append to rolling history (last 15 frames).
-
-        3. Count consecutive frames where ratio > threshold.
-           If ≥ fall_confirm_frames: mark as "fall candidate".
-
-        4. State transitions:
-           STANDING  → FALLING   : fall candidate detected
-           FALLING   → FALLEN    : held for fallen_duration_s
-           FALLEN    → EMERGENCY : held for emergency_duration_s
-           ANY       → STANDING  : aspect ratio normal for recovery_frames
-        """
-        now = time.time()
-        self.aspect_history.append(aspect_ratio)
-        self.centroid_history.append(centroid)
-
-        is_wide = aspect_ratio > CFG.fall_aspect_ratio
-        if is_wide:
-            self.fall_frames_count += 1
-            self.recovery_count = 0       # Reset recovery if still wide
-        else:
-            # Decay faster than accumulation to avoid false triggers
-            self.fall_frames_count = max(0, self.fall_frames_count - 3)
-            self.recovery_count += 1      # Track consecutive "tall" frames
-
-        if pose_sit_signal:
-            self.sit_frames_count += 1
-        else:
-            self.sit_frames_count = max(0, self.sit_frames_count - 2)
-
-        sit_candidate = self.sit_frames_count >= 5
-        fall_candidate = self.fall_frames_count >= CFG.fall_confirm_frames
-        is_recovered = self.recovery_count >= CFG.recovery_frames
-        should_alert = False
-
-        # ── State machine transitions ──────────────────────────────
-        if self.state == PersonState.STANDING:
-            if fall_candidate:
-                self.state = PersonState.FALLING
-                self.fall_confirmed_at = now
-                log.warning(f"🟡 Track {self.track_id:>3} → FALLING  (AR={aspect_ratio:.2f})")
-                should_alert = True
-            elif sit_candidate:
-                self.state = PersonState.SITTING
-                self.sit_frames_count = 5
-                log.info(f"🪑 Track {self.track_id:>3} → SITTING")
-
-        elif self.state == PersonState.SITTING:
-            if fall_candidate:
-                self.state = PersonState.FALLING
-                self.fall_confirmed_at = now
-                log.warning(f"🟡 Track {self.track_id:>3} → FALLING  (from sitting) (AR={aspect_ratio:.2f})")
-                should_alert = True
-            elif self.sit_frames_count == 0 and is_recovered:
-                self.state = PersonState.STANDING
-                log.info(f"🟢 Track {self.track_id:>3} → STANDING (stood up)")
-
-        elif self.state == PersonState.FALLING:
-            if not fall_candidate:
-                # Recovered — false alarm
-                self.state = PersonState.STANDING
-                self.fall_confirmed_at = None
-                self.fall_frames_count = 0
-                self.recovery_count = 0
-                log.info(f"🟢 Track {self.track_id:>3} → STANDING (recovered from FALLING)")
-            elif (now - self.fall_confirmed_at) >= CFG.fallen_duration_s:
-                self.state = PersonState.FALLEN
-                self.fallen_at = now
-                log.error(f"🔴 Track {self.track_id:>3} → FALLEN   (held {CFG.fallen_duration_s}s)")
-                should_alert = True
-
-        elif self.state == PersonState.FALLEN:
-            if is_recovered:
-                # Person stood back up — reset
-                self.state = PersonState.STANDING
-                self.fallen_at = None
-                self.fall_confirmed_at = None
-                self.fall_frames_count = 0
-                self.recovery_count = 0
-                log.info(f"🟢 Track {self.track_id:>3} → STANDING (recovered from FALLEN)")
-            elif (now - self.fallen_at) >= CFG.emergency_duration_s:
-                self.state = PersonState.EMERGENCY
-                log.critical(f"🆘 Track {self.track_id:>3} → EMERGENCY (on ground {self.fall_duration:.0f}s)")
-                should_alert = True
-
-        elif self.state == PersonState.EMERGENCY:
-            if is_recovered:
-                # Person stood back up from emergency — reset
-                self.state = PersonState.STANDING
-                self.fallen_at = None
-                self.fall_confirmed_at = None
-                self.fall_frames_count = 0
-                self.recovery_count = 0
-                log.info(f"🟢 Track {self.track_id:>3} → STANDING (recovered from EMERGENCY)")
-            elif self.needs_alert:
-                # Still on ground — re-alert every cooldown period
-                should_alert = True
-
-        # Record alert time to enforce cooldown
-        if should_alert and self.needs_alert:
-            self.last_alert_sent = now
-        elif should_alert:
-            should_alert = False  # Suppress due to cooldown
-
-        return should_alert
-
-
-# ─────────────────────────────────────────────────────────────────────
-# HTTP SESSION — connection pooling & retry
-# ─────────────────────────────────────────────────────────────────────
-def build_session() -> requests.Session:
-    """
-    Persistent HTTP session with:
-    - Connection pool (avoids TCP handshake on every frame)
-    - Automatic retry on connection errors (NOT on 4xx/5xx — those are real errors)
-    """
-    session = requests.Session()
-    retry = Retry(
-        total=2,
-        backoff_factor=0.2,
-        status_forcelist=[500, 502, 503, 504],
-        allowed_methods=["POST", "GET"],
-    )
-    adapter = HTTPAdapter(max_retries=retry, pool_connections=4, pool_maxsize=8)
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    return session
-
-
-SESSION = build_session()
-
-
-# ─────────────────────────────────────────────────────────────────────
-# NETWORK SENDER
-# ─────────────────────────────────────────────────────────────────────
-class DashboardSender:
-    """
-    Manages all outbound communication to the Tasuke'26 dashboard.
-    Uses a bounded ThreadPoolExecutor so we never spawn >4 threads.
-    """
-    def __init__(self):
-        self._pool = ThreadPoolExecutor(max_workers=CFG.max_send_threads,
-                                        thread_name_prefix="t26-send")
-        self._camera_active = False
-        self._status_lock   = threading.Lock()
-
-        # Start background threads
-        threading.Thread(target=self._heartbeat_loop, daemon=True,
-                         name="t26-heartbeat").start()
-        threading.Thread(target=self._status_poll_loop, daemon=True,
-                         name="t26-statuspoll").start()
-
-    @property
-    def camera_active(self) -> bool:
-        with self._status_lock:
-            return self._camera_active
-
-    # ── Outbound ──────────────────────────────────────────────────────
-
-    def send_frame_and_alert(self,
-                              frame: np.ndarray,
-                              alerts: List[dict],
-                              metadata: dict) -> None:
-        """
-        Submit async send job to the thread pool.
-        Caller never blocks — if pool is full, job is queued.
-        """
-        self._pool.submit(self._do_send, frame, alerts, metadata)
-
-    def _do_send(self, frame: np.ndarray, alerts: List[dict], metadata: dict) -> None:
+def heartbeat_loop():
+    while True:
         try:
-            # Encode frame
-            frame_small = cv2.resize(frame, (640, 480))
-            ok, buf = cv2.imencode('.jpg', frame_small,
-                                   [cv2.IMWRITE_JPEG_QUALITY, CFG.jpeg_quality])
-            if not ok:
-                return
-            b64 = base64.b64encode(buf).decode('utf-8')
-
-            # Video frame endpoint
-            SESSION.post(
-                f"{CFG.base_url}/api/video",
-                json={'frame': b64, 'metadata': metadata},
-                headers=CFG.auth_headers,
-                timeout=CFG.request_timeout_s,
-            )
-
-            # Alert endpoint — one request per alert event
-            for alert in alerts:
-                SESSION.post(
-                    f"{CFG.base_url}/api/alert",
-                    json=alert,
-                    headers=CFG.auth_headers,
-                    timeout=CFG.request_timeout_s,
-                )
+            base_url = get_base_url()
+            requests.post(f"{base_url}/api/heartbeat", timeout=1)
         except Exception:
             # Silently swallow — dashboard may not be running
             pass
@@ -655,511 +305,64 @@ class DashboardSender:
                 pass
             time.sleep(1)
 
+threading.Thread(target=status_loop, daemon=True).start()
 
-# ─────────────────────────────────────────────────────────────────────
-# ANNOTATION ENGINE
-# ─────────────────────────────────────────────────────────────────────
-class Annotator:
-    """
-    Draws professional bounding boxes, labels, and overlays on frames.
-    Uses a filled semi-transparent label strip instead of a plain rect.
-    The box color and style encode the person state:
-      GREEN  → STANDING
-      AMBER  → FALLING (potential fall)
-      RED    → FALLEN  (confirmed fall on ground)
-      FLASH  → EMERGENCY (pulsing red, requires immediate attention)
-    """
+model = YOLO('yolov8n.pt') 
+cap = None
 
-    @staticmethod
-    def draw_person(frame: np.ndarray,
-                    x1: int, y1: int, x2: int, y2: int,
-                    track: PersonTrack,
-                    conf: float) -> None:
-        now = time.time()
-        state = track.state
-        color = STATE_COLOR[state]
+print("AI Engine Ready... Waiting for dashboard to START UPLINK.")
 
-        # ── EMERGENCY: flash by toggling visibility at 2Hz ──────────
-        if state == PersonState.EMERGENCY:
-            if int(now * 2) % 2 == 0:
-                color = (0, 0, 255)    # Bright red
-            else:
-                color = (50, 50, 255)  # Slightly lighter red
+try:
+    frame_count = 0
+    last_alert_time = 0
+    
+    while True:
+        if is_camera_active:
+            if cap is None or not cap.isOpened():
+                print("[INFO] Starting Camera Uplink...")
+                cap = cv2.VideoCapture(0)
+                
+            success, frame = cap.read()
+            if not success:
+                time.sleep(0.1)
+                continue
 
-        # ── Bounding box ─────────────────────────────────────────────
-        thickness = 3 if state in (PersonState.FALLEN, PersonState.EMERGENCY) else 2
-        cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness)
+            results = model(frame, conf=0.5, verbose=False) # verbose=False cleans up terminal
+            annotated_frame = results[0].plot()
 
-        # ── Corner markers (Tasuke'26 style) ─────────────────────────
-        cs = 14  # Corner mark length
-        corners = [
-            (x1, y1, +1, +1), (x2, y1, -1, +1),
-            (x1, y2, +1, -1), (x2, y2, -1, -1),
-        ]
-        for cx, cy, dx, dy in corners:
-            cv2.line(frame, (cx, cy), (cx + cs*dx, cy),          color, thickness+1)
-            cv2.line(frame, (cx, cy), (cx,          cy + cs*dy), color, thickness+1)
+            # cv2.imshow("SafeSight AI Test", annotated_frame) # Removed to prevent external popup
 
-        # ── Label strip ──────────────────────────────────────────────
-        state_text = state.value
-        conf_text  = f"ID:{track.track_id}  {conf:.0%}"
-
-        if state == PersonState.FALLEN:
-            dur = track.fall_duration
-            state_text = f"FALLEN  {dur:.1f}s"
-        elif state == PersonState.EMERGENCY:
-            dur = track.fall_duration
-            state_text = f"EMERGENCY! {dur:.0f}s"
-
-        label = f" {state_text}  {conf_text} "
-        font       = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 0.52
-        thickness_text = 1
-        (lw, lh), _ = cv2.getTextSize(label, font, font_scale, thickness_text)
-
-        # Semi-transparent background strip
-        strip_y1 = max(y1 - lh - 10, 0)
-        strip_y2 = y1
-        overlay  = frame.copy()
-        cv2.rectangle(overlay, (x1, strip_y1), (x1 + lw + 4, strip_y2), color, -1)
-        cv2.addWeighted(overlay, 0.75, frame, 0.25, 0, frame)
-
-        # Text
-        cv2.putText(frame, label, (x1 + 2, strip_y2 - 3),
-                    font, font_scale, (255, 255, 255), thickness_text, cv2.LINE_AA)
-
-        # ── Fall duration bar (filled progress under bbox) ───────────
-        if state in (PersonState.FALLEN, PersonState.EMERGENCY):
-            dur    = min(track.fall_duration, CFG.emergency_duration_s)
-            pct    = dur / CFG.emergency_duration_s
-            bar_w  = x2 - x1
-            bar_h  = 5
-            bar_y  = y2 + 4
-            cv2.rectangle(frame, (x1, bar_y), (x2, bar_y + bar_h), (40, 40, 40), -1)
-            cv2.rectangle(frame, (x1, bar_y),
-                          (x1 + int(bar_w * pct), bar_y + bar_h), color, -1)
-
-    @staticmethod
-    def draw_hud(frame: np.ndarray,
-                 tracks: Dict[int, PersonTrack],
-                 fps: float,
-                 inference_ms: float) -> None:
-        """
-        Heads-up display in top-left corner:
-        • FPS and inference time
-        • Count of people in each state
-        """
-        h, w = frame.shape[:2]
-
-        # ── HUD background strip ──────────────────────────────────────
-        hud_h = 90
-        overlay = frame.copy()
-        cv2.rectangle(overlay, (0, 0), (300, hud_h), (5, 10, 20), -1)
-        cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
-
-        # ── Brand ────────────────────────────────────────────────────
-        cv2.putText(frame, "T26 AI ENGINE", (10, 18),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (56, 189, 248), 1, cv2.LINE_AA)
-
-        # ── Metrics ──────────────────────────────────────────────────
-        counts = defaultdict(int)
-        for t in tracks.values():
-            counts[t.state] += 1
-
-        lines = [
-            f"FPS: {fps:5.1f}   INF: {inference_ms:5.1f}ms",
-            f"Stand: {counts[PersonState.STANDING]}   "
-            f"Sit: {counts[PersonState.SITTING]}   "
-            f"Fall: {counts[PersonState.FALLING]}   "
-            f"Down: {counts[PersonState.FALLEN]+counts[PersonState.EMERGENCY]}",
-        ]
-        for i, line in enumerate(lines):
-            cv2.putText(frame, line, (10, 38 + i * 20),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.44, (180, 210, 240), 1, cv2.LINE_AA)
-
-        # ── Alert banner (if any FALLEN/EMERGENCY) ───────────────────
-        emergencies = [t for t in tracks.values()
-                       if t.state in (PersonState.FALLEN, PersonState.EMERGENCY)]
-        if emergencies:
-            flash_on = int(time.time() * 2) % 2 == 0
-            banner_color = (0, 0, 220) if flash_on else (0, 0, 100)
-            cv2.rectangle(frame, (0, h - 40), (w, h), banner_color, -1)
-            msg = f"  ⚠  FALL DETECTED — {len(emergencies)} PERSON(S) REQUIRE ATTENTION  ⚠"
-            cv2.putText(frame, msg, (10, h - 14),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1, cv2.LINE_AA)
-
-        # ── Timestamp ────────────────────────────────────────────────
-        ts = time.strftime('%Y-%m-%d  %H:%M:%S')
-        cv2.putText(frame, ts, (w - 200, h - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.42, (100, 130, 160), 1, cv2.LINE_AA)
-
-
-# ─────────────────────────────────────────────────────────────────────
-# MAIN AI ENGINE
-# ─────────────────────────────────────────────────────────────────────
-class AIEngine:
-    """
-    Orchestrates camera capture, YOLO inference, state tracking,
-    annotation, and dashboard communication.
-
-    Frame pipeline:
-      Camera → Resize → YOLO(every N frames) → Parse boxes →
-      Update PersonTrack state machines → Annotate → Dashboard send
-    """
-
-    def __init__(self):
-        log.info("🚀  Initialising Tasuke'26 AI Engine v3.0 ...")
-
-        # YOLO model — prefer pose model for richer keypoints
-        # Falls back gracefully to detection-only if pose model unavailable
-        self._model = self._load_model()
-
-        self._sender  = DashboardSender()
-        self._tracks: Dict[int, PersonTrack] = {}
-        self._cap:    Optional[cv2.VideoCapture] = None
-
-        # FPS tracking
-        self._fps_history = deque(maxlen=30)
-        self._last_frame_time = time.time()
-
-        # Inference frame skip counter
-        self._frame_count = 0
-
-        # Last YOLO results (reused on skipped frames)
-        self._last_results = None
-
-        # Graceful shutdown
-        self._running = True
-        signal.signal(signal.SIGINT,  self._handle_shutdown)
-        signal.signal(signal.SIGTERM, self._handle_shutdown)
-
-        log.info(f"✅  Engine ready.  Dashboard: {CFG.base_url}")
-        log.info(f"📐  Fall threshold: W/H ratio > {CFG.fall_aspect_ratio} "
-                 f"for {CFG.fall_confirm_frames} frames")
-
-    # ── Model loading ─────────────────────────────────────────────────
-
-    def _load_model(self) -> YOLO:
-        """
-        Try to load YOLOv8-Pose for richer keypoint data.
-        If not available, fall back to standard detection model.
-        """
-        for model_name in ("yolov8n-pose.pt", "yolov8n.pt"):
-            try:
-                model = YOLO(model_name)
-                log.info(f"🧠  Loaded model: {model_name}")
-                return model
-            except Exception as e:
-                log.warning(f"   Could not load {model_name}: {e}")
-        log.error("❌  No YOLO model could be loaded. Exiting.")
-        sys.exit(1)
-
-    # ── Camera management ─────────────────────────────────────────────
-
-    def _open_camera(self) -> None:
-        log.info(f"📷  Opening camera index {CFG.camera_index} ...")
-        self._cap = cv2.VideoCapture(CFG.camera_index)
-        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH,  CFG.frame_width)
-        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CFG.frame_height)
-        self._cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimal buffer = low latency
-        actual_w = int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        actual_h = int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        log.info(f"   Resolution: {actual_w}×{actual_h}")
-
-    def _release_camera(self) -> None:
-        if self._cap is not None and self._cap.isOpened():
-            self._cap.release()
-            self._cap = None
-            log.info("📷  Camera released.")
-
-    # ── Inference ─────────────────────────────────────────────────────
-
-    def _should_run_inference(self, has_active_alerts: bool) -> bool:
-        """
-        Adaptive inference rate:
-        - When alerts are active: run every frame (maximum sensitivity)
-        - Quiet scene: run every inference_interval frames (saves CPU)
-        """
-        interval = CFG.alert_interval if has_active_alerts else CFG.inference_interval
-        return (self._frame_count % interval) == 0
-
-    def _run_inference(self, frame: np.ndarray):
-        """
-        Run YOLO with ByteTracker for stable per-person IDs.
-        tracker="bytetrack" persists IDs across frames so our
-        state machines stay attached to the right person.
-        """
-        results = self._model.track(
-            frame,
-            conf=CFG.confidence_thresh,
-            classes=[0],          # COCO class 0 = person
-            tracker="bytetrack.yaml",
-            persist=True,
-            verbose=False,
-        )
-        return results
-
-    # ── Per-detection processing ──────────────────────────────────────
-
-    def _process_detection(self,
-                            box,
-                            results) -> Tuple[Optional[PersonTrack], bool, dict]:
-        """
-        Extract bounding box + track_id from one YOLO detection.
-        Update the PersonTrack state machine.
-        Returns (track, should_alert, detection_info).
-        """
-        # Bounding box
-        xyxy = box.xyxy[0].cpu().numpy().astype(int)
-        x1, y1, x2, y2 = xyxy
-        bw = x2 - x1
-        bh = y2 - y1
-        if bh <= 0:
-            return None, False, {}
-
-        # ── Skip tiny bounding boxes (unreliable aspect ratio) ────────
-        bbox_area = bw * bh
-        if bbox_area < CFG.min_bbox_area:
-            return None, False, {}
-
-        aspect_ratio = bw / bh
-        conf         = float(box.conf[0])
-        cx, cy       = (x1 + x2) // 2, (y1 + y2) // 2
-
-        # Track ID (ByteTracker assigns stable integer IDs)
-        track_id = int(box.id[0]) if box.id is not None else -1
-        if track_id < 0:
-            track_id = id(box) % 9999  # Fallback synthetic ID
-
-        # Get or create track
-        if track_id not in self._tracks:
-            self._tracks[track_id] = PersonTrack(track_id=track_id)
-            log.debug(f"   New track: ID={track_id}")
-
-        track = self._tracks[track_id]
-
-        # ── Pose-enhanced fall detection (if pose model loaded) ──────
-        # If we have keypoints, we can check if shoulders are below hips
-        # (a much stronger signal than aspect ratio alone).
-        pose_fall_signal = False
-        pose_sit_signal = False
-        if hasattr(results[0], 'keypoints') and results[0].keypoints is not None:
-            try:
-                # Find the correct keypoint index for this specific box
-                # The boxes and keypoints arrays are aligned by index
-                box_idx = None
-                for bi, b in enumerate(results[0].boxes):
-                    if b is box:
-                        box_idx = bi
+            # Basic alert logic (Person = class 0 in COCO)
+            is_alert = False
+            max_conf = 0.0
+            current_time = time.time()
+            
+            # Cooldown of 5 seconds for alerts
+            if current_time - last_alert_time > 5:
+                for box in results[0].boxes:
+                    if int(box.cls) == 0: # Person detected
+                        is_alert = True
+                        max_conf = float(box.conf[0])
                         break
+            
+            if is_alert:
+                last_alert_time = current_time
 
-                if box_idx is not None and box_idx < len(results[0].keypoints.xy):
-                    kps = results[0].keypoints.xy[box_idx].cpu().numpy()
-                    # COCO keypoints: 5=L-shoulder, 6=R-shoulder, 11=L-hip, 12=R-hip
-                    if len(kps) > 12:
-                        ls_x, ls_y = kps[5][0], kps[5][1]
-                        rs_x, rs_y = kps[6][0], kps[6][1]
-                        lh_x, lh_y = kps[11][0], kps[11][1]
-                        rh_x, rh_y = kps[12][0], kps[12][1]
-                        
-                        # Only use keypoints if they have valid (non-zero) coordinates
-                        if ls_y > 0 and rs_y > 0 and lh_y > 0 and rh_y > 0:
-                            shoulder_x = (ls_x + rs_x) / 2
-                            shoulder_y = (ls_y + rs_y) / 2
-                            hip_x      = (lh_x + rh_x) / 2
-                            hip_y      = (lh_y + rh_y) / 2
-                            
-                            torso_dx = shoulder_x - hip_x
-                            torso_dy = hip_y - shoulder_y # Positive if shoulder is ABOVE hip
+            # Send frame to dashboard asynchronously (every 3rd frame to reduce network load)
+            if frame_count % 3 == 0 or is_alert:
+                threading.Thread(target=send_to_dashboard, args=(annotated_frame, is_alert, max_conf), daemon=True).start()
 
-                            # 1. Fall logic: Upside down OR horizontally oriented torso
-                            if torso_dy < -30 or abs(torso_dx) > max(10.0, torso_dy * 1.5):
-                                pose_fall_signal = True
-                            
-                            # 2. Sit logic: Torso upright but thighs are horizontal
-                            elif len(kps) > 14:
-                                lk_y, rk_y = kps[13][1], kps[14][1]
-                                if lk_y > 0 and rk_y > 0:
-                                    knee_y = (lk_y + rk_y) / 2
-                                    thigh_dy = knee_y - hip_y
-                                    if torso_dy > 0 and thigh_dy < torso_dy * 0.5:
-                                        pose_sit_signal = True
-            except Exception:
-                pass  # Keypoints unavailable for this detection
+            frame_count += 1
+            
+        else:
+            if cap is not None and cap.isOpened():
+                print("[INFO] Pausing Camera Uplink...")
+                cap.release()
+                cap = None
+            time.sleep(0.5)
 
-        # ── Combine signals ──────────────────────────────────────────
-        # Pose signal only REINFORCES aspect ratio, doesn't override it.
-        # We boost the effective aspect ratio ONLY if both bbox is borderline
-        # AND pose confirms the fall posture.
-        effective_ar = aspect_ratio
-        if pose_fall_signal and aspect_ratio > (CFG.fall_aspect_ratio * 0.7):
-            # Bbox is somewhat wide AND pose confirms → boost signal
-            effective_ar = max(aspect_ratio, CFG.fall_aspect_ratio + 0.15)
-        elif pose_sit_signal:
-            # Dampen aspect ratio slightly if sitting to prevent false falls
-            if aspect_ratio < (CFG.fall_aspect_ratio * 1.5):
-                effective_ar = aspect_ratio * 0.5
-
-        # Update state machine
-        should_alert = track.update_state(effective_ar, (cx, cy), pose_sit_signal)
-
-        detection_info = {
-            "track_id":     track_id,
-            "bbox":         [int(x1), int(y1), int(x2), int(y2)],
-            "state":        track.state.value,
-            "confidence":   round(conf, 3),
-            "aspect_ratio": round(aspect_ratio, 3),
-            "pose_signal":  pose_fall_signal,
-            "fall_duration": round(track.fall_duration, 1),
-        }
-        return track, should_alert, detection_info
-
-    # ── Frame processing ──────────────────────────────────────────────
-
-    def _process_frame(self, frame: np.ndarray) -> Tuple[np.ndarray, List[dict], List[dict]]:
-        """
-        Full pipeline for one frame:
-        1. Optionally run YOLO inference
-        2. Process each detection through state machines
-        3. Annotate frame
-        4. Build alert and metadata payloads
-        Returns (annotated_frame, alerts, all_detections)
-        """
-        has_active_alerts = any(
-            t.state in (PersonState.FALLEN, PersonState.EMERGENCY)
-            for t in self._tracks.values()
-        )
-
-        t0 = time.perf_counter()
-        if self._should_run_inference(has_active_alerts):
-            self._last_results = self._run_inference(frame)
-        inf_ms = (time.perf_counter() - t0) * 1000
-
-        results    = self._last_results
-        alerts     = []
-        detections = []
-        active_ids = set()
-
-        if results and len(results[0].boxes) > 0:
-            for box in results[0].boxes:
-                track, should_alert, det_info = self._process_detection(box, results)
-                if track is None:
-                    continue
-
-                active_ids.add(track.track_id)
-                track._last_seen = self._frame_count  # Track when last seen for pruning
-                detections.append(det_info)
-
-                # Annotate
-                x1,y1,x2,y2 = det_info["bbox"]
-                Annotator.draw_person(frame, x1,y1,x2,y2, track, det_info["confidence"])
-
-                # Build alert payload with proper severity
-                if should_alert:
-                    # Map state → severity for the SaaS backend
-                    severity_map = {
-                        PersonState.STANDING:  "info",
-                        PersonState.SITTING:   "info",
-                        PersonState.FALLING:   "warning",
-                        PersonState.FALLEN:    "critical",
-                        PersonState.EMERGENCY: "critical",
-                    }
-                    severity = severity_map.get(track.state, "warning")
-
-                    # Human-readable label
-                    label_map = {
-                        PersonState.STANDING:  f"Person Detected #{track.track_id}",
-                        PersonState.SITTING:   f"Person Sitting #{track.track_id}",
-                        PersonState.FALLING:   f"⚠ Person Falling #{track.track_id}",
-                        PersonState.FALLEN:    f"🔴 Person on Ground #{track.track_id}",
-                        PersonState.EMERGENCY: f"🆘 EMERGENCY — Person Down #{track.track_id} ({det_info['fall_duration']:.0f}s)",
-                    }
-                    label = label_map.get(track.state, track.state.value)
-
-                    alerts.append({
-                        "label":         label,
-                        "confidence":    det_info["confidence"],
-                        "severity":      severity,
-                        "camera":        f"CAM-0{CFG.camera_index + 1}",
-                        "zone":          f"Zone {chr(65 + CFG.camera_index)}",
-                        "state":         track.state.value,
-                        "track_id":      track.track_id,
-                        "fall_duration": det_info["fall_duration"],
-                        "bbox":          det_info["bbox"],
-                        "timestamp":     time.strftime('%Y-%m-%dT%H:%M:%S'),
-                    })
-                    log.warning(
-                        f"{STATE_EMOJI[track.state]} ALERT [{severity.upper()}] → {label}"
-                    )
-
-        # ── Prune stale tracks (person left frame for >90 frames) ────
-        stale = [tid for tid in self._tracks if tid not in active_ids]
-        for tid in stale:
-            last_seen = getattr(self._tracks[tid], '_last_seen', self._frame_count)
-            if (self._frame_count - last_seen) > 90:
-                del self._tracks[tid]
-                log.debug(f"   Pruned stale track ID={tid}")
-
-        # ── HUD overlay ───────────────────────────────────────────────
-        fps = self._current_fps()
-        Annotator.draw_hud(frame, self._tracks, fps, inf_ms)
-
-        return frame, alerts, detections
-
-    # ── FPS ───────────────────────────────────────────────────────────
-
-    def _current_fps(self) -> float:
-        now  = time.time()
-        dt   = now - self._last_frame_time
-        self._last_frame_time = now
-        if dt > 0:
-            self._fps_history.append(1.0 / dt)
-        return sum(self._fps_history) / len(self._fps_history) if self._fps_history else 0.0
-
-    # ── Shutdown ──────────────────────────────────────────────────────
-
-    def _handle_shutdown(self, *_) -> None:
-        log.info("\n🛑  Shutdown signal received. Cleaning up ...")
-        self._running = False
-
-    # ── Main loop ─────────────────────────────────────────────────────
-
-    def run(self) -> None:
-        log.info("⏳  Waiting for dashboard to activate camera uplink ...")
-
-        try:
-            while self._running:
-                # ── Camera gating ─────────────────────────────────────
-                if not self._sender.camera_active:
-                    self._release_camera()
-                    time.sleep(0.5)
-                    continue
-
-                # ── Open camera if needed ─────────────────────────────
-                if self._cap is None or not self._cap.isOpened():
-                    self._open_camera()
-                    log.info("📡  Camera uplink started.")
-
-                success, frame = self._cap.read()
-                if not success:
-                    log.warning("⚠️   Frame read failed. Retrying ...")
-                    time.sleep(0.1)
-                    continue
-
-                # ── Main pipeline ─────────────────────────────────────
-                annotated, alerts, detections = self._process_frame(frame)
-
-                # ── Send to dashboard ─────────────────────────────────
-                has_alert = bool(alerts)
-                if (self._frame_count % CFG.send_every_n_frames == 0) or has_alert:
-                    metadata = {
-                        "frame_id":   self._frame_count,
-                        "timestamp":  time.strftime('%Y-%m-%dT%H:%M:%S'),
-                        "detections": detections,
-                    }
-                    self._sender.send_frame_and_alert(annotated, alerts, metadata)
-
-                self._frame_count += 1
+except KeyboardInterrupt:
+    print("\n[INFO] Stopping AI Engine... (Ctrl+C pressed)")
 
         finally:
             self._cleanup()

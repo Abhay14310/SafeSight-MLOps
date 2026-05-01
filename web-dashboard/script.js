@@ -1,4 +1,4 @@
-const express      = require("express");
+﻿const express      = require("express");
 const http         = require("http");
 const path         = require("path");
 const { Server }   = require("socket.io");
@@ -48,12 +48,12 @@ const io     = new Server(server, {
 const User = SecurityUser;
 const Alert = SecurityAlert;
 
-// ── Initialize DB ────────────────────────────────────────────────────────────
+// ÔöÇÔöÇ Initialize DB ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 initDB();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'safesight-super-secret-change-me';
 
-// ── Security Middleware ───────────────────────────────────────────────────────
+// ÔöÇÔöÇ Security Middleware ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -75,7 +75,7 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Default route → login
+// Default route ÔåÆ login
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
@@ -83,7 +83,7 @@ app.get("/", (req, res) => {
 // Body parser (high limit for base64 frames)
 app.use(express.json({ limit: "50mb" }));
 
-// ── Rate Limiting ─────────────────────────────────────────────────────────────
+// ÔöÇÔöÇ Rate Limiting ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10,                   // 10 attempts per window
@@ -99,18 +99,18 @@ const apiLimiter = rateLimit({
 });
 app.use("/api/", apiLimiter);
 
-// ── Mediflow Routes ──────────────────────────────────────────────────────────
+// ÔöÇÔöÇ Mediflow Routes ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 app.use('/api/medflow/auth',        medAuthRoutes);
 app.use('/api/medflow/patients',    patientRoutes);
 app.use('/api/medflow/vitals',      vitalsRoutes);
 app.use('/api/medflow/lab-reports', labReportRoutes);
 app.use('/api/medflow/alerts',      medAlertRoutes);
 
-// ── State ────────────────────────────────────────────────────────────────────
+// ÔöÇÔöÇ State ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 let lastAiHeartbeat = 0;
 let isCameraActive  = false;
 
-// ── JWT Auth Middleware ───────────────────────────────────────────────────────
+// ÔöÇÔöÇ JWT Auth Middleware ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -124,7 +124,7 @@ function authMiddleware(req, res, next) {
   }
 }
 
-// ── API Key Auth Middleware (for AI engine endpoints) ────────────────────────
+// ÔöÇÔöÇ API Key Auth Middleware (for AI engine endpoints) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 async function apiKeyMiddleware(req, res, next) {
   const key = req.headers['x-api-key'];
   if (!key) return res.status(401).json({ error: 'Missing X-API-Key header' });
@@ -138,7 +138,7 @@ async function apiKeyMiddleware(req, res, next) {
   next();
 }
 
-// ── Tier Guard Middleware ─────────────────────────────────────────────────────
+// ÔöÇÔöÇ Tier Guard Middleware ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 const TIER_RANK = { core: 0, pro: 1, elite: 2 };
 function requireTier(minTier) {
   return async (req, res, next) => {
@@ -151,12 +151,12 @@ function requireTier(minTier) {
   };
 }
 
-// ── Audit Log Helper ──────────────────────────────────────────────────────────
+// ÔöÇÔöÇ Audit Log Helper ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 async function audit(action, username, detail = '', ip = '') {
   await AuditLog.create({ action, username, detail, ip }).catch(() => {});
 }
 
-// ── System Health ─────────────────────────────────────────────────────────────
+// ÔöÇÔöÇ System Health ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 app.post("/api/heartbeat", apiKeyMiddleware, (req, res) => {
   lastAiHeartbeat = Date.now();
   res.status(200).json({ status: "OK" });
@@ -166,7 +166,7 @@ app.get("/api/camera-status", (req, res) => {
   res.json({ active: isCameraActive });
 });
 
-// ── Alerts API ────────────────────────────────────────────────────────────────
+// ÔöÇÔöÇ Alerts API ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 app.get("/api/alerts", authMiddleware, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 50, 200);
@@ -250,7 +250,7 @@ app.patch("/api/alerts/:id/review", authMiddleware, async (req, res) => {
   }
 });
 
-// ── Authentication API ────────────────────────────────────────────────────────
+// ÔöÇÔöÇ Authentication API ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 app.post("/api/register", async (req, res) => {
   const { username, password, displayName, organization, tier } = req.body;
   if (!username || !password) return res.status(400).json({ error: "Username and password required" });
@@ -306,7 +306,7 @@ app.post("/api/login", loginLimiter, async (req, res) => {
   }
 });
 
-// ── User Profile API ──────────────────────────────────────────────────────────
+// ÔöÇÔöÇ User Profile API ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 app.get("/api/me", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
@@ -351,7 +351,7 @@ app.post("/api/me/change-password", authMiddleware, async (req, res) => {
   }
 });
 
-// ── API Keys (Edge Node management) ──────────────────────────────────────────
+// ÔöÇÔöÇ API Keys (Edge Node management) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 app.get("/api/keys", authMiddleware, async (req, res) => {
   const keys = await ApiKey.find().select('-__v').sort({ createdAt: -1 });
   res.json(keys);
@@ -377,7 +377,7 @@ app.delete("/api/keys/:id", authMiddleware, async (req, res) => {
   }
 });
 
-// ── Audit Log API (#12) ───────────────────────────────────────────────────────
+// ÔöÇÔöÇ Audit Log API (#12) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 app.get("/api/audit", authMiddleware, async (req, res) => {
   try {
     const logs = await AuditLog.find().sort({ timestamp: -1 }).limit(100);
@@ -387,13 +387,13 @@ app.get("/api/audit", authMiddleware, async (req, res) => {
   }
 });
 
-// ── Broadcast System Status ───────────────────────────────────────────────────
+// ÔöÇÔöÇ Broadcast System Status ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 setInterval(() => {
   const isAiOnline = (Date.now() - lastAiHeartbeat) < 15000;
   io.emit("system-status", { web: true, ai: isAiOnline });
 }, 5000);
 
-// ── Socket.io Auth ────────────────────────────────────────────────────────────
+// ÔöÇÔöÇ Socket.io Auth ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
   if (!token) return next(new Error("Authentication error: No token provided"));
@@ -407,12 +407,12 @@ io.use((socket, next) => {
 });
 
 io.on("connection", async (socket) => {
-  console.log(`✅ Client connected: ${socket.user.username} (${socket.id})`);
+  console.log(`Ô£à Client connected: ${socket.user.username} (${socket.id})`);
   const isAiOnline = (Date.now() - lastAiHeartbeat) < 15000;
   socket.emit("system-status", { web: true, ai: isAiOnline });
   socket.emit("camera-status", isCameraActive);
 
-  // ── SafeSight Events ──
+  // ÔöÇÔöÇ SafeSight Events ÔöÇÔöÇ
   socket.on("toggle-camera", async (state) => {
     isCameraActive = state;
     io.emit("camera-status", isCameraActive);
@@ -424,7 +424,7 @@ io.on("connection", async (socket) => {
     await audit(state ? 'CAMERA_START' : 'CAMERA_STOP', socket.user.username);
   });
 
-  // ── Mediflow Events ──
+  // ÔöÇÔöÇ Mediflow Events ÔöÇÔöÇ
   socket.on('subscribe_patient', ({ patientId }) => {
     socket.join(`patient:${patientId}`);
     console.log(`[WS] Client subscribed to patient:${patientId}`);
@@ -456,15 +456,15 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log(`🔌 Client disconnected: ${socket.id}`);
+    console.log(`­ƒöî Client disconnected: ${socket.id}`);
   });
 });
 
-// ── Mediflow Mock Services ──
+// ÔöÇÔöÇ Mediflow Mock Services ÔöÇÔöÇ
 const vitalsMock = new VitalsMockService(io);
 vitalsMock.start();
 
-// ── AI Engine Endpoints (API Key protected) ───────────────────────────────────
+// ÔöÇÔöÇ AI Engine Endpoints (API Key protected) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 app.post("/api/alert", apiKeyMiddleware, async (req, res) => {
   try {
     const { label, confidence, camera, zone, severity, state, fall_duration, track_id, timestamp } = req.body;
@@ -479,7 +479,7 @@ app.post("/api/alert", apiKeyMiddleware, async (req, res) => {
       trackId:      track_id != null ? track_id : null,
       timestamp:    timestamp ? new Date(timestamp) : new Date()
     });
-    console.log(`🚨 Alert: ${alert.label} [${alert.state || 'N/A'}] (${(alert.confidence * 100).toFixed(1)}%)`);
+    console.log(`­ƒÜ¿ Alert: ${alert.label} [${alert.state || 'N/A'}] (${(alert.confidence * 100).toFixed(1)}%)`);
     io.emit("new-alert", alert);
 
     // Email notification for critical alerts (#7)
@@ -500,7 +500,7 @@ app.post("/api/video", apiKeyMiddleware, (req, res) => {
   res.status(200).json({ status: "Frame Received" });
 });
 
-// ── Start Server ──────────────────────────────────────────────────────────────
+// ÔöÇÔöÇ Start Server ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 server.listen(3000, () => {
-  console.log("🚀 SafeSight Web Dashboard running on http://localhost:3000");
+  console.log("­ƒÜÇ SafeSight Web Dashboard running on http://localhost:3000");
 });
