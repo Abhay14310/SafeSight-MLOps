@@ -10,7 +10,6 @@ const cors         = require("cors");
 const rateLimit    = require("express-rate-limit");
 const { v4: uuidv4 } = require("uuid");
 const morgan = require("morgan");
-const bcrypt = require("bcrypt");
 
 // Modular Models
 const {
