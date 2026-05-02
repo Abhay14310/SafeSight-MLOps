@@ -1,33 +1,15 @@
-const crypto       = require("crypto");
-const express      = require("express");
-const http         = require("http");
-const path         = require("path");
-const { Server }   = require("socket.io");
-const bcrypt       = require("bcrypt");
-const jwt          = require("jsonwebtoken");
-const helmet       = require("helmet");
-const cors         = require("cors");
-const rateLimit    = require("express-rate-limit");
-const { v4: uuidv4 } = require("uuid");
-const morgan = require("morgan");
+const crypto = require("crypto");
+const express = require("express");
+const http = require("http");
+const path = require("path");
+const { Server } = require("socket.io");
 const bcrypt = require("bcrypt");
-
-// Modular Models
-const {
-  SecurityUser,
-  SecurityAlert,
-  Config,
-  ApiKey,
-  AuditLog,
-  MedicalUser,
-  MedicalAlert,
-  Patient,
-  VitalLog,
-  LabReport
-} = require("./models");
-
-// Services
-const { initDB } = require("./services/dbService");
+const jwt = require("jsonwebtoken");
+const helmet = require("helmet");
+const cors = require("cors");
+const rateLimit = require("express-rate-limit");
+const { v4: uuidv4 } = require("uuid");
+const { User, Alert, Config, ApiKey, AuditLog, initDB } = require("./db");
 const { sendAlertEmail } = require("./mailer");
 const VitalsMockService = require('./services/vitalsMockService');
 const SocketService = require('./services/socketService');
