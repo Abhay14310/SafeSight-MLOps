@@ -7,9 +7,22 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const helmet = require("helmet");
 const cors = require("cors");
+const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const { v4: uuidv4 } = require("uuid");
-const { User, Alert, Config, ApiKey, AuditLog, initDB } = require("./db");
+
+// ── Models (single source of truth) ──────────────────────────────────────────
+const {
+  SecurityUser: User,
+  SecurityAlert: Alert,
+  Config,
+  ApiKey,
+  AuditLog,
+  MedicalAlert,
+} = require("./models");
+
+// ── Services ──────────────────────────────────────────────────────────────────
+const { initDB } = require("./services/dbService");
 const { sendAlertEmail } = require("./mailer");
 const VitalsMockService = require('./services/vitalsMockService');
 const SocketService = require('./services/socketService');
@@ -28,9 +41,6 @@ const io = new Server(server, {
   transports: ['websocket', 'polling']
 });
 
-// Map SafeSight names to models for backward compatibility in script.js
-const User = SecurityUser;
-const Alert = SecurityAlert;
 
 // ── Initialize DB ────────────────────────────────────────────────────────────
 initDB();
