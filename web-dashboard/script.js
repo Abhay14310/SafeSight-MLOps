@@ -9,47 +9,49 @@ const helmet       = require("helmet");
 const cors         = require("cors");
 const rateLimit    = require("express-rate-limit");
 const { v4: uuidv4 } = require("uuid");
-const { User, Alert, Config, ApiKey, AuditLog, initDB } = require("./db");
-const { sendAlertEmail } = require("./mailer");
+const morgan = require("morgan");
+const bcrypt = require("bcrypt");
 
-const app    = express();
+// Modular Models
+const {
+  SecurityUser,
+  SecurityAlert,
+  Config,
+  ApiKey,
+  AuditLog,
+  MedicalUser,
+  MedicalAlert,
+  Patient,
+  VitalLog,
+  LabReport
+} = require("./models");
+
+// Services
+const { initDB } = require("./services/dbService");
+const { sendAlertEmail } = require("./mailer");
+const VitalsMockService = require('./services/vitalsMockService');
+const SocketService = require('./services/socketService');
+
+// Routes
+const patientRoutes = require('./routes/patients');
+const vitalsRoutes = require('./routes/vitals');
+const labReportRoutes = require('./routes/labReports');
+const medAlertRoutes = require('./routes/alerts');
+const medAuthRoutes = require('./routes/auth');
+
+const app = express();
 const server = http.createServer(app);
-const io     = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, {
+  cors: { origin: "*" },
+  transports: ['websocket', 'polling']
+});
+
+// Map SafeSight names to models for backward compatibility in script.js
+const User = SecurityUser;
+const Alert = SecurityAlert;
 
 // ── Initialize DB ────────────────────────────────────────────────────────────
-initDB().then(async () => {
-// Restore camera active state from DB (Disabled to ensure manual start)
-  // const camConfig = await Config.findOne({ key: 'isCameraActive' }).catch(() => null);
-  // if (camConfig) isCameraActive = !!camConfig.value;
-
-  // Seed a default API key if none exists
-  const keyCount = await ApiKey.countDocuments();
-  if (keyCount === 0) {
-    const defaultKey = uuidv4();
-    await ApiKey.create({ key: defaultKey, label: 'Default Edge Node' });
-    console.log(`🔑 Default API Key created: ${defaultKey}`);
-    console.log(`   Set this in your AI engine: SAFESIGHT_API_KEY=${defaultKey}`);
-  }
-
-  // ── Seed default admin account if NO users exist ─────────────────────────
-  const userCount = await User.countDocuments();
-  if (userCount === 0) {
-    const hashed = await bcrypt.hash('password123', 12);
-    await User.create({
-      username:     'admin',
-      password:     hashed,
-      displayName:  'Administrator',
-      organization: 'SafeSight',
-      tier:         'elite'
-    });
-    console.log('👤 Default admin account created:');
-    console.log('   Username : admin');
-    console.log('   Password : password123');
-    console.log('   ⚠  Change this password immediately after first login!');
-  } else {
-    console.log(`👥 ${userCount} user(s) already in database.`);
-  }
-});
+initDB();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'safesight-super-secret-change-me';
 
@@ -58,20 +60,22 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc:  ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com",
-                   "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com",
+        "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
       scriptSrcAttr: ["'unsafe-inline'"],
-      styleSrc:   ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc:    ["'self'", "https://fonts.gstatic.com"],
-      imgSrc:     ["'self'", "data:", "https://ui-avatars.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https://ui-avatars.com"],
       connectSrc: ["'self'", "ws:", "wss:"],
     }
   }
 }));
+app.use(morgan('dev'));
 app.use(cors());
 
 // Static files
 app.use(express.static(path.join(__dirname, "public")));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Default route → login
 app.get("/", (req, res) => {
@@ -97,9 +101,16 @@ const apiLimiter = rateLimit({
 });
 app.use("/api/", apiLimiter);
 
+// ── Mediflow Routes ──────────────────────────────────────────────────────────
+app.use('/api/medflow/auth', medAuthRoutes);
+app.use('/api/medflow/patients', patientRoutes);
+app.use('/api/medflow/vitals', vitalsRoutes);
+app.use('/api/medflow/lab-reports', labReportRoutes);
+app.use('/api/medflow/alerts', medAlertRoutes);
+
 // ── State ────────────────────────────────────────────────────────────────────
 let lastAiHeartbeat = 0;
-let isCameraActive  = false;
+let isCameraActive = false;
 
 // ── JWT Auth Middleware ───────────────────────────────────────────────────────
 function authMiddleware(req, res, next) {
@@ -125,7 +136,7 @@ async function apiKeyMiddleware(req, res, next) {
 
   // Update last-used timestamp
   record.lastUsed = new Date();
-  await record.save().catch(() => {});
+  await record.save().catch(() => { });
   next();
 }
 
@@ -144,7 +155,7 @@ function requireTier(minTier) {
 
 // ── Audit Log Helper ──────────────────────────────────────────────────────────
 async function audit(action, username, detail = '', ip = '') {
-  await AuditLog.create({ action, username, detail, ip }).catch(() => {});
+  await AuditLog.create({ action, username, detail, ip }).catch(() => { });
 }
 
 // ── System Health ─────────────────────────────────────────────────────────────
@@ -177,9 +188,9 @@ app.get("/api/alerts/stats", authMiddleware, async (req, res) => {
       { $group: { _id: { $hour: "$timestamp" }, count: { $sum: 1 } } },
       { $sort: { _id: 1 } }
     ]);
-    const total    = await Alert.countDocuments();
+    const total = await Alert.countDocuments();
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-    const today    = await Alert.countDocuments({ timestamp: { $gte: todayStart } });
+    const today = await Alert.countDocuments({ timestamp: { $gte: todayStart } });
     const critical = await Alert.countDocuments({ severity: 'critical' });
     // Weekly breakdown (last 7 days)
     const weeklyRaw = await Alert.aggregate([
@@ -257,7 +268,8 @@ app.post("/api/register", async (req, res) => {
       password: hashed,
       displayName: displayName || username,
       organization: organization || 'My Organization',
-      tier: ['core', 'pro', 'elite'].includes(tier) ? tier : 'core'
+      tier: ['core', 'pro', 'elite'].includes(tier) ? tier : 'core',
+      role: req.body.role === 'admin' ? 'admin' : 'user' // Allow admin registration for now or handle via DB
     });
     await audit('REGISTER', username, `New user registered`, req.ip);
     res.json({ success: true, message: "Account created successfully" });
@@ -288,7 +300,8 @@ app.post("/api/login", loginLimiter, async (req, res) => {
       username: user.username,
       displayName: user.displayName || user.username,
       organization: user.organization || 'My Organization',
-      tier: user.tier || 'core'
+      tier: user.tier || 'core',
+      role: user.role || 'user'
     });
   } catch (err) {
     res.status(500).json({ error: "Server error during login" });
@@ -401,6 +414,7 @@ io.on("connection", async (socket) => {
   socket.emit("system-status", { web: true, ai: isAiOnline });
   socket.emit("camera-status", isCameraActive);
 
+  // ── SafeSight Events ──
   socket.on("toggle-camera", async (state) => {
     isCameraActive = state;
     io.emit("camera-status", isCameraActive);
@@ -408,8 +422,39 @@ io.on("connection", async (socket) => {
       { key: 'isCameraActive' },
       { value: isCameraActive },
       { upsert: true }
-    ).catch(() => {});
+    ).catch(() => { });
     await audit(state ? 'CAMERA_START' : 'CAMERA_STOP', socket.user.username);
+  });
+
+  // ── Mediflow Events ──
+  socket.on('subscribe_patient', ({ patientId }) => {
+    socket.join(`patient:${patientId}`);
+    console.log(`[WS] Client subscribed to patient:${patientId}`);
+  });
+
+  socket.on('unsubscribe_patient', ({ patientId }) => {
+    socket.leave(`patient:${patientId}`);
+  });
+
+  socket.on('join_nurses', () => {
+    socket.join('nurses');
+  });
+
+  socket.on('ai_medical_alert', async (payload) => {
+    try {
+      const alert = await MedicalAlert.create({
+        patientId: payload.patientId,
+        type: payload.type,
+        severity: payload.severity || 'warning',
+        message: payload.message,
+        metadata: payload.metadata || {},
+        source: 'ai_client',
+      });
+      io.to(`patient:${payload.patientId}`).emit('new_medical_alert', alert);
+      io.to('nurses').emit('new_medical_alert', alert);
+    } catch (err) {
+      console.error('[WS] AI medical alert failed:', err.message);
+    }
   });
 
   socket.on("disconnect", () => {
@@ -417,20 +462,24 @@ io.on("connection", async (socket) => {
   });
 });
 
+// ── Mediflow Mock Services ──
+const vitalsMock = new VitalsMockService(io);
+vitalsMock.start();
+
 // ── AI Engine Endpoints (API Key protected) ───────────────────────────────────
 app.post("/api/alert", apiKeyMiddleware, async (req, res) => {
   try {
     const { label, confidence, camera, zone, severity, state, fall_duration, track_id, timestamp } = req.body;
     const alert = await Alert.create({
-      label:        label || 'Unknown Detection',
-      confidence:   confidence || 0,
-      camera:       camera || 'CAM-01',
-      zone:         zone || 'Zone A',
-      severity:     severity || 'critical',
-      state:        state || null,
+      label: label || 'Unknown Detection',
+      confidence: confidence || 0,
+      camera: camera || 'CAM-01',
+      zone: zone || 'Zone A',
+      severity: severity || 'critical',
+      state: state || null,
       fallDuration: fall_duration || 0,
-      trackId:      track_id != null ? track_id : null,
-      timestamp:    timestamp ? new Date(timestamp) : new Date()
+      trackId: track_id != null ? track_id : null,
+      timestamp: timestamp ? new Date(timestamp) : new Date()
     });
     console.log(`🚨 Alert: ${alert.label} [${alert.state || 'N/A'}] (${(alert.confidence * 100).toFixed(1)}%)`);
     io.emit("new-alert", alert);

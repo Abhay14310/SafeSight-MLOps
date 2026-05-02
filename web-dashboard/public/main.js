@@ -1,8 +1,8 @@
 /**
  * TASUKE'26 — MAIN.JS
- * All interactive logic: cursor, canvas, charts, scroll animations,
- * camera feeds, 3D camera renderer, notifications, incidents
  */
+
+let socket; // Global socket instance
 
 /* ═══════════════════════════════════════
    1. CURSOR
@@ -922,8 +922,7 @@ function initBackendIntegration() {
   }
 
   if (typeof io === 'undefined') return;
-
-  const socket = io({ auth: { token } });
+  socket = io({ auth: { token } });
 
   // --- Load real stats from MongoDB into Overview cards ---
   async function loadRealStats() {
@@ -1553,3 +1552,306 @@ function exportCSV() {
   } catch(e) { /* malformed token — ignore */ }
 })();
 
+/* ═══════════════════════════════════════
+   18. MEDIFLOW: NURSE STATION
+   ═══════════════════════════════════════ */
+async function initNurseStation() {
+  const grid = document.getElementById('nurse-patient-grid');
+  if (!grid || grid.dataset.init) return;
+  grid.dataset.init = '1';
+
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/medflow/patients', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const { data: patients } = await res.json();
+
+    if (!patients || patients.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">No active patients found.</div>';
+      return;
+    }
+
+    grid.innerHTML = patients.map(p => `
+      <div class="patient-card ${p.status || 'stable'}" id="pc-${p._id}" onclick="showPage('patient-vitals'); window.activePatientId='${p._id}';">
+        <div class="pc-header">
+          <span class="pc-room">ROOM ${p.bed || '—'}</span>
+          <span class="pc-status-dot"></span>
+        </div>
+        <div class="pc-body">
+          <div class="pc-name">${p.name}</div>
+          <div class="pc-meta">${p.age || '—'}y · ${p.gender || '—'}</div>
+          <div class="pc-vitals">
+            <div class="pc-v-item">
+              <span class="label">BPM</span>
+              <span class="val" id="pc-bpm-${p._id}">--</span>
+            </div>
+            <div class="pc-v-item">
+              <span class="label">SpO2</span>
+              <span class="val" id="pc-spo2-${p._id}">--%</span>
+            </div>
+          </div>
+        </div>
+        <div class="pc-footer">
+          <button class="btn-ghost-sm">View Vitals</button>
+        </div>
+      </div>
+    `).join('');
+
+    // Listen for real-time vitals updates
+    if (socket) {
+      socket.emit('join_nurses');
+      socket.on('vitals_brief', (data) => {
+        const bpmEl = document.getElementById(`pc-bpm-${data.patientId}`);
+        const spo2El = document.getElementById(`pc-spo2-${data.patientId}`);
+        if (bpmEl) {
+          bpmEl.textContent = data.bpm;
+          bpmEl.className = `val ${data.bpm > 100 || data.bpm < 50 ? 'text-rose' : ''}`;
+        }
+        if (spo2El) {
+          spo2El.textContent = data.spo2 + '%';
+          spo2El.className = `val ${data.spo2 < 92 ? 'text-rose' : ''}`;
+        }
+      });
+    }
+
+  } catch (err) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--rose)">Error loading patients: ${err.message}</div>`;
+  }
+}
+
+/* ═══════════════════════════════════════
+   19. MEDIFLOW: VITALS DASHBOARD
+   ═══════════════════════════════════════ */
+async function initVitalsDashboard() {
+  const container = document.getElementById('vitals-container');
+  if (!container || !window.activePatientId) return;
+  
+  // Re-init if patient changed
+  if (container.dataset.patientId !== window.activePatientId) {
+    container.innerHTML = '';
+    container.dataset.init = '';
+  }
+
+  if (container.dataset.init) {
+    if (window.bodyModel) window.bodyModel.resize();
+    return;
+  }
+  container.dataset.init = '1';
+  container.dataset.patientId = window.activePatientId;
+
+  const vitals = [
+    { id: 'bpm', label: 'Heart Rate', val: '--', unit: 'BPM', sub: 'Normal: 60-100', color: '#FF4D6D' },
+    { id: 'spo2', label: 'Blood Oxygen', val: '--', unit: '%', sub: 'Target: >95%', color: '#00F5FF' },
+    { id: 'temp', label: 'Temperature', val: '--', unit: '°C', sub: 'Baseline: 36.6', color: '#F59E0B' },
+    { id: 'bp', label: 'Blood Pressure', val: '--/--', unit: 'mmHg', sub: 'Systolic/Diastolic', color: '#10B981' }
+  ];
+
+  container.innerHTML = vitals.map(v => `
+    <div class="vital-card" id="vital-${v.id}">
+      <div class="vital-label">${v.label}</div>
+      <div class="vital-value-wrap">
+        <span class="vital-number mono" id="val-${v.id}">${v.val}</span>
+        <span class="vital-unit">${v.unit}</span>
+      </div>
+      <div class="vital-sub">${v.sub}</div>
+      <div class="vital-spark">
+        <canvas id="spark-${v.id}"></canvas>
+      </div>
+    </div>
+  `).join('');
+
+  const sparks = {};
+  vitals.forEach(v => {
+    if (v.id !== 'bp') sparks[v.id] = initSparkline(`spark-${v.id}`, v.color);
+  });
+
+  initThreeBodyModel();
+
+  if (socket) {
+    socket.emit('subscribe_patient', { patientId: window.activePatientId });
+    socket.on('vitals_update', (data) => {
+      if (data.patientId !== window.activePatientId) return;
+      
+      const bpmEl = document.getElementById('val-bpm');
+      if (bpmEl) bpmEl.textContent = data.bpm;
+      if (sparks.bpm) sparks.bpm.push(data.bpm);
+
+      const spo2El = document.getElementById('val-spo2');
+      if (spo2El) spo2El.textContent = data.spo2;
+      if (sparks.spo2) sparks.spo2.push(data.spo2);
+
+      const tempEl = document.getElementById('val-temp');
+      if (tempEl) tempEl.textContent = data.temp;
+      if (sparks.temp) sparks.temp.push(data.temp);
+
+      const bpEl = document.getElementById('val-bp');
+      if (bpEl) bpEl.textContent = `${data.systolic}/${data.diastolic}`;
+    });
+  }
+}
+
+function initSparkline(id, color) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return null;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.offsetWidth;
+  const h = canvas.offsetHeight;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+
+  let points = Array.from({ length: 40 }, () => h / 2);
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+
+    const step = w / (points.length - 1);
+    points.forEach((p, i) => {
+      // Normalize p to fit in canvas height (assuming 0-200 range for vitals)
+      // For simplicity, we just use the raw value but we should scale it.
+      const y = h - (p / 200) * h; 
+      if (i === 0) ctx.moveTo(0, y);
+      else ctx.lineTo(i * step, y);
+    });
+    ctx.stroke();
+
+    // Fill
+    ctx.lineTo(w, h);
+    ctx.lineTo(0, h);
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, color + '33');
+    grad.addColorStop(1, color + '00');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+
+  return {
+    push: (val) => {
+      points.shift();
+      points.push(val);
+    }
+  };
+}
+
+
+/* ═══════════════════════════════════════
+   20. THREE.JS: ANATOMICAL 3D MODEL
+   ═══════════════════════════════════════ */
+function initThreeBodyModel() {
+  const container = document.getElementById('anatomical-model-container');
+  if (!container || window.bodyModel) return;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+  camera.position.set(0, 0.6, 3.5);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  container.appendChild(renderer.domElement);
+
+  const group = new THREE.Group();
+  scene.add(group);
+
+  // Lighting
+  scene.add(new THREE.AmbientLight(0x404040, 2));
+  const light = new THREE.DirectionalLight(0x00F5FF, 1);
+  light.position.set(2, 2, 2);
+  scene.add(light);
+
+  // Simple Humanoid Mockup (Cylinders/Spheres)
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x1a1a1a,
+    emissive: 0x001a20,
+    metalness: 0.5,
+    roughness: 0.5,
+    wireframe: false
+  });
+
+  const bodyParts = [
+    { name: 'head', geo: new THREE.SphereGeometry(0.18, 16, 16), pos: [0, 1.65, 0] },
+    { name: 'torso', geo: new THREE.CylinderGeometry(0.22, 0.2, 0.6, 16), pos: [0, 1.15, 0] },
+    { name: 'l-arm', geo: new THREE.CylinderGeometry(0.06, 0.05, 0.6, 12), pos: [-0.35, 1.15, 0] },
+    { name: 'r-arm', geo: new THREE.CylinderGeometry(0.06, 0.05, 0.6, 12), pos: [0.35, 1.15, 0] },
+    { name: 'l-leg', geo: new THREE.CylinderGeometry(0.09, 0.07, 0.8, 12), pos: [-0.12, 0.45, 0] },
+    { name: 'r-leg', geo: new THREE.CylinderGeometry(0.09, 0.07, 0.8, 12), pos: [0.12, 0.45, 0] }
+  ];
+
+  bodyParts.forEach(p => {
+    const mesh = new THREE.Mesh(p.geo, mat);
+    mesh.position.set(...p.pos);
+    group.add(mesh);
+    
+    // Wireframe overlay
+    const wf = new THREE.Mesh(p.geo, new THREE.MeshBasicMaterial({ color: 0x00F5FF, wireframe: true, transparent: true, opacity: 0.1 }));
+    wf.position.set(...p.pos);
+    wf.scale.set(1.02, 1.02, 1.02);
+    group.add(wf);
+  });
+
+  // Alert Zones
+  const zones = [
+    { id: 'heart', pos: [-0.05, 1.25, 0.2], severity: 'warning' },
+    { id: 'hip', pos: [-0.12, 0.75, 0.1], severity: 'critical' }
+  ];
+
+  zones.forEach(z => {
+    const color = z.severity === 'critical' ? 0xFF0000 : 0x00F5FF;
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.06, 12, 12),
+      new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 2 })
+    );
+    sphere.position.set(...z.pos);
+    group.add(sphere);
+
+    // Pulse Ring
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(0.12, 0.005, 8, 24),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.5 })
+    );
+    ring.position.set(...z.pos);
+    ring.rotation.x = Math.PI / 2;
+    group.add(ring);
+    
+    z.mesh = sphere;
+    z.ring = ring;
+  });
+
+  // Floor Grid
+  const grid = new THREE.GridHelper(10, 20, 0x1a1a1a, 0x111111);
+  grid.position.y = 0;
+  scene.add(grid);
+
+  window.bodyModel = {
+    resize: () => {
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+    }
+  };
+
+  function animate() {
+    requestAnimationFrame(animate);
+    group.rotation.y += 0.01;
+    
+    zones.forEach(z => {
+      const s = 1 + Math.sin(Date.now() * 0.005) * 0.1;
+      z.mesh.scale.set(s, s, s);
+      z.ring.scale.set(s * 1.5, s * 1.5, 1);
+      z.ring.material.opacity = 0.5 * (1 - (s - 0.9) / 0.2);
+    });
+
+    renderer.render(scene, camera);
+  }
+  animate();
+  window.addEventListener('resize', window.bodyModel.resize);
+}

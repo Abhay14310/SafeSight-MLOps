@@ -1,0 +1,104 @@
+version: '3.9'
+
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: sr-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: sruser
+      MONGO_INITDB_ROOT_PASSWORD: srpass
+      MONGO_INITDB_DATABASE: smartretail
+    volumes:
+      - sr_mongo_data:/data/db
+      - ./server/config/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
+    ports:
+      - "27018:27017"
+    networks:
+      - sr-net
+    healthcheck:
+      test: ["CMD","mongosh","--eval","db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mysql:
+    image: mysql:8.0
+    container_name: sr-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: srroot
+      MYSQL_DATABASE: smartretail_tx
+      MYSQL_USER: sruser
+      MYSQL_PASSWORD: srpass
+    volumes:
+      - sr_mysql_data:/var/lib/mysql
+      - ./server/config/mysql-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "3307:3306"
+    networks:
+      - sr-net
+    healthcheck:
+      test: ["CMD","mysqladmin","ping","-h","localhost","-u","sruser","-psrpass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: sr-server
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5050
+      MONGO_URI: mongodb://sruser:srpass@sr-mongo:27017/smartretail?authSource=admin
+      MYSQL_HOST: sr-mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: sruser
+      MYSQL_PASSWORD: srpass
+      MYSQL_DATABASE: smartretail_tx
+      JWT_SECRET: smartretail_jwt_secret_change_in_prod
+      CLIENT_URL: http://localhost:3005
+    ports:
+      - "5050:5050"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    volumes:
+      - sr_uploads:/app/uploads
+    networks:
+      - sr-net
+    healthcheck:
+      test: ["CMD","curl","-f","http://localhost:5050/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: sr-client
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:5050
+      VITE_WS_URL: ws://localhost:5050
+    ports:
+      - "3005:80"
+    depends_on:
+      - server
+    networks:
+      - sr-net
+
+volumes:
+  sr_mongo_data:
+  sr_mysql_data:
+  sr_uploads:
+
+networks:
+  sr-net:
+    driver: bridge
