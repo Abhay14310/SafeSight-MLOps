@@ -1,21 +1,23 @@
-const express      = require("express");
-const http         = require("http");
-const path         = require("path");
-const { Server }   = require("socket.io");
-const jwt          = require("jsonwebtoken");
-const helmet       = require("helmet");
-const cors         = require("cors");
-const rateLimit    = require("express-rate-limit");
+const crypto = require('crypto');
+// ... other imports
+const express = require("express");
+const http = require("http");
+const path = require("path");
+const { Server } = require("socket.io");
+const jwt = require("jsonwebtoken");
+const helmet = require("helmet");
+const cors = require("cors");
+const rateLimit = require("express-rate-limit");
 const { v4: uuidv4 } = require("uuid");
-const morgan      = require("morgan");
-const bcrypt      = require("bcrypt");
+const morgan = require("morgan");
+const bcrypt = require("bcrypt");
 
 // Modular Models
-const { 
-  SecurityUser, 
-  SecurityAlert, 
-  Config, 
-  ApiKey, 
+const {
+  SecurityUser,
+  SecurityAlert,
+  Config,
+  ApiKey,
   AuditLog,
   MedicalUser,
   MedicalAlert,
@@ -28,18 +30,18 @@ const {
 const { initDB } = require("./services/dbService");
 const { sendAlertEmail } = require("./mailer");
 const VitalsMockService = require('./services/vitalsMockService');
-const SocketService     = require('./services/socketService');
+const SocketService = require('./services/socketService');
 
 // Routes
-const patientRoutes   = require('./routes/patients');
-const vitalsRoutes    = require('./routes/vitals');
+const patientRoutes = require('./routes/patients');
+const vitalsRoutes = require('./routes/vitals');
 const labReportRoutes = require('./routes/labReports');
-const medAlertRoutes  = require('./routes/alerts');
-const medAuthRoutes   = require('./routes/auth');
+const medAlertRoutes = require('./routes/alerts');
+const medAuthRoutes = require('./routes/auth');
 
-const app    = express();
+const app = express();
 const server = http.createServer(app);
-const io     = new Server(server, { 
+const io = new Server(server, {
   cors: { origin: "*" },
   transports: ['websocket', 'polling']
 });
@@ -58,12 +60,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc:  ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com",
-                   "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com",
+        "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
       scriptSrcAttr: ["'unsafe-inline'"],
-      styleSrc:   ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc:    ["'self'", "https://fonts.gstatic.com"],
-      imgSrc:     ["'self'", "data:", "https://ui-avatars.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https://ui-avatars.com"],
       connectSrc: ["'self'", "ws:", "wss:"],
     }
   }
@@ -100,15 +102,15 @@ const apiLimiter = rateLimit({
 app.use("/api/", apiLimiter);
 
 // ── Mediflow Routes ──────────────────────────────────────────────────────────
-app.use('/api/medflow/auth',        medAuthRoutes);
-app.use('/api/medflow/patients',    patientRoutes);
-app.use('/api/medflow/vitals',      vitalsRoutes);
+app.use('/api/medflow/auth', medAuthRoutes);
+app.use('/api/medflow/patients', patientRoutes);
+app.use('/api/medflow/vitals', vitalsRoutes);
 app.use('/api/medflow/lab-reports', labReportRoutes);
-app.use('/api/medflow/alerts',      medAlertRoutes);
+app.use('/api/medflow/alerts', medAlertRoutes);
 
 // ── State ────────────────────────────────────────────────────────────────────
 let lastAiHeartbeat = 0;
-let isCameraActive  = false;
+let isCameraActive = false;
 
 // ── JWT Auth Middleware ───────────────────────────────────────────────────────
 function authMiddleware(req, res, next) {
@@ -134,7 +136,7 @@ async function apiKeyMiddleware(req, res, next) {
 
   // Update last-used timestamp
   record.lastUsed = new Date();
-  await record.save().catch(() => {});
+  await record.save().catch(() => { });
   next();
 }
 
@@ -153,7 +155,7 @@ function requireTier(minTier) {
 
 // ── Audit Log Helper ──────────────────────────────────────────────────────────
 async function audit(action, username, detail = '', ip = '') {
-  await AuditLog.create({ action, username, detail, ip }).catch(() => {});
+  await AuditLog.create({ action, username, detail, ip }).catch(() => { });
 }
 
 // ── System Health ─────────────────────────────────────────────────────────────
@@ -186,9 +188,9 @@ app.get("/api/alerts/stats", authMiddleware, async (req, res) => {
       { $group: { _id: { $hour: "$timestamp" }, count: { $sum: 1 } } },
       { $sort: { _id: 1 } }
     ]);
-    const total    = await Alert.countDocuments();
+    const total = await Alert.countDocuments();
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-    const today    = await Alert.countDocuments({ timestamp: { $gte: todayStart } });
+    const today = await Alert.countDocuments({ timestamp: { $gte: todayStart } });
     const critical = await Alert.countDocuments({ severity: 'critical' });
     // Weekly breakdown (last 7 days)
     const weeklyRaw = await Alert.aggregate([
@@ -420,7 +422,7 @@ io.on("connection", async (socket) => {
       { key: 'isCameraActive' },
       { value: isCameraActive },
       { upsert: true }
-    ).catch(() => {});
+    ).catch(() => { });
     await audit(state ? 'CAMERA_START' : 'CAMERA_STOP', socket.user.username);
   });
 
@@ -442,11 +444,11 @@ io.on("connection", async (socket) => {
     try {
       const alert = await MedicalAlert.create({
         patientId: payload.patientId,
-        type:      payload.type,
-        severity:  payload.severity || 'warning',
-        message:   payload.message,
-        metadata:  payload.metadata || {},
-        source:    'ai_client',
+        type: payload.type,
+        severity: payload.severity || 'warning',
+        message: payload.message,
+        metadata: payload.metadata || {},
+        source: 'ai_client',
       });
       io.to(`patient:${payload.patientId}`).emit('new_medical_alert', alert);
       io.to('nurses').emit('new_medical_alert', alert);
@@ -469,15 +471,15 @@ app.post("/api/alert", apiKeyMiddleware, async (req, res) => {
   try {
     const { label, confidence, camera, zone, severity, state, fall_duration, track_id, timestamp } = req.body;
     const alert = await Alert.create({
-      label:        label || 'Unknown Detection',
-      confidence:   confidence || 0,
-      camera:       camera || 'CAM-01',
-      zone:         zone || 'Zone A',
-      severity:     severity || 'critical',
-      state:        state || null,
+      label: label || 'Unknown Detection',
+      confidence: confidence || 0,
+      camera: camera || 'CAM-01',
+      zone: zone || 'Zone A',
+      severity: severity || 'critical',
+      state: state || null,
       fallDuration: fall_duration || 0,
-      trackId:      track_id != null ? track_id : null,
-      timestamp:    timestamp ? new Date(timestamp) : new Date()
+      trackId: track_id != null ? track_id : null,
+      timestamp: timestamp ? new Date(timestamp) : new Date()
     });
     console.log(`🚨 Alert: ${alert.label} [${alert.state || 'N/A'}] (${(alert.confidence * 100).toFixed(1)}%)`);
     io.emit("new-alert", alert);
