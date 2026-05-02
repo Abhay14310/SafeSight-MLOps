@@ -1,13 +1,13 @@
-const crypto = require('crypto');
-// ... other imports
-const express = require("express");
-const http = require("http");
-const path = require("path");
-const { Server } = require("socket.io");
-const jwt = require("jsonwebtoken");
-const helmet = require("helmet");
-const cors = require("cors");
-const rateLimit = require("express-rate-limit");
+const crypto       = require("crypto");
+const express      = require("express");
+const http         = require("http");
+const path         = require("path");
+const { Server }   = require("socket.io");
+const bcrypt       = require("bcrypt");
+const jwt          = require("jsonwebtoken");
+const helmet       = require("helmet");
+const cors         = require("cors");
+const rateLimit    = require("express-rate-limit");
 const { v4: uuidv4 } = require("uuid");
 const morgan = require("morgan");
 const bcrypt = require("bcrypt");
