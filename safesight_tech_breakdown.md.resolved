@@ -1,0 +1,226 @@
+# SafeSight-MLOps — Complete Tech Breakdown & Resume Guide
+
+---
+
+## 🏗️ Architecture Overview
+
+SafeSight-MLOps (branded **Tasuke'26**) is a **multi-module, microservices-based** platform with two major products:
+
+```mermaid
+graph TB
+    subgraph "AI Engine (Python)"
+        A1["YOLOv8 Pose Detection"]
+        A2["Fall Detection State Machine"]
+        A3["OpenCV Video Pipeline"]
+    end
+
+    subgraph "Web Dashboard (Node.js)"
+        B1["Express.js REST API"]
+        B2["Socket.io Real-time"]
+        B3["Vanilla JS Frontend + Three.js"]
+    end
+
+    subgraph "MedFlow Module (React)"
+        C1["Vite + TypeScript + React"]
+        C2["MediaPipe Pose Estimation"]
+        C3["Three.js 3D Body Model"]
+        C4["Zustand State + GSAP Animations"]
+    end
+
+    subgraph "Infrastructure"
+        D1["Docker + Docker Compose"]
+        D2["MongoDB (Mongoose)"]
+        D3["GitHub Actions CI/CD"]
+        D4["Nginx Reverse Proxy"]
+    end
+
+    A1 --> B2
+    A3 --> B2
+    B2 --> B1
+    B1 --> D2
+    C1 --> B1
+    C1 --> B2
+    D1 --> B1
+    D1 --> C1
+    D1 --> D2
+    D3 --> D1
+```
+
+---
+
+## 📋 Complete Technology Inventory
+
+### 1. AI / Computer Vision Layer
+
+| Technology | Purpose | How You Used It |
+|:---|:---|:---|
+| **Python 3.10+** | Core language | AI engine runtime |
+| **YOLOv8 (Ultralytics)** | Object detection + Pose estimation | Real-time person detection and fall detection using `yolov8n.pt` and `yolov8n-pose.pt` models |
+| **OpenCV (cv2)** | Video capture & frame processing | Webcam capture, frame annotation, JPEG encoding, image manipulation |
+| **NumPy** | Numerical computation | Array operations for keypoint analysis, aspect-ratio calculations |
+| **Requests + urllib3** | HTTP client with retry logic | Session-pooled, retry-aware communication with dashboard API |
+| **python-dotenv** | Environment variable management | Loading API keys and configuration |
+| **ThreadPoolExecutor** | Bounded concurrency | Max 4 threads for async frame + alert sending (avoids thread flooding) |
+| **ByteTracker (YOLO built-in)** | Multi-object tracking | Per-person identity tracking across frames |
+
+> [!IMPORTANT]
+> **Key Innovation**: Custom **finite state machine** per tracked person:
+> `STANDING → SITTING → FALLING → FALLEN → EMERGENCY`
+> Uses dual-method fall detection: **bbox aspect-ratio heuristic** + **pose keypoint analysis**, with temporal filtering (consecutive frame confirmation) to eliminate false positives.
+
+---
+
+### 2. Backend Layer (Node.js)
+
+| Technology | Purpose | How You Used It |
+|:---|:---|:---|
+| **Node.js 18** | Server runtime | Backend for both SafeSight and MedFlow |
+| **Express.js v5** | Web framework | RESTful API routes, middleware pipeline, static file serving |
+| **Socket.io v4** | WebSocket real-time communication | Bi-directional events: live video feed, alerts, vitals streaming, patient subscriptions |
+| **MongoDB (Mongoose v9)** | NoSQL database | 10+ schemas: Users, Alerts, Patients, Vitals, LabReports, AuditLogs, ApiKeys, Config |
+| **JWT (jsonwebtoken)** | Authentication | Stateless token-based auth with 8-hour expiry |
+| **bcrypt / bcryptjs** | Password hashing | 12-round salt hashing for user passwords |
+| **Helmet.js** | HTTP security headers | Content Security Policy, XSS protection, clickjacking prevention |
+| **express-rate-limit** | Rate limiting | Login endpoint: 10 attempts/15min; API: 200 req/min |
+| **Morgan** | HTTP request logging | Dev-mode access logging |
+| **CORS** | Cross-origin resource sharing | Allowing cross-origin requests from frontend modules |
+| **UUID (v4)** | Unique identifier generation | API key generation for edge node authentication |
+| **Multer + GridFS** | File upload handling | Lab report file uploads stored in MongoDB GridFS |
+| **Nodemailer** | Email service | SMTP-based critical alert email notifications with HTML templates |
+
+---
+
+### 3. Frontend Layer — SafeSight Dashboard (Vanilla JS)
+
+| Technology | Purpose | How You Used It |
+|:---|:---|:---|
+| **Vanilla JavaScript (ES6+)** | UI logic | ~75K lines of hand-written JS — no framework overhead |
+| **Three.js** | 3D WebGL rendering | Wireframe CCTV camera model, particle systems, grid helpers |
+| **HTML5 Canvas API** | 2D data visualization | Custom threat charts, pie/donut charts, heatmaps, weekly bar charts, live camera feed simulations |
+| **Socket.io Client** | Real-time data | Live alert feed, video frame streaming, system status indicators |
+| **CSS3** | Styling | Dark-mode glassmorphism theme, 57K+ lines of custom CSS, scan-line effects, gradient animations |
+| **IntersectionObserver** | Scroll-triggered animations | Lazy-load animations, performance-optimized Three.js rendering |
+| **RequestAnimationFrame** | Smooth animations | Particle networks, counter animations, camera feed rendering |
+
+---
+
+### 4. Frontend Layer — MedFlow Module (React)
+
+| Technology | Purpose | How You Used It |
+|:---|:---|:---|
+| **React 18** | UI framework | Component-based healthcare dashboard |
+| **TypeScript** | Type safety | Full type definitions for all interfaces and API contracts |
+| **Vite** | Build tool | Fast HMR dev server, optimized production builds |
+| **React Router v6** | Client-side routing | Protected routes with auth guards |
+| **Zustand** | State management | Global store for auth, patients, vitals, alerts, and UI state |
+| **Three.js + React Three Fiber** | 3D rendering in React | Interactive 3D body model with alert zone spheres |
+| **@react-three/drei** | Three.js React helpers | Pre-built 3D components and camera controls |
+| **GSAP** | Premium animations | Page entrance animations, login transitions |
+| **Framer Motion** | React animations | Component-level transitions and micro-interactions |
+| **MediaPipe Pose** | Browser-side AI | Fall detection, distress posture, eye closure — **runs entirely in-browser, zero video transmitted** |
+| **Recharts** | Data charts | Vitals sparkline charts and historical data visualization |
+| **Axios** | HTTP client | API communication with interceptors |
+| **Lucide React** | Icons | Consistent icon system across UI |
+| **Tailwind CSS v3** | Utility-first CSS | Responsive layout with custom design tokens |
+| **Socket.io Client** | Real-time data | Patient vital subscriptions, nurse alert broadcasts |
+
+---
+
+### 5. Infrastructure & DevOps
+
+| Technology | Purpose | How You Used It |
+|:---|:---|:---|
+| **Docker** | Containerization | Multi-stage Dockerfiles for both Python and Node.js services |
+| **Docker Compose** | Multi-container orchestration | 5 services: web-dashboard, mongodb, medflow-mongo, medflow-server, medflow-client |
+| **GitHub Actions** | CI/CD pipeline | 4-job pipeline: Lint Backend → Lint AI → Docker Build → API Smoke Test |
+| **Nginx** | Reverse proxy / static server | Production serving of React SPA in MedFlow client container |
+| **MongoDB volumes** | Data persistence | Named Docker volumes for database and uploads |
+| **Health checks** | Container reliability | HTTP and `mongosh` health checks with retry logic |
+| **Flake8** | Python linting | Automated code quality checks in CI |
+
+---
+
+### 6. Security Implementation
+
+| Mechanism | Technology | Detail |
+|:---|:---|:---|
+| **User Authentication** | JWT + bcrypt | Token-based sessions, salted password hashing |
+| **Machine Authentication** | X-API-Key (UUID) | AI edge nodes authenticate via UUID API keys |
+| **Rate Limiting** | express-rate-limit | Brute-force protection on login endpoints |
+| **HTTP Security** | Helmet.js | CSP, XSS protection, frame guard headers |
+| **Audit Logging** | MongoDB | Every login, API access, camera toggle, and incident review is logged |
+| **Tiered Access Control** | Custom middleware | Core / Pro / Elite subscription tiers with role-based guards |
+
+---
+
+## 📝 What to Say on Your Resume
+
+### Project Title Options
+- **SafeSight-MLOps — AI-Powered Video Management & Healthcare Monitoring Platform**
+- **Tasuke'26 — Real-Time AI Surveillance & MLOps System**
+
+---
+
+### Resume Bullet Points (Pick 5-7)
+
+> [!TIP]
+> Use the **XYZ formula**: *Accomplished [X] as measured by [Y] by doing [Z]*
+
+#### AI & Computer Vision
+- Engineered a **real-time fall detection system** using **YOLOv8-Pose** with a custom **finite state machine** (STANDING → FALLING → FALLEN → EMERGENCY) achieving **sub-second alert latency** through temporal filtering and per-track identity tracking
+- Built a **dual-method fall detection algorithm** combining **bounding-box aspect-ratio heuristics** and **pose keypoint analysis** with configurable temporal thresholds to eliminate false positives
+
+#### Full-Stack Development
+- Designed and implemented a **multi-tenant microservices platform** with **5 Docker containers**, orchestrated via Docker Compose, featuring **JWT auth**, **API key-based M2M authentication**, and **role-based access control** (Core/Pro/Elite tiers)
+- Developed a real-time monitoring dashboard using **Socket.io** for bi-directional WebSocket communication, streaming **live video frames, alerts, and vitals data** to multiple concurrent clients
+- Built a **RESTful API** with **20+ endpoints** using Express.js, featuring **rate limiting** (10 login attempts/15min), **Helmet.js security headers**, and comprehensive **audit logging** in MongoDB
+
+#### Frontend & Visualization
+- Created a **premium dark-mode dashboard** with **Three.js 3D wireframe visualizations**, **HTML5 Canvas-based analytics charts**, and **custom particle animation systems** — all in vanilla JavaScript for zero-framework overhead
+- Developed a **React + TypeScript healthcare module** (MedFlow) with **Zustand state management**, **React Three Fiber 3D body model**, and **browser-side MediaPipe pose estimation** for privacy-first patient monitoring
+
+#### DevOps & Infrastructure
+- Implemented a **CI/CD pipeline** using **GitHub Actions** with 4 automated stages: Node.js lint, Python Flake8 lint, Docker image build (with BuildKit caching), and API smoke testing against a live MongoDB service container
+- Containerized a **5-service architecture** (2 Node.js servers, 2 MongoDB instances, 1 Nginx-served React SPA) with **health checks**, **named volumes**, and **network isolation** via Docker Compose
+
+---
+
+### Skills Section Tags
+
+```
+Languages:       Python, JavaScript (ES6+), TypeScript, HTML5, CSS3
+AI/ML:           YOLOv8, OpenCV, MediaPipe, NumPy, Pose Estimation, Fall Detection
+Backend:         Node.js, Express.js, Socket.io, REST API, JWT, bcrypt
+Frontend:        React 18, Zustand, Three.js, React Three Fiber, GSAP, Canvas API, Tailwind CSS
+Database:        MongoDB, Mongoose, GridFS, Aggregation Pipelines
+DevOps:          Docker, Docker Compose, GitHub Actions, Nginx, CI/CD
+Security:        Helmet.js, Rate Limiting, API Key Auth, RBAC, Audit Logging
+Tools:           Vite, Git, Flake8, Nodemailer, Multer
+```
+
+---
+
+### LinkedIn Project Description (Copy-Paste Ready)
+
+> **SafeSight-MLOps (Tasuke'26)** — An AI-powered Video Management System integrating real-time computer vision with a modern web dashboard. Features include YOLOv8-based fall detection with a custom state machine, Three.js 3D visualizations, Socket.io real-time streaming, JWT + API key dual authentication, and a fully containerized microservices architecture with GitHub Actions CI/CD. Includes MedFlow, a healthcare monitoring module with React Three Fiber 3D body mapping and browser-side MediaPipe pose analysis.
+>
+> **Tech:** Python · YOLOv8 · OpenCV · Node.js · Express · Socket.io · MongoDB · React · TypeScript · Three.js · Docker · GitHub Actions
+
+---
+
+### Interview Talking Points
+
+1. **"Tell me about a challenging technical problem you solved"**
+   → The fall detection false-positive problem: people crouching/bending triggered false falls. Solved with temporal filtering (18 consecutive "wide" frames required) + recovery counter + per-track state machine isolation.
+
+2. **"How did you handle real-time data?"**
+   → Socket.io with JWT-authenticated WebSocket connections, per-patient room subscriptions, bounded ThreadPoolExecutor (4 threads) on the AI side to prevent thread flooding during network congestion.
+
+3. **"How did you approach security?"**
+   → Defense in depth: Helmet CSP headers, bcrypt(12) password hashing, JWT tokens with 8h expiry, X-API-Key for machine auth, rate limiting, comprehensive audit logging of every action.
+
+4. **"Tell me about your DevOps experience"**
+   → 5-container Docker Compose setup with health checks, GitHub Actions CI with lint → build → smoke test pipeline, BuildKit layer caching for fast rebuilds.
+
+5. **"What's unique about the MedFlow module?"**
+   → Privacy-first AI — MediaPipe runs **entirely in the browser**. No patient video is ever transmitted to the server. Only alert metadata is sent via WebSocket.

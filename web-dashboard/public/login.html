@@ -187,6 +187,7 @@ document.getElementById('login-btn').addEventListener('click', async () => {
       localStorage.setItem('displayName', data.displayName || data.username);
       localStorage.setItem('organization', data.organization || 'My Organization');
       localStorage.setItem('tier', data.tier || 'core');
+      localStorage.setItem('role', data.role || 'user');
       window.location.href = 'dashboard.html';
     } else {
       showLoginError('⚠ ' + (data.error || 'Authentication failed.'));

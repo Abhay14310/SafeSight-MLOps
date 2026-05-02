@@ -45,10 +45,72 @@ services:
       retries: 5
       start_period: 20s
 
+  # --- Mediflow Mongo ---
+  medflow-mongo:
+    image: mongo:7.0
+    container_name: medflow-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: medflow
+      MONGO_INITDB_ROOT_PASSWORD: medflow_secret
+      MONGO_INITDB_DATABASE: medflow
+    volumes:
+      - medflow_mongo_data:/data/db
+      - ./medflow/server/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
+    ports:
+      - "27018:27017"
+    networks:
+      - safesight-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Mediflow Server ---
+  medflow-server:
+    build: ./medflow/server
+    container_name: medflow-server
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGO_URI: mongodb://medflow:medflow_secret@medflow-mongo:27017/medflow?authSource=admin
+      JWT_SECRET: medflow_jwt_super_secret_change_in_prod
+      CLIENT_URL: http://localhost:3001
+    ports:
+      - "5000:5000"
+    depends_on:
+      medflow-mongo:
+        condition: service_healthy
+    volumes:
+      - medflow_uploads_data:/app/uploads
+    networks:
+      - safesight-network
+
+  # --- Mediflow Client ---
+  medflow-client:
+    build: ./medflow/client
+    container_name: medflow-client
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:5000
+      VITE_WS_URL: ws://localhost:5000
+    ports:
+      - "3001:80"
+    depends_on:
+      - medflow-server
+    networks:
+      - safesight-network
+
 networks:
   safesight-network:
     driver: bridge
 
 volumes:
   mongodb_data:
+    driver: local
+  medflow_mongo_data:
+    driver: local
+  medflow_uploads_data:
     driver: local

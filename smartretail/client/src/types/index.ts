@@ -1,0 +1,15 @@
+export type AlertSeverity='info'|'warning'|'critical';
+export type CameraType='footfall'|'security'|'shelf'|'checkout';
+export type CameraStatus='online'|'offline'|'alert';
+export type StockStatus='in_stock'|'low_stock'|'out_of_stock'|'overstocked';
+export type UserRole='manager'|'analyst'|'security';
+export interface User{id:string;name:string;email:string;role:UserRole}
+export interface Camera{_id:string;camId:string;label:string;zone:string;status:CameraStatus;type:CameraType;resolution:string;detections:{persons:number;anomaly:boolean;crowding:boolean};fps?:number;confidence?:number;lastFrame?:string;createdAt:string}
+export interface CameraFrame{camId:string;label:string;zone:string;type:CameraType;status:CameraStatus;persons:number;anomaly:boolean;crowding:boolean;fps:number;confidence:number;timestamp:string}
+export interface FootfallZone{zoneId:string;zoneName:string;count:number;entering:number;exiting:number;dwellTime:number;capacity:number;occupancyPct:number;timestamp:string}
+export interface POSTransaction{txId:string;terminalId:string;zone:string;total:number;items:number;products:{sku:string;name:string;category:string;price:number}[];payment:string;timestamp:string;dailyTotal:number;dailyTxCount:number}
+export interface InventoryItem{_id:string;sku:string;name:string;category:string;zone:string;shelf:string;stockLevel:number;minStock:number;maxStock:number;unitCost:number;sellPrice:number;status:StockStatus;lastRestock?:string;lastSold?:string}
+export interface Alert{_id:string;type:string;severity:AlertSeverity;zone?:string;message:string;metadata?:Record<string,unknown>;acknowledged:boolean;acknowledgedBy?:string;resolved:boolean;createdAt:string;source?:string}
+export interface StaffMember{id:number;staff_id:string;name:string;role:string;zone:string;shift:string;status:'active'|'break'|'off';clock_in?:string;clock_out?:string}
+export interface SalesSummary{tx_count:number;revenue:number;avg_basket:number;total_items:number}
+export interface ZoneSales{zone:string;tx:number;revenue:number}
