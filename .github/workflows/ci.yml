@@ -113,7 +113,8 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: |            # FIX #8
+          # FIX #8 — all three client lockfiles included so npm cache is shared
+          cache-dependency-path: |
             medflow2/client/package-lock.json
             ecotrack/client/package-lock.json
             smartretail/client/package-lock.json
@@ -122,7 +123,7 @@ jobs:
         run: npm ci
         working-directory: ./${{ matrix.dir }}
 
-      - name: TypeScript type-check           # FIX #7
+      - name: TypeScript type-check
         run: npx tsc --noEmit
         working-directory: ./${{ matrix.dir }}
 
