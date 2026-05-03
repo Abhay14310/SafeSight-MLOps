@@ -87,11 +87,14 @@ jobs:
             --count
 
   # ── Job 4: TypeScript type-check for all Vite client apps ─────────────────
-  # FIX #7 — New job: tsc --noEmit is fast (~10s) vs Docker build (~5 min)
-  # FIX #8 — All client lockfiles included in cache-dependency-path
+  # Each matrix job runs on its own runner — cache only its own lockfile.
   typecheck-clients:
     name: TypeScript Check — ${{ matrix.name }}
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./${{ matrix.dir }}
 
     strategy:
       fail-fast: false
@@ -113,19 +116,13 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          # FIX #8 — all three client lockfiles included so npm cache is shared
-          cache-dependency-path: |
-            medflow2/client/package-lock.json
-            ecotrack/client/package-lock.json
-            smartretail/client/package-lock.json
+          cache-dependency-path: ${{ matrix.dir }}/package-lock.json
 
       - name: Install dependencies
         run: npm ci
-        working-directory: ./${{ matrix.dir }}
 
       - name: TypeScript type-check
         run: npx tsc --noEmit
-        working-directory: ./${{ matrix.dir }}
 
   # ── Job 5: Build all Docker images in parallel matrix ─────────────────────
   # FIX #4  — Matrix covers all 8 services, not just web-dashboard
