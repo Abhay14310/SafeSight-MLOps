@@ -10,7 +10,7 @@ echo ====================================================
 echo.
 echo  --- START (uses cached images, fast) ---
 echo  [1] All projects
-echo  [2] SafeSight only     (web-dashboard)        :3000
+echo  [2] SafeSight only     (web-dashboard)        :4000
 echo  [3] MedFlow 2 only     (hospital mgmt)        :3010
 echo  [4] EcoTrack only      (waste logistics)      :3008
 echo  [5] SmartRetail only   (retail intelligence)  :3005

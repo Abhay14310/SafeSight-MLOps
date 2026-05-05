@@ -3,7 +3,7 @@
 #  One command to build everything, or use --profile to run sub-projects.
 #
 #  PROFILES:
-#    safesight   → web-dashboard + mongodb  (localhost:3000)
+#    safesight   → web-dashboard + mongodb  (localhost:4000)
 #    medflow2    → mf2-mongo + mf2-server + mf2-client  (localhost:3010)
 #    ecotrack    → eco-mongo + eco-server + eco-client  (localhost:3008)
 #    smartretail → sr-mongo + sr-mysql + sr-server + sr-client  (localhost:3005)
@@ -46,7 +46,7 @@ services:
     profiles: [safesight]
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "4000:4000"
     environment:
       - MONGO_URI=mongodb://mongodb:27017/safesight
       - JWT_SECRET=change-this-to-a-secure-random-secret
@@ -66,7 +66,7 @@ services:
     networks:
       - safesight-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-f", "http://localhost:4000"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -109,7 +109,7 @@ services:
       MONGO_URI: mongodb://mfuser:mfpass@mf2-mongo:27017/medflow2?authSource=admin
       JWT_SECRET: medflow2_jwt_2024
       CLIENT_URL: http://localhost:3010
-      TASUKE_URL: http://localhost:3000
+      TASUKE_URL: http://localhost:4000
     ports:
       - "5060:5060"
     depends_on:
@@ -182,7 +182,7 @@ services:
       MONGO_URI: mongodb://ecouser:ecopass@eco-mongo:27017/ecotrack?authSource=admin
       JWT_SECRET: ecotrack_jwt_secret_2024
       CLIENT_URL: http://localhost:3008
-      TASUKE_URL: http://localhost:3000
+      TASUKE_URL: http://localhost:4000
     ports:
       - "5055:5055"
     depends_on:

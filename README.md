@@ -53,7 +53,7 @@ Each sub-platform operates autonomously with its own database, server, and clien
 <tr>
 <td align="center">🛡️ <b>SafeSight</b></td>
 <td>AI Surveillance & VMS</td>
-<td><code>:3000</code></td>
+<td><code>:4000</code></td>
 <td>Node.js · MongoDB · YOLOv8 · Three.js</td>
 </tr>
 <tr>
@@ -189,7 +189,7 @@ The launcher presents a menu:
 
  --- START (uses cached images, fast) ---
  [1] All projects
- [2] SafeSight only     (web-dashboard)        :3000
+ [2] SafeSight only     (web-dashboard)        :4000
  [3] MedFlow 2 only     (hospital mgmt)        :3010
  [4] EcoTrack only      (waste logistics)      :3008
  [5] SmartRetail only   (retail intelligence)  :3005
@@ -232,7 +232,7 @@ docker-compose down -v
 ### Activating the SafeSight AI Uplink
 
 1. Launch SafeSight: `docker-compose --profile safesight up`
-2. Open **`http://localhost:3000`** — log in (`admin` / `password123`)
+2. Open **`http://localhost:4000`** — log in (`admin` / `password123`)
 3. Navigate to **Edge Nodes** → copy your **API Key**
 4. Set environment: `set SAFESIGHT_API_KEY=<your_key>` (Windows) or `export SAFESIGHT_API_KEY=<your_key>` (Linux)
 5. Run the AI engine: `cd ai-engine && pip install -r requirements.txt && python src/detection.py`
@@ -280,7 +280,7 @@ SafeSight-MLOps/
 ## 🌐 Service Map
 
 ```
-localhost:3000  ──►  🛡️  SafeSight Web Dashboard
+localhost:4000  ──►  🛡️  SafeSight Web Dashboard
 localhost:3010  ──►  🏥  MedFlow 2 React Client
 localhost:3008  ──►  🌿  EcoTrack React Client
 localhost:3005  ──►  🛒  SmartRetail React Client

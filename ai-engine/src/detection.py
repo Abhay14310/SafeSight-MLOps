@@ -220,6 +220,14 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, Dict, List, Tuple
 
+# ── Load .env from project root (two levels up from src/) ──────────────
+try:
+    from dotenv import load_dotenv
+    _env_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
+    load_dotenv(dotenv_path=os.path.abspath(_env_path), override=False)
+except ImportError:
+    pass  # python-dotenv not installed; env vars must be set manually
+
 # ── OpenCV ──
 try:
     import cv2
@@ -287,7 +295,7 @@ log = get_logger("T26-AI")
 @dataclass
 class Config:
     # Dashboard
-    dashboard_url: str = os.environ.get("DASHBOARD_URL", "http://localhost:3000/api/alert")
+    dashboard_url: str = os.environ.get("DASHBOARD_URL", "http://localhost:4000/api/alert")
 
     # Authentication (set via SAFESIGHT_API_KEY env var)
     api_key: str = os.environ.get("SAFESIGHT_API_KEY", "")
@@ -852,11 +860,17 @@ class AIEngine:
     # ── Camera management ─────────────────────────────────────────────
 
     def _open_camera(self) -> None:
-        log.info(f"📷  Opening camera index {CFG.camera_index} ...")
-        self._cap = cv2.VideoCapture(CFG.camera_index)
+        log.info(f"📷  Opening camera index {CFG.camera_index} (backend: DirectShow) ...")
+        # Use CAP_DSHOW instead of the default MSMF backend.
+        # MSMF frequently fails with error -1072875772 on Windows when a camera
+        # was recently used by another process (Docker container, previous run, etc.)
+        # DirectShow is the stable legacy fallback that avoids this MSMF lock issue.
+        self._cap = cv2.VideoCapture(CFG.camera_index, cv2.CAP_DSHOW)
         self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, CFG.frame_width)
         self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CFG.frame_height)
         self._cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimal buffer = low latency
+        # Brief warm-up: DSHOW needs a moment to negotiate the format with the driver
+        time.sleep(0.5)
         actual_w = int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         actual_h = int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         log.info(f"   Resolution: {actual_w}×{actual_h}")

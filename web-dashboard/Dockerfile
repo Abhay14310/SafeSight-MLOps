@@ -5,5 +5,5 @@ COPY package*.json ./
 RUN npm install --legacy-peer-deps --omit=dev
 COPY . .
 RUN mkdir -p /app/uploads
-EXPOSE 3000
+EXPOSE 4000
 CMD ["node", "script.js"]

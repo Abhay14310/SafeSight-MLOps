@@ -495,6 +495,6 @@ app.post("/api/video", apiKeyMiddleware, (req, res) => {
 });
 
 // ── Start Server ──────────────────────────────────────────────────────────────
-server.listen(3000, () => {
-  console.log("🚀 SafeSight Web Dashboard running on http://localhost:3000");
+server.listen(4000, () => {
+  console.log("🚀 SafeSight Web Dashboard running on http://localhost:4000");
 });

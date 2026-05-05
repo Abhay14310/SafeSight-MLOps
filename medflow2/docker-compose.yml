@@ -32,7 +32,7 @@ services:
       MONGO_URI: mongodb://mfuser:mfpass@mf2-mongo:27017/medflow2?authSource=admin
       JWT_SECRET: medflow2_jwt_2024
       CLIENT_URL: http://localhost:3010
-      TASUKE_URL: http://localhost:3000
+      TASUKE_URL: http://localhost:4000
     ports: ["5060:5060"]
     depends_on:
       mongo:
