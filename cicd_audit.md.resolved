@@ -1,0 +1,278 @@
+# CI/CD Pipeline Audit — SafeSight-MLOps GitHub Actions
+
+## Executive Summary
+
+The existing `ci.yml` was written for the old single-project structure.  
+After the monorepo unification, it now covers only **1 of 5 sub-projects** and has **6 critical issues** that will cause builds to fail or produce false-positive passes on GitHub Actions runners.
+
+---
+
+## 🔴 Critical — Will Cause Build Failures
+
+### 1. Node version mismatch: CI uses Node 18, Dockerfiles use Node 20
+
+**File:** `.github/workflows/ci.yml` — lines 23–26 and 102–105
+
+```yaml
+# ❌ Current — both jobs
+- uses: actions/setup-node@v4
+  with:
+    node-version: '18'
+```
+
+**Why it breaks:** `web-dashboard/package.json` has dependencies like `bcrypt ^6.0.0`, `express ^5.2.1`, and `jest ^30.3.0` which require Node 20+. `npm ci` will succeed on Node 18, but the runtime behaviour is different from what the Docker container (Node 20-alpine) actually executes. Any native binding (especially `bcrypt`) compiled on Node 18 inside CI will differ from what's in the image.
+
+**Fix:**
+```yaml
+node-version: '20'
+```
+
+---
+
+### 2. `npm ci` used in CI but web-dashboard Dockerfile uses `--legacy-peer-deps`
+
+**File:** `.github/workflows/ci.yml` — line 30
+
+```yaml
+# ❌ Current
+- name: Install dependencies
+  run: npm ci
+```
+
+**Why it breaks:** `web-dashboard/package.json` has conflicting peer dependencies (that's why `--legacy-peer-deps` was added to the Dockerfile). On GitHub Actions runners, `npm ci` runs a clean install without `--legacy-peer-deps`, which will exit with peer dependency resolution errors:
+
+```
+npm error ERESOLVE unable to resolve dependency tree
+```
+
+**Fix:**
+```yaml
+- name: Install dependencies
+  run: npm install --legacy-peer-deps
+```
+
+> [!CAUTION]
+> Do not use `npm ci` for the web-dashboard project until the peer dependency conflicts in `package.json` are fully resolved.
+
+---
+
+### 3. Smoke test checks `/api/register` responds with `"success"` — but the field is `"success": true` (JSON), not a string
+
+**File:** `.github/workflows/ci.yml` — lines 129–132
+
+```bash
+# ❌ Current — will always fail
+curl ... | grep -q "success"
+```
+
+**Why it breaks:** `grep -q "success"` does work (the string `success` appears in the JSON body), but the login test that follows uses Python to extract the JWT token:
+
+```bash
+python3 -c "import sys,json; print(json.load(sys.stdin)['token'])"
+```
+
+If the `smoke-test` job runs on the same `ubuntu-latest` runner, `python3` is available. However the test **pipes the `curl` output directly into Python** with no error handling — if the server hasn't seeded or if bcrypt hashing takes >5s on a fresh instance, the curl response will be empty and python3 will throw `json.decoder.JSONDecodeError`, failing the step silently because the exit code is not always `1` in this piping pattern.
+
+**Fix:** Add `|| exit 1` and use `jq` instead of python3 for JSON parsing (already available on ubuntu-latest):
+```bash
+TOKEN=$(curl -sf -X POST http://localhost:3000/api/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"ci_user","password":"CIpassword1"}' \
+  | jq -r '.token')
+[ -n "$TOKEN" ] || exit 1
+```
+
+---
+
+### 4. Docker build job only builds `web-dashboard` — all other services are untested
+
+**File:** `.github/workflows/ci.yml` — lines 72–79
+
+```yaml
+# ❌ Only this one service is built
+- name: Build web-dashboard image (no push)
+  uses: docker/build-push-action@v5
+  with:
+    context: ./web-dashboard
+```
+
+**Why it breaks:** The `medflow2/client`, `ecotrack/client`, `smartretail/client` Dockerfiles all run `npm ci` + `npm run build` (TypeScript + Vite). These are the most failure-prone steps (the original reason for this whole investigation). A CI pipeline that doesn't build them means you only discover failures on a new machine, not in the PR review stage.
+
+**Fix:** Add a build matrix or separate steps for each service:
+```yaml
+strategy:
+  matrix:
+    service:
+      - web-dashboard
+      - medflow2/server
+      - medflow2/client
+      - ecotrack/server
+      - ecotrack/client
+      - smartretail/server
+      - smartretail/client
+      - ai-engine
+steps:
+  - uses: docker/build-push-action@v5
+    with:
+      context: ./${{ matrix.service }}
+      push: false
+```
+
+---
+
+### 5. Python `requirements.txt` has no version pins — breaks reproducibility
+
+**File:** `ai-engine/requirements.txt`
+
+```
+opencv-python        ← no version
+ultralytics          ← no version
+requests             ← no version
+numpy                ← no version
+python-dotenv        ← no version
+```
+
+**Why it breaks:** `pip install -r requirements.txt` on a GitHub Actions runner will always install the **latest** version of each package. `ultralytics` ships breaking API changes frequently. A build that works today may silently fail next week because `ultralytics 8.4.x` changed a function signature.
+
+**Fix:** Pin all versions:
+```
+opencv-python==4.10.0.84
+ultralytics==8.3.0
+requests==2.32.3
+numpy==1.26.4
+python-dotenv==1.0.1
+```
+Generate with: `pip freeze > requirements.txt` inside your local venv.
+
+---
+
+### 6. `node --check script.js db.js mailer.js` — `db.js` and `mailer.js` may not exist at the root level
+
+**File:** `.github/workflows/ci.yml` — line 33
+
+```yaml
+run: node --check script.js db.js mailer.js
+```
+
+**Why it breaks:** The web-dashboard structure uses `services/dbService.js`, not a root-level `db.js`. If `db.js` doesn't exist, this step exits with:
+```
+Error: Cannot find module '/home/runner/work/.../web-dashboard/db.js'
+```
+This would fail the entire `lint-backend` job and block `docker-build` from running (which `needs: [lint-backend]`).
+
+**Fix:** Check only files that actually exist:
+```yaml
+run: node --check script.js mailer.js
+```
+
+---
+
+## 🟡 Medium — Will Cause Incorrect Results or Silent Failures
+
+### 7. No TypeScript type-check step for any client app
+
+None of the three React/Vite clients (`medflow2/client`, `ecotrack/client`, `smartretail/client`) have a `tsc --noEmit` check in CI. This means TypeScript errors are only caught at the Docker build step — which is slow and expensive. A fast pre-check job should run `tsc --noEmit` before Docker builds:
+
+```yaml
+- name: TypeScript check
+  run: npx tsc --noEmit
+  working-directory: ./medflow2/client
+```
+
+---
+
+### 8. No `lockfile` for `ecotrack/client`, `medflow2/client`, `smartretail/client` in CI cache
+
+The `cache-dependency-path` in the CI workflow only points to `web-dashboard/package-lock.json`. The three Vite client apps each have their own `package-lock.json` but they're not referenced, meaning:
+- Cache is never shared across runs for these clients
+- Every CI run re-downloads ~50MB of npm packages per client
+
+**Fix:**
+```yaml
+cache-dependency-path: |
+  web-dashboard/package-lock.json
+  medflow2/client/package-lock.json
+  ecotrack/client/package-lock.json
+  smartretail/client/package-lock.json
+```
+
+---
+
+### 9. Smoke test starts the server with `node script.js &` but doesn't capture the PID or verify it's still running
+
+**File:** `.github/workflows/ci.yml` — line 112
+
+```bash
+run: node script.js &
+```
+
+If the server crashes immediately (e.g. because the MongoDB connection fails silently or a module is missing), the background process exits but the step still returns exit code `0`. The `curl` wait loop then times out after 30s (15 × 2s) and the job exits with `curl: (7) Failed to connect` — but this exit code is also ignored because the `for` loop doesn't `exit 1` on timeout.
+
+**Fix:**
+```bash
+node script.js & 
+SERVER_PID=$!
+# Wait loop with proper exit
+for i in $(seq 1 20); do
+  curl -sf http://localhost:3000 && echo "Ready" && break
+  sleep 2
+  if ! kill -0 $SERVER_PID 2>/dev/null; then
+    echo "Server process died!"
+    exit 1
+  fi
+done
+```
+
+---
+
+## 🟢 Low — Best Practice Improvements
+
+### 10. No branch protection / required status checks enforced
+
+The workflow runs on both `main` and `dev` but there's no indication that GitHub branch protection rules require the CI to pass before merging to `main`. Without this, a failing CI is informational only — PRs can still be merged.
+
+**Action needed in GitHub settings (not in code):**
+- Repository → Settings → Branches → Add rule for `main`
+- Enable: "Require status checks to pass before merging"
+- Select: `Lint Backend`, `Build Docker Image`, `API Smoke Test`
+
+---
+
+### 11. No secret scanning or `.env` leak detection
+
+`web-dashboard` uses `JWT_SECRET`, SMTP credentials, and MongoDB URIs. None of the CI steps check that these haven't been accidentally committed. Consider adding:
+
+```yaml
+- name: Check for hardcoded secrets
+  uses: gitleaks/gitleaks-action@v2
+```
+
+---
+
+### 12. Docker layer cache hit rate will be low without `cache-from` on ALL services
+
+The `docker-build` job uses `cache-from: type=gha` but only for `web-dashboard`. When the matrix is expanded to cover all 8 services, each needs its own cache key to avoid layer cache misses:
+
+```yaml
+cache-from: type=gha,scope=${{ matrix.service }}
+cache-to: type=gha,scope=${{ matrix.service }},mode=max
+```
+
+---
+
+## Summary Table
+
+| # | Severity | Issue | Impact |
+|---|---|---|---|
+| 1 | 🔴 Critical | Node 18 in CI vs Node 20 in Docker | `bcrypt` binary mismatch, false-positive pass |
+| 2 | 🔴 Critical | `npm ci` fails for web-dashboard peer deps | CI exits before Docker build |
+| 3 | 🔴 Critical | Token extraction fragile in smoke test | Silently passes even on failure |
+| 4 | 🔴 Critical | Only web-dashboard Docker image is built | Client TypeScript/Vite failures uncaught |
+| 5 | 🔴 Critical | `requirements.txt` unpinned | Breaks on any upstream release |
+| 6 | 🔴 Critical | `node --check` on non-existent `db.js` | Entire lint job fails, blocks docker-build |
+| 7 | 🟡 Medium | No `tsc --noEmit` for client apps | TypeScript errors only caught in slow Docker step |
+| 8 | 🟡 Medium | Client lockfiles not in cache path | Each run re-downloads 150MB+ of packages |
+| 9 | 🟡 Medium | Server crash not detected in smoke test | Timeout passes silently |
+| 10 | 🟢 Low | No branch protection rules | Failing CI doesn't block PR merge |
+| 11 | 🟢 Low | No secret scanning | Risk of credential leaks in commits |
+| 12 | 🟢 Low | Docker cache scope not set per service | Slow builds after matrix expansion |

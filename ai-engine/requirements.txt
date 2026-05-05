@@ -1,5 +1,8 @@
-opencv-python
-ultralytics
-requests
-numpy
-python-dotenv
+# Pinned versions — prevents CI breaking on upstream releases
+# Last verified working: 2026-05-03
+# To update: activate venv, pip install --upgrade <pkg>, then pip freeze
+opencv-python==4.10.0.84
+ultralytics==8.3.0
+requests==2.32.3
+numpy==1.26.4
+python-dotenv==1.0.1

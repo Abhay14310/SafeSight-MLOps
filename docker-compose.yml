@@ -1,9 +1,52 @@
+# =============================================================================
+#  SafeSight-MLOps — Unified docker-compose
+#  One command to build everything, or use --profile to run sub-projects.
+#
+#  PROFILES:
+#    safesight   → web-dashboard + mongodb  (localhost:4000)
+#    medflow2    → mf2-mongo + mf2-server + mf2-client  (localhost:3010)
+#    ecotrack    → eco-mongo + eco-server + eco-client  (localhost:3008)
+#    smartretail → sr-mongo + sr-mysql + sr-server + sr-client  (localhost:3005)
+#    ai          → ai-engine  (internal only)
+#
+#  USAGE:
+#    All projects:   docker-compose --profile safesight --profile medflow2 --profile ecotrack --profile smartretail --profile ai up --build
+#    One project:    docker-compose --profile ecotrack up --build
+#    Two projects:   docker-compose --profile medflow2 --profile ecotrack up --build
+#    Stop all:       docker-compose down
+#    Wipe volumes:   docker-compose down -v
+# =============================================================================
+
 services:
-  # --- The Web Dashboard (Node.js) ---
+
+  # ===========================================================================
+  #  SAFESIGHT — Web Dashboard + SafeSight MongoDB
+  # ===========================================================================
+  mongodb:
+    image: mongo:latest
+    container_name: ss-mongo
+    profiles: [safesight]
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - safesight-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
   web-dashboard:
     build: ./web-dashboard
+    container_name: ss-dashboard
+    profiles: [safesight]
+    restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "4000:4000"
     environment:
       - MONGO_URI=mongodb://mongodb:27017/safesight
       - JWT_SECRET=change-this-to-a-secure-random-secret
@@ -14,49 +57,182 @@ services:
       - ALERT_EMAIL_TO=
     env_file:
       - path: ./.env
-        required: false   # Optional — won't fail if .env doesn't exist
-    networks:
-      - safesight-network
+        required: false
     depends_on:
       mongodb:
         condition: service_healthy
-    restart: unless-stopped
+    volumes:
+      - ss_uploads:/app/uploads
+    networks:
+      - safesight-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', r => process.exit(r.statusCode===200||r.statusCode===302?0:1)).on('error',()=>process.exit(1))"]
+      test: ["CMD", "curl", "-f", "http://localhost:4000"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 15s
 
-  # --- Database (MongoDB) ---
-  mongodb:
-    image: mongo:latest
+  # ===========================================================================
+  #  MEDFLOW 2 — Hospital Management System  (localhost:3010)
+  # ===========================================================================
+  mf2-mongo:
+    image: mongo:7.0
+    container_name: mf2-mongo
+    profiles: [medflow2]
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mfuser
+      MONGO_INITDB_ROOT_PASSWORD: mfpass
+      MONGO_INITDB_DATABASE: medflow2
+    volumes:
+      - mf2_mongo_data:/data/db
+      - ./medflow2/server/config/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
     ports:
-      - "27017:27017"
+      - "27020:27017"
     networks:
       - safesight-network
-    volumes:
-      - mongodb_data:/data/db
-    restart: unless-stopped
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 15s
+      interval: 10s
       timeout: 5s
       retries: 5
       start_period: 20s
 
-  # --- Mediflow Mongo ---
-  medflow-mongo:
-    image: mongo:7.0
-    container_name: medflow-mongo
+  mf2-server:
+    build: ./medflow2/server
+    container_name: mf2-server
+    profiles: [medflow2]
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: medflow
-      MONGO_INITDB_ROOT_PASSWORD: medflow_secret
-      MONGO_INITDB_DATABASE: medflow
+      NODE_ENV: production
+      PORT: 5060
+      MONGO_URI: mongodb://mfuser:mfpass@mf2-mongo:27017/medflow2?authSource=admin
+      JWT_SECRET: medflow2_jwt_2024
+      CLIENT_URL: http://localhost:3010
+      TASUKE_URL: http://localhost:4000
+    ports:
+      - "5060:5060"
+    depends_on:
+      mf2-mongo:
+        condition: service_healthy
     volumes:
-      - medflow_mongo_data:/data/db
-      - ./medflow/server/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
+      - mf2_uploads:/app/uploads
+    networks:
+      - safesight-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5060/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  mf2-client:
+    build: ./medflow2/client
+    container_name: mf2-client
+    profiles: [medflow2]
+    restart: unless-stopped
+    ports:
+      - "3010:80"
+    depends_on:
+      mf2-server:
+        condition: service_healthy
+    networks:
+      - safesight-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
+  #  ECOTRACK — Waste Logistics Intelligence  (localhost:3008)
+  # ===========================================================================
+  eco-mongo:
+    image: mongo:7.0
+    container_name: eco-mongo
+    profiles: [ecotrack]
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ecouser
+      MONGO_INITDB_ROOT_PASSWORD: ecopass
+      MONGO_INITDB_DATABASE: ecotrack
+    volumes:
+      - eco_mongo_data:/data/db
+      - ./ecotrack/server/config/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
+    ports:
+      - "27019:27017"
+    networks:
+      - safesight-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  eco-server:
+    build: ./ecotrack/server
+    container_name: eco-server
+    profiles: [ecotrack]
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5055
+      MONGO_URI: mongodb://ecouser:ecopass@eco-mongo:27017/ecotrack?authSource=admin
+      JWT_SECRET: ecotrack_jwt_secret_2024
+      CLIENT_URL: http://localhost:3008
+      TASUKE_URL: http://localhost:4000
+    ports:
+      - "5055:5055"
+    depends_on:
+      eco-mongo:
+        condition: service_healthy
+    volumes:
+      - eco_uploads:/app/uploads
+    networks:
+      - safesight-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5055/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  eco-client:
+    build: ./ecotrack/client
+    container_name: eco-client
+    profiles: [ecotrack]
+    restart: unless-stopped
+    ports:
+      - "3008:80"
+    depends_on:
+      eco-server:
+        condition: service_healthy
+    networks:
+      - safesight-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
+  #  SMARTRETAIL — Retail Intelligence Platform  (localhost:3005)
+  # ===========================================================================
+  sr-mongo:
+    image: mongo:7.0
+    container_name: sr-mongo
+    profiles: [smartretail]
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: sruser
+      MONGO_INITDB_ROOT_PASSWORD: srpass
+      MONGO_INITDB_DATABASE: smartretail
+    volumes:
+      - sr_mongo_data:/data/db
+      - ./smartretail/server/config/mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
     ports:
       - "27018:27017"
     networks:
@@ -66,51 +242,116 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
 
-  # --- Mediflow Server ---
-  medflow-server:
-    build: ./medflow/server
-    container_name: medflow-server
+  sr-mysql:
+    image: mysql:8.0
+    container_name: sr-mysql
+    profiles: [smartretail]
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: srroot
+      MYSQL_DATABASE: smartretail_tx
+      MYSQL_USER: sruser
+      MYSQL_PASSWORD: srpass
+    volumes:
+      - sr_mysql_data:/var/lib/mysql
+      - ./smartretail/server/config/mysql-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "3307:3306"
+    networks:
+      - safesight-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "sruser", "-psrpass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  sr-server:
+    build: ./smartretail/server
+    container_name: sr-server
+    profiles: [smartretail]
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      PORT: 5000
-      MONGO_URI: mongodb://medflow:medflow_secret@medflow-mongo:27017/medflow?authSource=admin
-      JWT_SECRET: medflow_jwt_super_secret_change_in_prod
-      CLIENT_URL: http://localhost:3001
+      PORT: 5050
+      MONGO_URI: mongodb://sruser:srpass@sr-mongo:27017/smartretail?authSource=admin
+      MYSQL_HOST: sr-mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: sruser
+      MYSQL_PASSWORD: srpass
+      MYSQL_DATABASE: smartretail_tx
+      JWT_SECRET: smartretail_jwt_secret_change_in_prod
+      CLIENT_URL: http://localhost:3005
     ports:
-      - "5000:5000"
+      - "5050:5050"
     depends_on:
-      medflow-mongo:
+      sr-mongo:
+        condition: service_healthy
+      sr-mysql:
         condition: service_healthy
     volumes:
-      - medflow_uploads_data:/app/uploads
+      - sr_uploads:/app/uploads
     networks:
       - safesight-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5050/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
-  # --- Mediflow Client ---
-  medflow-client:
-    build: ./medflow/client
-    container_name: medflow-client
+  sr-client:
+    build: ./smartretail/client
+    container_name: sr-client
+    profiles: [smartretail]
     restart: unless-stopped
-    environment:
-      VITE_API_URL: http://localhost:5000
-      VITE_WS_URL: ws://localhost:5000
     ports:
-      - "3001:80"
+      - "3005:80"
     depends_on:
-      - medflow-server
+      sr-server:
+        condition: service_healthy
+    networks:
+      - safesight-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
+  #  AI ENGINE — YOLOv8 Object / Pose Detection  (internal only)
+  # ===========================================================================
+  ai-engine:
+    build: ./ai-engine
+    container_name: ai-engine
+    profiles: [ai]
+    restart: unless-stopped
+    volumes:
+      - ./yolov8n.pt:/app/yolov8n.pt:ro
+      - ./ai-engine/yolov8n-pose.pt:/app/yolov8n-pose.pt:ro
     networks:
       - safesight-network
 
+# =============================================================================
+#  SHARED NETWORK
+# =============================================================================
 networks:
   safesight-network:
     driver: bridge
 
+# =============================================================================
+#  VOLUMES
+# =============================================================================
 volumes:
   mongodb_data:
-    driver: local
-  medflow_mongo_data:
-    driver: local
-  medflow_uploads_data:
-    driver: local
+  ss_uploads:
+  mf2_mongo_data:
+  mf2_uploads:
+  eco_mongo_data:
+  eco_uploads:
+  sr_mongo_data:
+  sr_mysql_data:
+  sr_uploads:

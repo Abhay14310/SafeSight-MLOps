@@ -1,31 +1,27 @@
-const crypto       = require("crypto");
-const express      = require("express");
-const http         = require("http");
-const path         = require("path");
-const { Server }   = require("socket.io");
-const bcrypt       = require("bcrypt");
-const jwt          = require("jsonwebtoken");
-const helmet       = require("helmet");
-const cors         = require("cors");
-const rateLimit    = require("express-rate-limit");
-const { v4: uuidv4 } = require("uuid");
+const crypto = require("crypto");
+const express = require("express");
+const http = require("http");
+const path = require("path");
+const { Server } = require("socket.io");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const helmet = require("helmet");
+const cors = require("cors");
 const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
+const { v4: uuidv4 } = require("uuid");
 
-// Modular Models
+// ── Models (single source of truth) ──────────────────────────────────────────
 const {
-  SecurityUser,
-  SecurityAlert,
+  SecurityUser: User,
+  SecurityAlert: Alert,
   Config,
   ApiKey,
   AuditLog,
-  MedicalUser,
   MedicalAlert,
-  Patient,
-  VitalLog,
-  LabReport
 } = require("./models");
 
-// Services
+// ── Services ──────────────────────────────────────────────────────────────────
 const { initDB } = require("./services/dbService");
 const { sendAlertEmail } = require("./mailer");
 const VitalsMockService = require('./services/vitalsMockService');
@@ -45,9 +41,6 @@ const io = new Server(server, {
   transports: ['websocket', 'polling']
 });
 
-// Map SafeSight names to models for backward compatibility in script.js
-const User = SecurityUser;
-const Alert = SecurityAlert;
 
 // ── Initialize DB ────────────────────────────────────────────────────────────
 initDB();
@@ -502,6 +495,6 @@ app.post("/api/video", apiKeyMiddleware, (req, res) => {
 });
 
 // ── Start Server ──────────────────────────────────────────────────────────────
-server.listen(3000, () => {
-  console.log("🚀 SafeSight Web Dashboard running on http://localhost:3000");
+server.listen(4000, () => {
+  console.log("🚀 SafeSight Web Dashboard running on http://localhost:4000");
 });
