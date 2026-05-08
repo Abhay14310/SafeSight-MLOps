@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<title>Nexus Platform — One Hub. Four Facilities.</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;scroll-behavior:smooth}
+:root{
+  --bg:#03040a;--s1:#070a14;--s2:#0b0f1e;--s3:#10162a;
+  --cyan:#00e5ff;--cyan2:#00b4cc;
+  --med:#ff4d6d;--eco:#00ff88;--safe:#ffcc00;--retail:#a855f7;
+  --t1:#f0f4ff;--t2:#8892b0;--t3:#445060;
+  --b:rgba(255,255,255,0.06);
+  --mono:'Space Mono',monospace;--sans:'Space Grotesk',system-ui,sans-serif;
+  --glass:rgba(10,14,30,0.7);
+  --glow:0 0 30px rgba(0,229,255,0.3),0 0 80px rgba(0,229,255,0.1);
+}
+html{background:var(--bg);color:var(--t1);font-family:var(--sans);font-size:14px;overflow-x:hidden}
+body{overflow-x:hidden}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:rgba(0,229,255,0.2);border-radius:2px}
+
+/* SCANLINES */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,229,255,0.007) 2px,rgba(0,229,255,0.007) 4px)}
+
+/* GLASS */
+.glass{background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--b);border-radius:20px;position:relative;overflow:hidden}
+.glass::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.03) 0%,transparent 60%);pointer-events:none}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:64px;
+  display:flex;align-items:center;justify-content:space-between;padding:0 48px;
+  background:rgba(3,4,10,0.85);backdrop-filter:blur(24px);
+  border-bottom:1px solid rgba(0,229,255,0.08);transition:background .3s}
+.nav-brand{display:flex;align-items:center;gap:10px;cursor:pointer}
+.nav-orb{width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(168,85,247,0.25));
+  border:1px solid rgba(0,229,255,0.3);display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:9px;font-weight:700;color:var(--cyan);
+  animation:orbPulse 3s ease-in-out infinite}
+@keyframes orbPulse{0%,100%{box-shadow:0 0 0 0 rgba(0,229,255,0.3)}50%{box-shadow:0 0 0 8px rgba(0,229,255,0)}}
+.nav-name{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.18em}
+.nav-links{display:flex;align-items:center;gap:32px}
+.nav-link{font-size:13px;color:var(--t2);cursor:pointer;transition:color .2s;letter-spacing:.01em}
+.nav-link:hover{color:var(--t1)}
+.nav-cta{font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:9px 22px;border-radius:10px;
+  background:var(--cyan);color:#000;font-weight:700;cursor:pointer;border:none;transition:all .2s;
+  box-shadow:0 0 20px rgba(0,229,255,0.25)}
+.nav-cta:hover{box-shadow:var(--glow);transform:translateY(-1px)}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:80px 40px 60px;position:relative;overflow:hidden;text-align:center}
+#hero-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.hero-bg{position:absolute;inset:0;z-index:0;
+  background:radial-gradient(ellipse at 20% 40%,rgba(0,229,255,0.08) 0%,transparent 55%),
+    radial-gradient(ellipse at 80% 20%,rgba(168,85,247,0.07) 0%,transparent 50%),
+    radial-gradient(ellipse at 50% 80%,rgba(0,255,136,0.05) 0%,transparent 45%)}
+.hero-content{position:relative;z-index:2}
+.hero-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:20px;display:flex;align-items:center;gap:10px;justify-content:center;opacity:.85}
+.hero-eyebrow::before,.hero-eyebrow::after{content:'';width:40px;height:1px;background:var(--cyan);opacity:.4}
+.hero-title{font-size:clamp(2.5rem,6vw,5.5rem);font-weight:700;line-height:1.06;letter-spacing:-.03em;margin-bottom:24px;
+  background:linear-gradient(135deg,#f0f4ff 0%,#b0c4ff 40%,#00e5ff 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:1.05rem;color:var(--t2);max-width:580px;line-height:1.7;margin:0 auto 48px}
+.hero-btns{display:flex;align-items:center;gap:14px;justify-content:center;margin-bottom:60px;flex-wrap:wrap}
+.btn-primary{padding:14px 34px;border-radius:12px;
+  background:linear-gradient(135deg,var(--cyan),#0099bb);color:#000;
+  font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.1em;
+  border:none;cursor:pointer;transition:all .2s;box-shadow:0 0 24px rgba(0,229,255,0.3)}
+.btn-primary:hover{box-shadow:var(--glow);transform:translateY(-2px)}
+.btn-ghost{padding:14px 34px;border-radius:12px;background:transparent;
+  color:var(--t1);font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.1em;
+  border:1px solid rgba(255,255,255,0.12);cursor:pointer;transition:all .2s}
+.btn-ghost:hover{border-color:rgba(0,229,255,0.35);color:var(--cyan);background:rgba(0,229,255,0.04)}
+.hero-badges{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.hero-badge{font-family:var(--mono);font-size:8px;letter-spacing:.1em;padding:5px 13px;border-radius:20px}
+
+/* METRICS */
+.metrics-strip{display:flex;align-items:center;justify-content:center;gap:0;
+  border-top:1px solid var(--b);border-bottom:1px solid var(--b);
+  background:rgba(255,255,255,0.015)}
+.metric-item{flex:1;text-align:center;padding:28px 20px;border-right:1px solid var(--b)}
+.metric-item:last-child{border-right:none}
+.metric-val{font-family:var(--mono);font-size:2rem;font-weight:700;color:var(--t1);line-height:1;margin-bottom:6px}
+.metric-label{font-size:10.5px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase}
+
+/* SECTION */
+section{padding:100px 48px;max-width:1240px;margin:0 auto}
+.section-label{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:14px;opacity:.8}
+.section-title{font-size:clamp(2rem,4vw,3.2rem);font-weight:700;letter-spacing:-.025em;line-height:1.12;margin-bottom:18px}
+.section-sub{font-size:1rem;color:var(--t2);line-height:1.7;max-width:540px}
+
+/* ECOSYSTEM */
+.ecosystem-section{padding:60px 48px 100px;max-width:1240px;margin:0 auto}
+.ecosystem-header{text-align:center;margin-bottom:70px}
+.ecosystem-header .section-sub{margin:0 auto}
+
+.eco-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;position:relative}
+.eco-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:68px;height:68px;border-radius:50%;z-index:10;
+  background:linear-gradient(135deg,rgba(0,229,255,0.15),rgba(168,85,247,0.15));
+  border:1px solid rgba(0,229,255,0.3);backdrop-filter:blur(16px);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--cyan);
+  box-shadow:var(--glow),inset 0 0 20px rgba(0,229,255,0.08);
+  animation:orbPulse 3s ease-in-out infinite;flex-direction:column;gap:1px}
+.eco-center-sub{font-size:6px;color:rgba(0,229,255,0.5);letter-spacing:.14em}
+
+.mod-card{padding:30px;border-radius:20px;cursor:pointer;transition:all .3s cubic-bezier(.16,1,.3,1);
+  background:rgba(10,14,30,0.72);backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,0.06);position:relative;overflow:hidden}
+.mod-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .3s;
+  background:linear-gradient(135deg,rgba(255,255,255,0.025) 0%,transparent 70%)}
+.mod-card:hover::before{opacity:1}
+.mod-card:hover{transform:translateY(-5px)}
+.mod-med:hover{border-color:rgba(255,77,109,0.3);box-shadow:0 24px 64px rgba(255,77,109,0.12)}
+.mod-eco:hover{border-color:rgba(0,255,136,0.25);box-shadow:0 24px 64px rgba(0,255,136,0.1)}
+.mod-safe:hover{border-color:rgba(255,204,0,0.25);box-shadow:0 24px 64px rgba(255,204,0,0.1)}
+.mod-retail:hover{border-color:rgba(168,85,247,0.3);box-shadow:0 24px 64px rgba(168,85,247,0.12)}
+
+.mod-status{position:absolute;top:20px;right:20px;font-family:var(--mono);font-size:8px;
+  letter-spacing:.1em;padding:3px 9px;border-radius:20px}
+.s-live{background:rgba(0,255,136,0.1);color:var(--eco);border:1px solid rgba(0,255,136,0.2)}
+.s-phase{background:rgba(255,255,255,0.04);color:var(--t3);border:1px solid rgba(255,255,255,0.07)}
+
+.mod-icon-wrap{width:54px;height:54px;border-radius:14px;margin-bottom:18px;
+  display:flex;align-items:center;justify-content:center;font-size:24px;position:relative}
+.mod-icon-wrap::after{content:'';position:absolute;inset:0;border-radius:14px;
+  background:inherit;filter:blur(14px);opacity:.45;z-index:-1}
+.i-med{background:rgba(255,77,109,0.15);border:1px solid rgba(255,77,109,0.25)}
+.i-eco{background:rgba(0,255,136,0.12);border:1px solid rgba(0,255,136,0.22)}
+.i-safe{background:rgba(255,204,0,0.12);border:1px solid rgba(255,204,0,0.22)}
+.i-retail{background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.25)}
+
+.mod-tag{font-family:var(--mono);font-size:8px;letter-spacing:.14em;text-transform:uppercase;
+  padding:3px 9px;border-radius:20px;margin-bottom:10px;display:inline-block}
+.t-med{background:rgba(255,77,109,0.1);color:var(--med);border:1px solid rgba(255,77,109,0.2)}
+.t-eco{background:rgba(0,255,136,0.08);color:var(--eco);border:1px solid rgba(0,255,136,0.18)}
+.t-safe{background:rgba(255,204,0,0.08);color:var(--safe);border:1px solid rgba(255,204,0,0.18)}
+.t-retail{background:rgba(168,85,247,0.1);color:var(--retail);border:1px solid rgba(168,85,247,0.2)}
+
+.mod-name{font-size:1.25rem;font-weight:700;letter-spacing:-.01em;margin-bottom:9px}
+.mod-desc{font-size:12.5px;color:var(--t2);line-height:1.6;margin-bottom:16px}
+.mod-feats{display:flex;flex-direction:column;gap:5px;margin-bottom:22px}
+.mod-feat{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--t3)}
+.feat-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.mod-launch{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;
+  letter-spacing:.1em;color:var(--t2);cursor:pointer;transition:all .2s;width:fit-content}
+.mod-launch:hover{color:var(--cyan)}
+.launch-arr{transition:transform .2s}
+.mod-launch:hover .launch-arr{transform:translateX(4px)}
+
+/* DASHBOARD PREVIEW */
+.dash-section{padding:40px 48px 100px;max-width:1240px;margin:0 auto}
+.dash-frame{border-radius:24px;overflow:hidden;
+  border:1px solid rgba(0,229,255,0.12);background:rgba(5,8,18,0.95);
+  box-shadow:0 40px 120px rgba(0,0,0,0.6),0 0 0 1px rgba(0,229,255,0.05)}
+.dash-tb{height:52px;background:rgba(3,5,12,0.98);border-bottom:1px solid rgba(255,255,255,0.06);
+  display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0}
+.dtb-left{display:flex;align-items:center;gap:8px}
+.dtb-dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:orbPulse 2s ease-in-out infinite}
+.dtb-name{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.16em}
+.dtb-right{display:flex;align-items:center;gap:10px}
+.dtb-pill{font-family:var(--mono);font-size:8px;letter-spacing:.1em;padding:3px 9px;border-radius:20px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);color:var(--t3)}
+.dtb-clock{font-family:var(--mono);font-size:9px;color:var(--t3)}
+.dash-body{display:flex;height:460px}
+.dash-sb{width:164px;min-width:164px;background:rgba(2,4,10,0.8);border-right:1px solid rgba(255,255,255,0.05);
+  padding:14px 8px;display:flex;flex-direction:column;gap:2px}
+.dsb-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;
+  font-size:11px;color:var(--t3);cursor:pointer;transition:all .15s;border:1px solid transparent}
+.dsb-item.active{background:rgba(0,229,255,0.08);color:var(--cyan);border-color:rgba(0,229,255,0.14)}
+.dsb-item:hover:not(.active){background:rgba(255,255,255,0.03);color:var(--t2)}
+.dsb-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.dash-main{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px}
+.dash-main::-webkit-scrollbar{width:2px}
+.dash-main::-webkit-scrollbar-thumb{background:rgba(0,229,255,0.15)}
+
+/* KPI strip */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kpi-box{padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.05);background:rgba(0,0,0,0.35)}
+.kpi-lbl{font-family:var(--mono);font-size:7px;letter-spacing:.12em;color:var(--t3);margin-bottom:5px;text-transform:uppercase}
+.kpi-val{font-family:var(--mono);font-size:1.3rem;font-weight:700;line-height:1}
+
+/* Module tiles */
+.tile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dtile{padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,0.06);
+  background:rgba(0,0,0,0.32);cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.dtile:hover{transform:translateY(-2px)}
+.dt-med:hover{border-color:rgba(255,77,109,0.25)}
+.dt-eco:hover{border-color:rgba(0,255,136,0.2)}
+.dt-safe:hover{border-color:rgba(255,204,0,0.2)}
+.dt-retail:hover{border-color:rgba(168,85,247,0.2)}
+.dtile-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.dtile-icon{font-size:16px}
+.dtile-badge{font-family:var(--mono);font-size:7px;letter-spacing:.1em;padding:2px 6px;border-radius:4px}
+.dtile-name{font-size:12.5px;font-weight:600;color:var(--t1);margin-bottom:3px}
+.dtile-sub{font-size:10px;color:var(--t3)}
+.dtile-bar{height:3px;border-radius:2px;background:rgba(255,255,255,0.06);margin-top:10px;overflow:hidden}
+.dtile-fill{height:100%;border-radius:2px;transition:width .8s}
+
+/* Live feed */
+.feed-box{padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,0.06);background:rgba(0,0,0,0.32)}
+.feed-hdr{font-family:var(--mono);font-size:8px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--t3);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--eco);animation:livePulse 1.4s ease-in-out infinite}
+@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+.feed-row{display:flex;align-items:center;gap:8px;padding:5px 0;
+  border-bottom:1px solid rgba(255,255,255,0.04)}
+.feed-row:last-child{border-bottom:none}
+.feed-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.feed-txt{font-size:10.5px;color:var(--t2);flex:1}
+.feed-time{font-family:var(--mono);font-size:8px;color:var(--t3)}
+
+/* PRICING */
+.pricing-section{padding:60px 48px 100px;max-width:1240px;margin:0 auto}
+.pricing-hdr{text-align:center;margin-bottom:64px}
+.pricing-hdr .section-sub{margin:0 auto;text-align:center}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+
+.p-card{padding:32px;border-radius:20px;border:1px solid rgba(255,255,255,0.06);
+  background:rgba(10,14,30,0.72);backdrop-filter:blur(16px);transition:all .3s;position:relative}
+.p-card:hover{transform:translateY(-4px)}
+.p-card.featured{border-color:rgba(0,229,255,0.3);background:rgba(0,229,255,0.035);
+  box-shadow:0 0 40px rgba(0,229,255,0.08),inset 0 0 40px rgba(0,229,255,0.025)}
+.p-popular{position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:8px;letter-spacing:.14em;text-transform:uppercase;
+  padding:4px 16px;border-radius:20px;background:var(--cyan);color:#000;font-weight:700;white-space:nowrap}
+.p-tier{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);margin-bottom:8px}
+.p-name{font-size:1.4rem;font-weight:700;letter-spacing:-.01em;margin-bottom:4px}
+.p-desc{font-size:11.5px;color:var(--t2);margin-bottom:24px;line-height:1.55}
+.p-amt{display:flex;align-items:baseline;gap:4px;margin-bottom:5px}
+.p-cur{font-family:var(--mono);font-size:.95rem;color:var(--t2)}
+.p-num{font-family:var(--mono);font-size:2.5rem;font-weight:700;color:var(--t1);letter-spacing:-.02em;line-height:1}
+.p-per{font-size:11px;color:var(--t3)}
+.p-annual{font-size:10.5px;color:var(--eco);margin-bottom:24px}
+.p-divider{height:1px;background:rgba(255,255,255,0.06);margin:20px 0}
+.p-label{font-family:var(--mono);font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);margin-bottom:12px}
+
+.p-modules{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
+.p-mod{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:9px;
+  background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.05)}
+.p-mod.locked{opacity:.3;filter:grayscale(.7)}
+.pm-icon{font-size:13px}
+.pm-name{font-size:11.5px;font-weight:500;flex:1}
+.pm-chk{font-size:12px}
+
+.p-features{display:flex;flex-direction:column;gap:7px;margin-bottom:28px}
+.pf{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--t2)}
+.pf-ok{color:var(--eco);font-size:12px;flex-shrink:0}
+
+.p-btn{width:100%;padding:13px;border-radius:11px;font-family:var(--mono);font-size:11px;
+  font-weight:700;letter-spacing:.1em;cursor:pointer;border:none;transition:all .2s}
+.pb-main{background:var(--cyan);color:#000;box-shadow:0 0 20px rgba(0,229,255,0.22)}
+.pb-main:hover{box-shadow:var(--glow);transform:translateY(-1px)}
+.pb-outline{background:transparent;color:var(--t1);border:1px solid rgba(255,255,255,0.12)}
+.pb-outline:hover{border-color:rgba(0,229,255,0.3);color:var(--cyan);background:rgba(0,229,255,0.04)}
+
+/* Enterprise */
+.ent-row{margin-top:20px;padding:28px 32px;border-radius:20px;
+  border:1px solid rgba(168,85,247,0.2);background:rgba(168,85,247,0.03);
+  display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.ent-left{display:flex;align-items:center;gap:14px}
+.ent-icon{width:50px;height:50px;border-radius:14px;
+  background:rgba(168,85,247,0.14);border:1px solid rgba(168,85,247,0.24);
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.ent-name{font-size:1.1rem;font-weight:700;margin-bottom:3px}
+.ent-sub{font-size:11.5px;color:var(--t2)}
+.ent-feats{display:flex;gap:20px;flex-wrap:wrap}
+.ent-feat{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--t3)}
+.ent-chk{color:var(--retail)}
+.ent-btn{padding:12px 28px;border-radius:11px;background:rgba(168,85,247,0.12);
+  border:1px solid rgba(168,85,247,0.28);color:#a855f7;
+  font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.1em;
+  cursor:pointer;transition:all .2s;white-space:nowrap}
+.ent-btn:hover{background:rgba(168,85,247,0.22);box-shadow:0 0 20px rgba(168,85,247,0.18)}
+
+/* CTA */
+.cta-section{max-width:880px;margin:0 auto;padding:40px 48px 120px;text-align:center}
+.cta-card{padding:72px 56px;border-radius:28px;border:1px solid rgba(0,229,255,0.14);
+  background:linear-gradient(135deg,rgba(0,229,255,0.05) 0%,rgba(168,85,247,0.035) 100%);
+  backdrop-filter:blur(20px);position:relative;overflow:hidden}
+.cta-card::before{content:'';position:absolute;top:-50%;left:-20%;width:80%;height:80%;
+  background:radial-gradient(circle,rgba(0,229,255,0.06) 0%,transparent 70%);pointer-events:none}
+.cta-title{font-size:clamp(2rem,4vw,3.2rem);font-weight:700;letter-spacing:-.025em;margin-bottom:18px}
+.cta-sub{font-size:1rem;color:var(--t2);max-width:440px;margin:0 auto 40px;line-height:1.7}
+.cta-btns{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+
+/* FOOTER */
+.footer-wrap{border-top:1px solid var(--b);padding:40px 48px 36px;
+  max-width:1240px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.footer-brand{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.16em}
+.footer-mods{display:flex;gap:20px;align-items:center}
+.fmod{font-size:11px;color:var(--t3);cursor:pointer;transition:color .15s}
+.fmod:hover{color:var(--t1)}
+.footer-copy{font-size:11px;color:var(--t3)}
+
+/* SCROLL REVEAL */
+.reveal,.reveal-l,.reveal-r{opacity:0;transition:opacity .65s cubic-bezier(.16,1,.3,1),transform .65s cubic-bezier(.16,1,.3,1)}
+.reveal{transform:translateY(28px)}
+.reveal-l{transform:translateX(-22px)}
+.reveal-r{transform:translateX(22px)}
+.reveal.in,.reveal-l.in,.reveal-r.in{opacity:1;transform:translate(0)}
+.d1{transition-delay:.05s}.d2{transition-delay:.1s}.d3{transition-delay:.16s}
+.d4{transition-delay:.22s}.d5{transition-delay:.28s}
+
+/* MODAL */
+.modal-ov{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.78);
+  backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;pointer-events:none;transition:opacity .25s}
+.modal-ov.open{opacity:1;pointer-events:all}
+.modal-box{width:min(600px,94vw);background:rgba(6,8,18,0.98);border-radius:24px;overflow:hidden;
+  transform:scale(.9) translateY(20px);transition:all .3s cubic-bezier(.16,1,.3,1)}
+.modal-ov.open .modal-box{transform:scale(1) translateY(0)}
+.modal-hdr{padding:24px 28px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,0.07)}
+.modal-title-row{display:flex;align-items:center;gap:12px}
+.modal-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px}
+.modal-name{font-size:1.15rem;font-weight:700}
+.modal-close-btn{width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;
+  background:rgba(255,255,255,0.05);color:var(--t2);display:flex;align-items:center;justify-content:center;
+  font-size:14px;transition:all .15s}
+.modal-close-btn:hover{background:rgba(255,255,255,0.1);color:var(--t1)}
+.modal-body{padding:28px}
+.modal-desc{font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:22px}
+.modal-feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:26px}
+.mfeat{padding:13px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:rgba(0,0,0,0.3)}
+.mfeat-icon{font-size:17px;margin-bottom:7px}
+.mfeat-name{font-size:12px;font-weight:600;color:var(--t1);margin-bottom:3px}
+.mfeat-sub{font-size:10.5px;color:var(--t3)}
+.modal-ports{display:flex;align-items:center;gap:10px;margin-bottom:22px;flex-wrap:wrap}
+.port-badge{font-family:var(--mono);font-size:9px;letter-spacing:.1em;padding:4px 12px;border-radius:7px;
+  background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.18);color:var(--cyan)}
+.modal-launch-btn{width:100%;padding:14px;border-radius:11px;font-family:var(--mono);
+  font-size:11px;font-weight:700;letter-spacing:.1em;cursor:pointer;border:none;transition:all .2s}
+
+/* ANIMATIONS */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-in-up{animation:fadeInUp .35s ease}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="main-nav">
+  <div class="nav-brand" onclick="document.getElementById('hero').scrollIntoView({behavior:'smooth'})">
+    <div class="nav-orb">NX</div>
+    <span class="nav-name">NEXUS</span>
+  </div>
+  <div class="nav-links">
+    <span class="nav-link" onclick="sTo('ecosystem')">Platform</span>
+    <span class="nav-link" onclick="sTo('dashboard')">Dashboard</span>
+    <span class="nav-link" onclick="sTo('pricing')">Pricing</span>
+    <span class="nav-link" onclick="sTo('cta')">Contact</span>
+  </div>
+  <button class="nav-cta" onclick="openMod('retail')">Get Started →</button>
+</nav>
+
+<!-- HERO -->
+<div class="hero" id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Unified Platform Intelligence</div>
+    <h1 class="hero-title">One Hub.<br/>Four Facilities.<br/>Infinite Scale.</h1>
+    <p class="hero-sub">Nexus orchestrates MedFlow, EcoTrack, SafeSight and SmartRetail under a single intelligent control plane — with modular access, real-time data, and enterprise-grade security.</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="sTo('ecosystem')">Explore Platform →</button>
+      <button class="btn-ghost" onclick="sTo('pricing')">View Pricing</button>
+    </div>
+    <div class="hero-badges">
+      <span class="hero-badge" style="background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.2);color:var(--med)">🏥 MEDFLOW</span>
+      <span class="hero-badge" style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.18);color:var(--eco)">♻️ ECOTRACK</span>
+      <span class="hero-badge" style="background:rgba(255,204,0,0.08);border:1px solid rgba(255,204,0,0.18);color:var(--safe)">🛡 SAFESIGHT</span>
+      <span class="hero-badge" style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.2);color:var(--retail)">🛒 SMARTRETAIL</span>
+    </div>
+  </div>
+</div>
+
+<!-- METRICS -->
+<div class="metrics-strip">
+  <div class="metric-item"><div class="metric-val" id="m1">0</div><div class="metric-label">Facilities</div></div>
+  <div class="metric-item"><div class="metric-val" id="m2">0</div><div class="metric-label">Active Users</div></div>
+  <div class="metric-item"><div class="metric-val" id="m3">0</div><div class="metric-label">Events / Day</div></div>
+  <div class="metric-item"><div class="metric-val" id="m4">0</div><div class="metric-label">API Uptime</div></div>
+</div>
+
+<!-- ECOSYSTEM -->
+<div class="ecosystem-section" id="ecosystem">
+  <div class="ecosystem-header reveal">
+    <div class="section-label">Core Facilities</div>
+    <h2 class="section-title" style="text-align:center">Four Specialised Modules,<br/>One Unified Hub</h2>
+    <p class="section-sub">Each facility operates as a standalone powerhouse yet shares authentication, data pipelines, and billing through the Nexus control plane.</p>
+  </div>
+
+  <div class="eco-grid">
+    <div class="eco-center"><span>NEXUS</span><span class="eco-center-sub">HUB</span></div>
+
+    <!-- MedFlow -->
+    <div class="mod-card mod-med reveal d1" onclick="openMod('med')">
+      <div class="mod-status s-live">● LIVE :3010</div>
+      <div class="mod-icon-wrap i-med">🏥</div>
+      <div class="mod-tag t-med">MedFlow · Health</div>
+      <div class="mod-name" style="color:var(--med)">MedFlow</div>
+      <div class="mod-desc">AI-powered ICU clinical monitoring. Real-time ECG, SpO₂, and respiration waveforms. MEDPOSE-v2 skeleton analysis with fall risk assessment and Morse Scale.</div>
+      <div class="mod-feats">
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--med)"></div>Live vital stream — 1s socket intervals</div>
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--med)"></div>MEDPOSE-v2 · 17 joint keypoints · GPU</div>
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--med)"></div>Nurse station · STAT task queue</div>
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--med)"></div>HL7 FHIR R4 gateway · 9 Docker containers</div>
+      </div>
+      <div class="mod-launch">Launch MedFlow <span class="launch-arr">→</span></div>
+    </div>
+
+    <!-- EcoTrack -->
+    <div class="mod-card mod-eco reveal d2" onclick="openMod('eco')">
+      <div class="mod-status s-live">● LIVE :3008</div>
+      <div class="mod-icon-wrap i-eco">♻️</div>
+      <div class="mod-tag t-eco">EcoTrack · Sustainability</div>
+      <div class="mod-name" style="color:var(--eco)">EcoTrack</div>
+      <div class="mod-desc">Waste logistics intelligence platform. Fleet GPS, bin fill monitoring, AI camera waste classification with TF.js COCO-SSD, and collection route optimisation.</div>
+      <div class="mod-feats">
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--eco)"></div>4-vehicle live fleet GPS tracking</div>
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--eco)"></div>AI waste classifier — plastic / organic / e-waste</div>
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--eco)"></div>6 bins · 5 zones · route optimisation</div>
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--eco)"></div>ESG reporting · CO₂ tracking</div>
+      </div>
+      <div class="mod-launch">Launch EcoTrack <span class="launch-arr">→</span></div>
+    </div>
+
+    <!-- SafeSight -->
+    <div class="mod-card mod-safe reveal d3" onclick="openMod('safe')">
+      <div class="mod-status s-phase">PHASE 7</div>
+      <div class="mod-icon-wrap i-safe">🛡️</div>
+      <div class="mod-tag t-safe">SafeSight · Security</div>
+      <div class="mod-name" style="color:var(--safe)">SafeSight</div>
+      <div class="mod-desc">AI surveillance and physical security management. Anomaly detection, threat scoring, perimeter breach alerts, and a unified CCTV command centre.</div>
+      <div class="mod-feats">
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--safe)"></div>Multi-camera AI threat detection</div>
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--safe)"></div>Perimeter breach · face anomaly alerts</div>
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--safe)"></div>Real-time incident scoring engine</div>
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--safe)"></div>24/7 automated alert dispatch</div>
+      </div>
+      <div class="mod-launch">Preview SafeSight <span class="launch-arr">→</span></div>
+    </div>
+
+    <!-- SmartRetail -->
+    <div class="mod-card mod-retail reveal d4" onclick="openMod('retail')">
+      <div class="mod-status s-live">● LIVE :3005</div>
+      <div class="mod-icon-wrap i-retail">🛒</div>
+      <div class="mod-tag t-retail">SmartRetail · Commerce</div>
+      <div class="mod-name" style="color:var(--retail)">SmartRetail</div>
+      <div class="mod-desc">AI retail intelligence platform. Live POS stream, footfall counter, inventory heatmap, shrinkage detection, and dynamic pricing engine in one dashboard.</div>
+      <div class="mod-feats">
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--retail)"></div>Live POS stream via Socket.io</div>
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--retail)"></div>Footfall AI · 8 cameras · 6 zones</div>
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--retail)"></div>Inventory MongoDB · shrinkage detection</div>
+        <div class="mod-feat"><div class="feat-dot" style="background:var(--retail)"></div>Dynamic pricing · MySQL transactions</div>
+      </div>
+      <div class="mod-launch">Launch SmartRetail <span class="launch-arr">→</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD PREVIEW -->
+<div class="dash-section" id="dashboard">
+  <div style="text-align:center;margin-bottom:44px" class="reveal">
+    <div class="section-label">Master Dashboard</div>
+    <h2 class="section-title">Command All Facilities<br/>From One Interface</h2>
+    <p class="section-sub" style="margin:0 auto">Purchased modules appear as active tiles. One-click launch into any facility. Cross-facility alerts unified in a single live feed.</p>
+  </div>
+
+  <div class="dash-frame reveal">
+    <!-- Topbar -->
+    <div class="dash-tb">
+      <div class="dtb-left">
+        <div class="dtb-dot"></div>
+        <span class="dtb-name">NEXUS HUB</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--t3);margin-left:8px">/ Dashboard</span>
+      </div>
+      <div class="dtb-right">
+        <div class="dtb-pill">4 Facilities · Scale Plan</div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--eco)">● 99.9% uptime</div>
+        <div class="dtb-clock" id="dash-clock">--:--:--</div>
+      </div>
+    </div>
+
+    <div class="dash-body">
+      <!-- Sidebar -->
+      <div class="dash-sb">
+        <div class="dsb-item active"><div class="dsb-dot" style="background:var(--cyan)"></div>Hub</div>
+        <div class="dsb-item" onclick="openMod('med')"><div class="dsb-dot" style="background:var(--med)"></div>MedFlow</div>
+        <div class="dsb-item" onclick="openMod('eco')"><div class="dsb-dot" style="background:var(--eco)"></div>EcoTrack</div>
+        <div class="dsb-item" onclick="openMod('safe')"><div class="dsb-dot" style="background:var(--safe)"></div>SafeSight</div>
+        <div class="dsb-item" onclick="openMod('retail')"><div class="dsb-dot" style="background:var(--retail)"></div>SmartRetail</div>
+        <div style="flex:1"></div>
+        <div class="dsb-item"><div class="dsb-dot" style="background:var(--t3)"></div>Team</div>
+        <div class="dsb-item"><div class="dsb-dot" style="background:var(--t3)"></div>Billing</div>
+        <div class="dsb-item"><div class="dsb-dot" style="background:var(--t3)"></div>Settings</div>
+      </div>
+
+      <!-- Main -->
+      <div class="dash-main">
+        <!-- KPIs -->
+        <div class="kpi-row">
+          <div class="kpi-box"><div class="kpi-lbl">Patients</div><div class="kpi-val" style="color:var(--med)">12</div></div>
+          <div class="kpi-box"><div class="kpi-lbl">Fleet</div><div class="kpi-val" style="color:var(--eco)">4/4</div></div>
+          <div class="kpi-box"><div class="kpi-lbl">Footfall</div><div class="kpi-val" style="color:var(--retail)">234</div></div>
+          <div class="kpi-box"><div class="kpi-lbl">Alerts</div><div class="kpi-val" style="color:#ff4444" id="alert-num">7</div></div>
+        </div>
+
+        <!-- Tiles -->
+        <div class="tile-grid">
+          <div class="dtile dt-med" onclick="openMod('med')">
+            <div class="dtile-top">
+              <span class="dtile-icon">🏥</span>
+              <span class="dtile-badge" style="background:rgba(255,77,109,0.1);color:var(--med);border:1px solid rgba(255,77,109,0.2);font-family:var(--mono);font-size:7px;padding:2px 6px;border-radius:4px">LIVE</span>
+            </div>
+            <div class="dtile-name">MedFlow</div>
+            <div class="dtile-sub">5 patients · 2 critical · ICU-4A</div>
+            <div class="dtile-bar"><div class="dtile-fill" style="width:85%;background:var(--med)"></div></div>
+          </div>
+          <div class="dtile dt-eco" onclick="openMod('eco')">
+            <div class="dtile-top">
+              <span class="dtile-icon">♻️</span>
+              <span class="dtile-badge" style="background:rgba(0,255,136,0.08);color:var(--eco);border:1px solid rgba(0,255,136,0.18);font-family:var(--mono);font-size:7px;padding:2px 6px;border-radius:4px">LIVE</span>
+            </div>
+            <div class="dtile-name">EcoTrack</div>
+            <div class="dtile-sub">4 vehicles active · 3 bins critical</div>
+            <div class="dtile-bar"><div class="dtile-fill" style="width:62%;background:var(--eco)"></div></div>
+          </div>
+          <div class="dtile dt-safe" onclick="openMod('safe')">
+            <div class="dtile-top">
+              <span class="dtile-icon">🛡️</span>
+              <span class="dtile-badge" style="background:rgba(255,204,0,0.08);color:var(--safe);border:1px solid rgba(255,204,0,0.18);font-family:var(--mono);font-size:7px;padding:2px 6px;border-radius:4px">P7</span>
+            </div>
+            <div class="dtile-name">SafeSight</div>
+            <div class="dtile-sub">Coming Phase 7 · Preview available</div>
+            <div class="dtile-bar"><div class="dtile-fill" style="width:28%;background:var(--safe)"></div></div>
+          </div>
+          <div class="dtile dt-retail" onclick="openMod('retail')">
+            <div class="dtile-top">
+              <span class="dtile-icon">🛒</span>
+              <span class="dtile-badge" style="background:rgba(168,85,247,0.1);color:var(--retail);border:1px solid rgba(168,85,247,0.2);font-family:var(--mono);font-size:7px;padding:2px 6px;border-radius:4px">LIVE</span>
+            </div>
+            <div class="dtile-name">SmartRetail</div>
+            <div class="dtile-sub">₹48k revenue · 234 footfall today</div>
+            <div class="dtile-bar"><div class="dtile-fill" style="width:74%;background:var(--retail)"></div></div>
+          </div>
+        </div>
+
+        <!-- Feed -->
+        <div class="feed-box">
+          <div class="feed-hdr"><div class="live-dot"></div>LIVE CROSS-FACILITY FEED</div>
+          <div id="feed-list">
+            <div class="feed-row"><div class="feed-dot" style="background:var(--med)"></div><div class="feed-txt">Rajesh Kapoor — SpO₂ 92% threshold breach</div><div class="feed-time">14:22</div></div>
+            <div class="feed-row"><div class="feed-dot" style="background:var(--eco)"></div><div class="feed-txt">BIN-003 Zone B — overflow alert 95%</div><div class="feed-time">14:21</div></div>
+            <div class="feed-row"><div class="feed-dot" style="background:var(--retail)"></div><div class="feed-txt">POS T004 — ₹89,999 transaction · Electronics</div><div class="feed-time">14:20</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div class="pricing-section" id="pricing">
+  <div class="pricing-hdr reveal">
+    <div class="section-label">Modular Pricing</div>
+    <h2 class="section-title">Start with One.<br/>Scale to All Four.</h2>
+    <p class="section-sub">Each module is independently purchasable. Upgrade anytime as your operations grow across verticals.</p>
+  </div>
+
+  <div class="pricing-grid">
+    <!-- Starter -->
+    <div class="p-card reveal d1">
+      <div class="p-tier">Starter</div>
+      <div class="p-name">Single Facility</div>
+      <div class="p-desc">Perfect for teams deploying one vertical with full feature access.</div>
+      <div class="p-amt"><span class="p-cur">₹</span><span class="p-num">2,999</span><span class="p-per">/mo</span></div>
+      <div class="p-annual">Billed annually — save ₹6,000</div>
+      <div class="p-divider"></div>
+      <div class="p-label">Choose 1 Module</div>
+      <div class="p-modules">
+        <div class="p-mod"><span class="pm-icon">🏥</span><span class="pm-name">MedFlow</span><span class="pm-chk" style="color:var(--cyan)">○</span></div>
+        <div class="p-mod locked"><span class="pm-icon">♻️</span><span class="pm-name">EcoTrack</span><span class="pm-chk" style="color:var(--t3)">—</span></div>
+        <div class="p-mod locked"><span class="pm-icon">🛡️</span><span class="pm-name">SafeSight</span><span class="pm-chk" style="color:var(--t3)">—</span></div>
+        <div class="p-mod locked"><span class="pm-icon">🛒</span><span class="pm-name">SmartRetail</span><span class="pm-chk" style="color:var(--t3)">—</span></div>
+      </div>
+      <div class="p-features">
+        <div class="pf"><span class="pf-ok">✓</span>5 users included</div>
+        <div class="pf"><span class="pf-ok">✓</span>Real-time data stream</div>
+        <div class="pf"><span class="pf-ok">✓</span>MongoDB + Socket.io</div>
+        <div class="pf"><span class="pf-ok">✓</span>Standard support</div>
+      </div>
+      <button class="p-btn pb-outline">Get Started</button>
+    </div>
+
+    <!-- Growth (featured) -->
+    <div class="p-card featured reveal d2">
+      <div class="p-popular">Most Popular</div>
+      <div class="p-tier">Growth</div>
+      <div class="p-name">Multi-Facility</div>
+      <div class="p-desc">For organisations running two or three verticals under one team.</div>
+      <div class="p-amt"><span class="p-cur">₹</span><span class="p-num">7,999</span><span class="p-per">/mo</span></div>
+      <div class="p-annual">Billed annually — save ₹19,200</div>
+      <div class="p-divider"></div>
+      <div class="p-label">Choose 3 Modules</div>
+      <div class="p-modules">
+        <div class="p-mod"><span class="pm-icon">🏥</span><span class="pm-name">MedFlow</span><span class="pm-chk" style="color:var(--eco)">✓</span></div>
+        <div class="p-mod"><span class="pm-icon">♻️</span><span class="pm-name">EcoTrack</span><span class="pm-chk" style="color:var(--eco)">✓</span></div>
+        <div class="p-mod"><span class="pm-icon">🛡️</span><span class="pm-name">SafeSight</span><span class="pm-chk" style="color:var(--eco)">✓</span></div>
+        <div class="p-mod locked"><span class="pm-icon">🛒</span><span class="pm-name">SmartRetail</span><span class="pm-chk" style="color:var(--t3)">—</span></div>
+      </div>
+      <div class="p-features">
+        <div class="pf"><span class="pf-ok">✓</span>20 users included</div>
+        <div class="pf"><span class="pf-ok">✓</span>Nexus Hub dashboard</div>
+        <div class="pf"><span class="pf-ok">✓</span>Shared auth + billing</div>
+        <div class="pf"><span class="pf-ok">✓</span>Priority support</div>
+        <div class="pf"><span class="pf-ok">✓</span>Audit log + RBAC</div>
+      </div>
+      <button class="p-btn pb-main">Start Growth Plan</button>
+    </div>
+
+    <!-- Scale -->
+    <div class="p-card reveal d3">
+      <div class="p-tier">Scale</div>
+      <div class="p-name">All Facilities</div>
+      <div class="p-desc">Complete access to all four Nexus facilities for large organisations.</div>
+      <div class="p-amt"><span class="p-cur">₹</span><span class="p-num">19,999</span><span class="p-per">/mo</span></div>
+      <div class="p-annual">Billed annually — save ₹48,000</div>
+      <div class="p-divider"></div>
+      <div class="p-label">All 4 Modules Unlocked</div>
+      <div class="p-modules">
+        <div class="p-mod"><span class="pm-icon">🏥</span><span class="pm-name">MedFlow</span><span class="pm-chk" style="color:var(--eco)">✓</span></div>
+        <div class="p-mod"><span class="pm-icon">♻️</span><span class="pm-name">EcoTrack</span><span class="pm-chk" style="color:var(--eco)">✓</span></div>
+        <div class="p-mod"><span class="pm-icon">🛡️</span><span class="pm-name">SafeSight</span><span class="pm-chk" style="color:var(--eco)">✓</span></div>
+        <div class="p-mod"><span class="pm-icon">🛒</span><span class="pm-name">SmartRetail</span><span class="pm-chk" style="color:var(--eco)">✓</span></div>
+      </div>
+      <div class="p-features">
+        <div class="pf"><span class="pf-ok">✓</span>100 users included</div>
+        <div class="pf"><span class="pf-ok">✓</span>API key access</div>
+        <div class="pf"><span class="pf-ok">✓</span>GPU pose engine</div>
+        <div class="pf"><span class="pf-ok">✓</span>Dedicated onboarding</div>
+        <div class="pf"><span class="pf-ok">✓</span>SLA 99.9% guarantee</div>
+      </div>
+      <button class="p-btn pb-outline">Get All Facilities</button>
+    </div>
+  </div>
+
+  <!-- Enterprise -->
+  <div class="ent-row reveal">
+    <div class="ent-left">
+      <div class="ent-icon">🏢</div>
+      <div>
+        <div class="ent-name">Enterprise</div>
+        <div class="ent-sub">Unlimited users · White-label · Custom SLA · Dedicated infrastructure</div>
+      </div>
+    </div>
+    <div class="ent-feats">
+      <div class="ent-feat"><span class="ent-chk">✦</span>Custom domain + branding</div>
+      <div class="ent-feat"><span class="ent-chk">✦</span>SSO / SAML auth</div>
+      <div class="ent-feat"><span class="ent-chk">✦</span>On-premise deploy</div>
+      <div class="ent-feat"><span class="ent-chk">✦</span>24/7 dedicated engineer</div>
+    </div>
+    <button class="ent-btn">Contact Sales →</button>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-section" id="cta">
+  <div class="cta-card reveal">
+    <div class="section-label" style="margin-bottom:14px">Ready to Deploy</div>
+    <h2 class="cta-title">Launch Your First<br/>Facility Today</h2>
+    <p class="cta-sub">Start with one module, add more as you grow. Docker-ready, fully documented, production-grade from day one.</p>
+    <div class="cta-btns">
+      <button class="btn-primary" onclick="sTo('pricing')">Start Free Trial →</button>
+      <button class="btn-ghost">View Docs</button>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div style="border-top:1px solid rgba(255,255,255,0.06)">
+  <div class="footer-wrap">
+    <div class="footer-brand">NEXUS PLATFORM</div>
+    <div class="footer-mods">
+      <span class="fmod" style="color:var(--med)">MedFlow</span>
+      <span class="fmod" style="color:var(--eco)">EcoTrack</span>
+      <span class="fmod" style="color:var(--safe)">SafeSight</span>
+      <span class="fmod" style="color:var(--retail)">SmartRetail</span>
+    </div>
+    <div class="footer-copy">© 2026 Nexus Platform · Built on Tasuke</div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-ov" id="modal-ov" onclick="closeMod(event)">
+  <div class="modal-box" id="modal-box">
+    <div class="modal-hdr" id="modal-hdr">
+      <div class="modal-title-row">
+        <div class="modal-icon" id="modal-icon"></div>
+        <div class="modal-name" id="modal-name"></div>
+      </div>
+      <button class="modal-close-btn" onclick="closeMod()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-desc" id="modal-desc"></div>
+      <div class="modal-ports" id="modal-ports"></div>
+      <div class="modal-feat-grid" id="modal-feats"></div>
+      <button class="modal-launch-btn" id="modal-btn" onclick="closeMod()"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── CANVAS HERO ─────────────────────────────────────────────
+const cv=document.getElementById('hero-canvas'),cx=cv.getContext('2d');
+let W,H,pts=[];
+function rsz(){W=cv.width=cv.offsetWidth;H=cv.height=cv.offsetHeight;}
+window.addEventListener('resize',rsz);rsz();
+for(let i=0;i<140;i++)pts.push({x:Math.random(),y:Math.random(),r:Math.random()*1.5+.3,s:Math.random()*.0003+.0001,p:Math.random()*Math.PI*2,c:['#00e5ff','#a855f7','#ffffff','#00ff88'][Math.floor(Math.random()*4)]});
+const orbs=[{tx:.18,ty:.38,c:'rgba(255,77,109,',r:130},{tx:.82,ty:.28,c:'rgba(0,255,136,',r:105},{tx:.12,ty:.72,c:'rgba(255,204,0,',r:90},{tx:.88,ty:.68,c:'rgba(168,85,247,',r:115}];
+let t=0;
+(function frame(){
+  t+=.007;cx.clearRect(0,0,W,H);
+  orbs.forEach((o,i)=>{
+    const ox=(o.tx+Math.sin(t*.7+i)*.05)*W,oy=(o.ty+Math.cos(t*.5+i*1.3)*.04)*H;
+    const g=cx.createRadialGradient(ox,oy,0,ox,oy,o.r);
+    g.addColorStop(0,o.c+'0.09)');g.addColorStop(1,o.c+'0)');
+    cx.fillStyle=g;cx.fillRect(0,0,W,H);
+  });
+  pts.forEach(p=>{
+    const a=.3+Math.sin(t*p.s*900+p.p)*.4;
+    cx.beginPath();cx.arc(p.x*W,p.y*H,p.r,0,Math.PI*2);
+    cx.fillStyle=p.c;cx.globalAlpha=Math.max(0,a);cx.fill();cx.globalAlpha=1;
+  });
+  cx.strokeStyle='rgba(0,229,255,0.035)';cx.lineWidth=1;
+  for(let i=0;i<W;i+=80){cx.beginPath();cx.moveTo(i,0);cx.lineTo(i,H);cx.stroke();}
+  for(let j=0;j<H;j+=80){cx.beginPath();cx.moveTo(0,j);cx.lineTo(W,j);cx.stroke();}
+  requestAnimationFrame(frame);
+})();
+
+// ─── SCROLL HELPERS ──────────────────────────────────────────
+function sTo(id){document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});}
+const io2=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');});},{threshold:.1});
+document.querySelectorAll('.reveal,.reveal-l,.reveal-r').forEach(el=>io2.observe(el));
+window.addEventListener('scroll',()=>{document.getElementById('main-nav').style.background=window.scrollY>60?'rgba(3,4,10,.98)':'rgba(3,4,10,.85)';},{passive:true});
+
+// ─── COUNTERS ────────────────────────────────────────────────
+function cnt(el,end,sfx='',dur=1400){
+  let s=0,step=end/70;
+  const id=setInterval(()=>{s=Math.min(s+step,end);el.textContent=Math.round(s).toLocaleString()+sfx;if(s>=end)clearInterval(id);},dur/70);
+}
+const cio=new IntersectionObserver(e=>{
+  if(e[0].isIntersecting){cnt(document.getElementById('m1'),4);cnt(document.getElementById('m2'),2840);cnt(document.getElementById('m3'),1,'M+ events');cnt(document.getElementById('m4'),99.9,'%');cio.disconnect();}
+},{threshold:.5});
+cio.observe(document.querySelector('.metrics-strip'));
+
+// ─── CLOCK ──────────────────────────────────────────────────
+function clk(){const n=new Date(),p=v=>String(v).padStart(2,'0');document.getElementById('dash-clock').textContent=`${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;}
+setInterval(clk,1000);clk();
+
+// ─── LIVE FEED ────────────────────────────────────────────────
+const FEED=[
+  {c:'var(--med)',t:'Priya Nair — HR 118 bpm above threshold'},
+  {c:'var(--eco)',t:'VH-003 Electric — 94% load capacity reached'},
+  {c:'var(--retail)',t:'Checkout zone — crowding 88% occupancy'},
+  {c:'var(--safe)',t:'SafeSight — Perimeter sensor heartbeat OK'},
+  {c:'var(--med)',t:'Suresh Iyer — FALL_RISK HIGH (Morse 50)'},
+  {c:'var(--retail)',t:'SKU-006 Levi\'s — out of stock alert'},
+  {c:'var(--eco)',t:'Route RT-001 complete — 2,400 kg collected'},
+  {c:'var(--med)',t:'BED-02 Priya Nair — SpO₂ 93% recovering'},
+];
+let fi=0;
+setInterval(()=>{
+  const list=document.getElementById('feed-list');
+  const item=FEED[fi%FEED.length];fi++;
+  const n=new Date(),p=v=>String(v).padStart(2,'0');
+  const d=document.createElement('div');d.className='feed-row fade-in-up';
+  d.innerHTML=`<div class="feed-dot" style="background:${item.c}"></div><div class="feed-txt">${item.t}</div><div class="feed-time">${p(n.getHours())}:${p(n.getMinutes())}</div>`;
+  list.insertBefore(d,list.firstChild);
+  if(list.children.length>5)list.removeChild(list.lastChild);
+  const a=document.getElementById('alert-num');a.textContent=String((parseInt(a.textContent)||0)+1);
+},4200);
+
+// ─── MODULE MODAL DATA ────────────────────────────────────────
+const MODS={
+  med:{icon:'🏥',name:'MedFlow',bg:'rgba(6,3,10,0.99)',hBorder:'rgba(255,77,109,0.2)',iBg:'rgba(255,77,109,0.15)',
+    desc:'MedFlow is a real-time AI clinical monitoring platform for ICU environments. Streams ECG, SpO₂ and respiration waveforms every second. MEDPOSE-v2 skeleton analysis for fall detection. Full nurse station workflow with STAT / URGENT / ROUTINE task queue. 9 Docker containers including GPU-accelerated pose engine.',
+    ports:['Client :3010','API :5060','MongoDB :27020'],
+    feats:[{icon:'📈',n:'Live Vitals',s:'ECG, SpO₂, Resp, NIBP, Temp'},{icon:'🦴',n:'MEDPOSE-v2',s:'17 joints, fall risk, GPU CUDA'},{icon:'👩‍⚕️',n:'Nurse Station',s:'STAT / URGENT task queue'},{icon:'🏗',n:'Docker Stack',s:'9 containers, HL7 FHIR R4'}],
+    btnTxt:'Launch MedFlow → :3010',btnC:'#ff4d6d',btnBg:'rgba(255,77,109,0.12)'},
+  eco:{icon:'♻️',name:'EcoTrack',bg:'rgba(2,7,4,0.99)',hBorder:'rgba(0,255,136,0.2)',iBg:'rgba(0,255,136,0.12)',
+    desc:'EcoTrack manages waste logistics across city zones. Live vehicle GPS tracking, bin fill monitoring via Socket.io, AI camera waste classification using TF.js COCO-SSD, and collection route optimisation. Full ESG reporting and CO₂ savings tracking built in.',
+    ports:['Client :3008','API :5055','MongoDB :27019'],
+    feats:[{icon:'🚛',n:'Fleet GPS',s:'4 vehicles, live tracking'},{icon:'🗑',n:'Bin Monitor',s:'6 bins, fill level alerts'},{icon:'📷',n:'AI Camera',s:'TF.js — plastic/organic/e-waste'},{icon:'🗺',n:'Routes',s:'Optimised collection paths'}],
+    btnTxt:'Launch EcoTrack → :3008',btnC:'#00ff88',btnBg:'rgba(0,255,136,0.1)'},
+  safe:{icon:'🛡️',name:'SafeSight',bg:'rgba(8,7,2,0.99)',hBorder:'rgba(255,204,0,0.2)',iBg:'rgba(255,204,0,0.12)',
+    desc:'SafeSight is a next-generation AI surveillance command centre arriving in Phase 7. Multi-camera anomaly detection, threat scoring, perimeter breach alerts, and 24/7 automated incident management across your entire physical security estate.',
+    ports:['Phase 7 — Coming Soon'],
+    feats:[{icon:'📹',n:'Multi-Camera AI',s:'Anomaly & threat detection'},{icon:'⚡',n:'Threat Scoring',s:'Real-time risk assessment'},{icon:'🔔',n:'Alert Dispatch',s:'Automated incident response'},{icon:'🔐',n:'Access Control',s:'RBAC + full audit trail'}],
+    btnTxt:'Join SafeSight Waitlist',btnC:'#ffcc00',btnBg:'rgba(255,204,0,0.1)'},
+  retail:{icon:'🛒',name:'SmartRetail',bg:'rgba(5,2,10,0.99)',hBorder:'rgba(168,85,247,0.2)',iBg:'rgba(168,85,247,0.15)',
+    desc:'SmartRetail delivers AI-powered retail intelligence — live POS stream via Socket.io, footfall counting across 8 camera zones, MongoDB inventory heatmap, shrinkage detection and a dynamic pricing engine. MySQL-backed transactions with full analytics.',
+    ports:['Client :3005','API :5050','MongoDB :27018','MySQL :3307'],
+    feats:[{icon:'💳',n:'Live POS Stream',s:'Socket.io, 4-7s intervals'},{icon:'👥',n:'Footfall AI',s:'8 cameras, 6 zones'},{icon:'📦',n:'Inventory',s:'MongoDB stock heatmap'},{icon:'📊',n:'Analytics',s:'Revenue, zone, payment mix'}],
+    btnTxt:'Launch SmartRetail → :3005',btnC:'#a855f7',btnBg:'rgba(168,85,247,0.12)'},
+};
+
+function openMod(id){
+  const d=MODS[id];if(!d)return;
+  document.getElementById('modal-icon').textContent=d.icon;
+  document.getElementById('modal-icon').style.background=d.iBg;
+  document.getElementById('modal-name').textContent=d.name;
+  document.getElementById('modal-desc').textContent=d.desc;
+  document.getElementById('modal-hdr').style.borderColor=d.hBorder;
+  document.getElementById('modal-box').style.background=d.bg;
+  document.getElementById('modal-ports').innerHTML=d.ports.map(p=>`<span class="port-badge">${p}</span>`).join('');
+  document.getElementById('modal-feats').innerHTML=d.feats.map(f=>`<div class="mfeat"><div class="mfeat-icon">${f.icon}</div><div class="mfeat-name">${f.n}</div><div class="mfeat-sub">${f.s}</div></div>`).join('');
+  const btn=document.getElementById('modal-btn');
+  btn.textContent=d.btnTxt;btn.style.color=d.btnC;btn.style.background=d.btnBg;btn.style.border=`1px solid ${d.hBorder}`;
+  document.getElementById('modal-ov').classList.add('open');
+}
+function closeMod(e){
+  if(!e||e.target===document.getElementById('modal-ov'))document.getElementById('modal-ov').classList.remove('open');
+}
+</script>
+</body>
+</html>

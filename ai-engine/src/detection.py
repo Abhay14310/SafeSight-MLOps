@@ -223,10 +223,16 @@ from typing import Optional, Dict, List, Tuple
 # ── Load .env from project root (two levels up from src/) ──────────────
 try:
     from dotenv import load_dotenv
-    _env_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
-    load_dotenv(dotenv_path=os.path.abspath(_env_path), override=False)
+    _env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
+    if os.path.isfile(_env_path):
+        load_dotenv(dotenv_path=_env_path, override=False)
+        print(f"[ENV] Loaded .env from: {_env_path}")
+    else:
+        print(f"[ENV] WARNING: .env file not found at: {_env_path}")
+        print("[ENV]          Set environment variables manually or create a .env file.")
 except ImportError:
-    pass  # python-dotenv not installed; env vars must be set manually
+    print("[ENV] WARNING: python-dotenv not installed. Run: pip install python-dotenv")
+    print("[ENV]          Env vars must be set manually until then.")
 
 # ── OpenCV ──
 try:

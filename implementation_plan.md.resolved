@@ -1,0 +1,70 @@
+# AI Engine — Training & Accuracy Testing Plan
+
+## What We're Building
+
+The existing `detection.py` already uses **YOLOv8n-pose** (a pre-trained model) — we don't retrain the neural network weights (that needs a GPU cluster). Instead, we:
+
+1. **Tune & validate the fall-detection logic** (the aspect-ratio + state-machine thresholds that sit on top of YOLO)
+2. **Build a synthetic test suite** that tests accuracy without needing a live camera
+3. **Add a benchmark script** that measures real-world performance metrics (FPS, detection rate, fall detection accuracy)
+
+> [!IMPORTANT]
+> "Training" here = **threshold calibration** of our fall-detection algorithm (aspect ratio, confirm frames, duration timers). YOLOv8 itself is already trained — we use it as-is.
+
+---
+
+## Open Questions (None — proceeding with implementation)
+
+---
+
+## Proposed Changes
+
+### 1. Unit Tests — `tests/test_detection.py` [MODIFY]
+
+Completely replace the outdated empty-module tests with real functional tests:
+
+- **State machine tests** — feed synthetic aspect ratios, verify STANDING → FALLING → FALLEN → EMERGENCY transitions
+- **Accuracy metrics** — precision, recall, F1 for fall detection logic
+- **Edge case tests** — tiny bbox, negative bbox height, zero-frame sequences
+- **Config validation** — thresholds in valid ranges
+
+---
+
+### 2. Accuracy Benchmark Script — `tests/test_accuracy.py` [NEW]
+
+A standalone script that:
+- Generates **synthetic video scenarios** (standing sequences, fall sequences, sitting sequences)
+- Runs each scenario through the full `PersonTrack.update_state()` pipeline
+- Reports **Precision, Recall, F1 score, False Positive Rate**
+- Outputs a clean accuracy report table
+
+---
+
+### 3. Camera Performance Benchmark — `tests/test_camera_benchmark.py` [NEW]
+
+Tests the full camera pipeline (without a real camera, using synthetic frames):
+- Mocks `cv2.VideoCapture` with synthetic numpy frames
+- Benchmarks `_process_frame()` speed → FPS estimate
+- Tests inference skipping logic (every N frames)
+- Tests dashboard send throttling
+
+---
+
+### 4. Requirements update — `requirements.txt` [MODIFY]
+
+Add test dependencies:
+- `pytest==8.2.0`
+- `pytest-cov==5.0.0` (coverage reports)
+
+---
+
+## Verification Plan
+
+```
+cd ai-engine
+pip install -r requirements.txt
+pytest tests/ -v --tb=short
+pytest tests/test_accuracy.py -v  # accuracy report
+```
+
+Expected output: accuracy report showing metrics per scenario.

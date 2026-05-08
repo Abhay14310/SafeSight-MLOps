@@ -1,0 +1,532 @@
+# ER Diagram Prompt — SafeSight-MLOps Thesis Project
+
+> Copy everything below this line and paste it into Claude (or any AI) to generate your ER diagram.
+
+---
+
+## Prompt to give Claude
+
+Please create a detailed, professional **Entity-Relationship (ER) diagram** for my thesis project called **SafeSight-MLOps**. This is a **multi-domain intelligent MLOps platform** comprising **4 sub-systems**, each with its own MongoDB database. All databases use **MongoDB (NoSQL document store)**, so relationships are represented via **reference fields (ObjectId refs or string IDs)** rather than foreign keys.
+
+Draw the ER diagram using **Mermaid `erDiagram` syntax**. Group entities by sub-system using comments. Show all attributes with their data types, and mark primary keys (PK), foreign keys/references (FK), and required fields (NOT NULL equivalent). Show cardinality on every relationship line (||, |{, }|, etc.).
+
+---
+
+## Sub-System 1: SafeSight Web Dashboard (Port 5000)
+**Database:** `safesight` (MongoDB)
+**Purpose:** AI-powered fall detection & patient safety monitoring using YOLOv8 + pose estimation
+
+### Collection: `securityusers`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| username | String | required, unique |
+| password | String | required (bcrypt hashed) |
+| displayName | String | default '' |
+| organization | String | default 'My Organization' |
+| tier | String | enum: core, pro, elite |
+| role | String | enum: user, admin |
+| email | String | |
+| createdAt | Date | default: now |
+
+### Collection: `apikeys`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| key | String | required, unique |
+| label | String | default 'Default Edge Node' |
+| createdAt | Date | default: now |
+| lastUsed | Date | nullable |
+
+### Collection: `securityalerts`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| label | String | required |
+| confidence | Number | default 0 |
+| camera | String | default 'CAM-01' |
+| zone | String | default 'Zone A' |
+| severity | String | enum: critical, warning, info |
+| timestamp | Date | default: now |
+| state | String | enum: STANDING, FALLING, FALLEN, EMERGENCY, null |
+| fallDuration | Number | default 0 |
+| trackId | Number | nullable |
+| acknowledged | Boolean | default false |
+| resolvedBy | String | nullable |
+| resolvedAt | Date | nullable |
+| resolution | String | enum: resolved, false_positive, null |
+
+### Collection: `auditlogs`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| action | String | required |
+| username | String | default 'system' |
+| detail | String | |
+| ip | String | |
+| timestamp | Date | default: now |
+
+### Collection: `configs`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| key | String | required, unique |
+| value | Mixed | any type |
+
+### Collection: `patients` (SafeSight/Medical context)
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| mrn | String | required, unique (auto-generated MRN-timestamp-rand) |
+| name | String | required |
+| age | Number | required, 0–150 |
+| gender | String | enum: male, female, other; required |
+| bloodType | String | enum: A+, A-, B+, B-, AB+, AB-, O+, O-, unknown |
+| ward | String | default 'ICU-4A' |
+| bed | String | required |
+| condition | String | required |
+| status | String | enum: critical, warning, stable, discharged |
+| admittedAt | Date | default: now |
+| attendingDoctor | String | |
+| emergencyContact.name | String | embedded |
+| emergencyContact.phone | String | embedded |
+| emergencyContact.relation | String | embedded |
+| tags | [String] | array |
+| notes | String | |
+| avatar | String | |
+| isHomeUser | Boolean | default false |
+| homeUserId | ObjectId | FK → MedicalUser._id |
+| createdAt / updatedAt | Date | timestamps |
+
+### Collection: `vitallogs` (SafeSight)
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| patientId | ObjectId | FK → Patient._id, required, indexed |
+| timestamp | Date | indexed, TTL 90 days |
+| bpm | Number | 0–300 |
+| spo2 | Number | 0–100 |
+| o2 | Number | 0–100 |
+| systolic | Number | 0–300 |
+| diastolic | Number | 0–200 |
+| temp | Number | 30–45 |
+| respRate | Number | 0–60 |
+| glucose | Number | |
+| source | String | enum: mock, device, manual |
+
+### Collection: `medicalalerts`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| patientId | ObjectId | FK → Patient._id, required, indexed |
+| type | String | enum: FALL_DETECTED, BED_EXIT, NO_MOTION, ABNORMAL_GAIT, DISTRESS_POSTURE, EYES_CLOSED, CARDIAC_ANOMALY, SPO2_LOW, BPM_HIGH, BPM_LOW, TEMP_HIGH, SYSTEM |
+| severity | String | enum: info, warning, critical |
+| message | String | required |
+| source | String | enum: ai_client, vitals_engine, manual, system |
+| metadata | Mixed | |
+| acknowledged | Boolean | default false |
+| acknowledgedBy | String | |
+| acknowledgedAt | Date | |
+| resolved | Boolean | default false |
+| resolvedAt | Date | |
+| createdAt / updatedAt | Date | timestamps |
+
+### Collection: `labreports`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| patientId | ObjectId | FK → Patient._id, required, indexed |
+| title | String | required |
+| type | String | enum: blood, urine, ecg, xray, mri, ct, ultrasound, pathology, other |
+| status | String | enum: pending, processing, completed, flagged |
+| reportedBy | String | |
+| reportedAt | Date | default: now |
+| summary | String | |
+| findings | String | |
+| fileUrl | String | |
+| fileName | String | |
+| fileSize | Number | |
+| mimeType | String | |
+| values | [Object] | array of {label, value(Mixed), unit, normalMin, normalMax, flag(enum: normal/low/high/critical)} |
+| tags | [String] | |
+| createdAt / updatedAt | Date | timestamps |
+
+### Collection: `medicalusers`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| name | String | required |
+| email | String | required, unique, lowercase |
+| password | String | required (bcrypt, select:false) |
+| role | String | enum: nurse, doctor, admin, home_user |
+| ward | String | |
+| isActive | Boolean | default true |
+| lastLogin | Date | |
+| createdAt / updatedAt | Date | timestamps |
+
+---
+
+## Sub-System 2: MedFlow 2 (Port 4001)
+**Database:** `medflow2` (MongoDB)
+**Purpose:** ICU patient monitoring with real-time vitals, pose analysis, and task management
+
+### Collection: `patients` (MedFlow2)
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| bedId | String | required, unique |
+| name | String | required |
+| age | Number | |
+| gender | String | enum: M, F, Other |
+| diagnosis | String | |
+| admittedAt | Date | default: now |
+| ward | String | default 'ICU-4A' |
+| status | String | enum: stable, warning, critical, discharged |
+| nurseAssigned | String | |
+| morseScore | Number | fall risk score |
+| allergies | [String] | |
+| bloodType | String | |
+| weight | Number | kg |
+| height | Number | cm |
+| baseline.hr | Number | default 75 bpm |
+| baseline.spo2 | Number | default 98% |
+| baseline.resp | Number | default 16 |
+| baseline.sbp | Number | default 120 mmHg |
+| baseline.dbp | Number | default 80 mmHg |
+| baseline.temp | Number | default 37.0 °C |
+| createdAt / updatedAt | Date | timestamps |
+
+### Collection: `vitallogs` (MedFlow2)
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| patientId | String | FK → Patient.bedId, required, indexed |
+| bedId | String | required |
+| timestamp | Date | indexed, TTL 24 hours |
+| hr | Number | heart rate bpm |
+| spo2 | Number | % |
+| resp | Number | breaths/min |
+| sbp | Number | systolic mmHg |
+| dbp | Number | diastolic mmHg |
+| temp | Number | °C |
+| etco2 | Number | mmHg |
+| ecgRhythm | String | default 'Sinus' |
+
+### Collection: `alerts` (MedFlow2)
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| patientId | String | FK → Patient.bedId |
+| bedId | String | |
+| type | String | enum: BRADYCARDIA, TACHYCARDIA, SPO2_LOW, RESP_ABNORMAL, FALL_RISK, POSE_ALERT, TEMP_HIGH, BP_CRITICAL, SYSTEM |
+| severity | String | enum: info, warning, critical |
+| message | String | required |
+| value | Number | measured value |
+| threshold | Number | threshold value |
+| acknowledged | Boolean | default false |
+| resolved | Boolean | default false |
+| createdAt / updatedAt | Date | timestamps |
+
+### Collection: `tasks`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| bedId | String | FK → Patient.bedId |
+| patientId | String | |
+| type | String | enum: MEDICATION, VITALS_CHECK, POSITION_CHANGE, LAB_DRAW, WOUND_CARE, CONSULT, CUSTOM |
+| description | String | required |
+| urgency | String | enum: routine, urgent, stat |
+| assignedTo | String | nurse name |
+| dueAt | Date | |
+| completedAt | Date | |
+| status | String | enum: pending, in_progress, completed, cancelled |
+| notes | String | |
+| createdAt / updatedAt | Date | timestamps |
+
+### Collection: `poseframes`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| patientId | String | FK → Patient.bedId |
+| bedId | String | |
+| timestamp | Date | TTL 6 hours |
+| keypoints | [Object] | array of {name, x, y, score} |
+| posture | String | enum: SLEEPING, RESTLESS, SITTING_UP, STANDING, FALL_DETECTED, UNKNOWN |
+| morseScore | Number | |
+| hipDeviation | Number | |
+| fallRisk | String | enum: LOW, MEDIUM, HIGH, CRITICAL |
+| jointScores | Mixed | JSON object |
+
+### Collection: `users` (MedFlow2)
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| name | String | required |
+| email | String | required, unique, lowercase |
+| password | String | required (bcrypt, select:false) |
+| role | String | enum: admin, nurse, doctor, supervisor |
+| ward | String | default 'ICU-4A' |
+| shiftStart | String | |
+| shiftEnd | String | |
+| phone | String | |
+| avatar | String | |
+| isActive | Boolean | default true |
+| lastLogin | Date | |
+| preferences.alerts | Boolean | default true |
+| preferences.sound | Boolean | default true |
+| createdAt / updatedAt | Date | timestamps |
+
+---
+
+## Sub-System 3: EcoTrack (Port 4002)
+**Database:** `ecotrack` (MongoDB)
+**Purpose:** Smart waste management — vehicle tracking, route optimization, bin monitoring
+
+### Collection: `wastelogs`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| logId | String | auto-generated WL-timestamp |
+| vehicleId | String | FK → Vehicle.vehicleId, required |
+| driverId | String | FK → User (driver) |
+| zone | String | required |
+| binId | String | FK → Bin.binId |
+| wasteType | String | enum: organic, recyclable, hazardous, e-waste, medical, general, construction; required |
+| weightKg | Number | required, ≥ 0 |
+| volumeL | Number | |
+| status | String | enum: collected, in_transit, processing, disposed, recycled |
+| collectedAt | Date | default: now |
+| notes | String | |
+| photoUrl | String | |
+| geoLocation.lat | Number | embedded |
+| geoLocation.lng | Number | embedded |
+| source | String | default 'manual' |
+| createdAt / updatedAt | Date | timestamps |
+
+### Collection: `vehicles`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| vehicleId | String | required, unique |
+| regNumber | String | required |
+| type | String | enum: truck, compactor, tipper, van, electric |
+| capacity | Number | kg, default 5000 |
+| currentLoad | Number | default 0 |
+| fuelType | String | enum: diesel, petrol, cng, electric |
+| status | String | enum: active, idle, maintenance, offline |
+| driverId | String | FK → User (driver) |
+| driverName | String | |
+| currentZone | String | |
+| currentLat | Number | |
+| currentLng | Number | |
+| lastService | Date | |
+| mileage | Number | default 0 |
+| co2Saved | Number | default 0 |
+| createdAt / updatedAt | Date | timestamps |
+
+### Collection: `bins`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| binId | String | required, unique |
+| zone | String | required |
+| address | String | |
+| wasteType | String | enum: organic, recyclable, hazardous, general, mixed |
+| capacityL | Number | default 240 L |
+| fillLevel | Number | 0–100 percentage |
+| status | String | enum: empty, partial, full, overflow, damaged |
+| lastEmptied | Date | |
+| lat | Number | |
+| lng | Number | |
+| createdAt / updatedAt | Date | timestamps |
+
+### Collection: `routes`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| routeId | String | required, unique |
+| name | String | required |
+| zone | String | |
+| vehicleId | String | FK → Vehicle.vehicleId |
+| driverId | String | FK → User (driver) |
+| status | String | enum: planned, active, completed, cancelled |
+| scheduledAt | Date | |
+| startedAt | Date | |
+| completedAt | Date | |
+| waypoints | [Object] | array of {lat, lng, address, binId(FK→Bin), sequence} |
+| distanceKm | Number | |
+| estimatedMin | Number | |
+| actualMin | Number | |
+| totalWeightKg | Number | |
+| createdAt / updatedAt | Date | timestamps |
+
+### Collection: `schedules`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| scheduleId | String | auto-generated SCH-timestamp |
+| zone | String | required |
+| vehicleId | String | FK → Vehicle.vehicleId |
+| driverId | String | FK → User (driver) |
+| wasteType | String | |
+| frequency | String | enum: daily, alternate, weekly, biweekly |
+| dayOfWeek | [Number] | 0–6 |
+| timeSlot | String | |
+| isActive | Boolean | default true |
+| nextPickup | Date | |
+| createdAt / updatedAt | Date | timestamps |
+
+### Collection: `alerts` (EcoTrack)
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| type | String | enum: BIN_OVERFLOW, VEHICLE_BREAKDOWN, MISSED_PICKUP, HAZARDOUS_DETECTED, ROUTE_DELAY, WEIGHT_EXCEEDED, MAINTENANCE_DUE, SYSTEM |
+| severity | String | enum: info, warning, critical |
+| zone | String | |
+| vehicleId | String | FK → Vehicle.vehicleId |
+| binId | String | FK → Bin.binId |
+| message | String | required |
+| metadata | Mixed | |
+| acknowledged | Boolean | default false |
+| resolved | Boolean | default false |
+| resolvedAt | Date | |
+| createdAt / updatedAt | Date | timestamps |
+
+### Collection: `users` (EcoTrack)
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| name | String | required |
+| email | String | required, unique, lowercase |
+| password | String | required (bcrypt, select:false) |
+| role | String | enum: admin, manager, driver, analyst, supervisor |
+| zone | String | |
+| phone | String | |
+| avatar | String | |
+| isActive | Boolean | default true |
+| preferences.notifications | Boolean | default true |
+| preferences.emailAlerts | Boolean | default true |
+| preferences.theme | String | default 'green' |
+| lastLogin | Date | |
+| createdAt / updatedAt | Date | timestamps |
+
+---
+
+## Sub-System 4: SmartRetail (Port 4003)
+**Database:** `smartretail` (MongoDB)
+**Purpose:** AI-powered retail analytics — footfall counting, inventory management, anomaly detection
+
+### Collection: `cameras`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| camId | String | required, unique |
+| label | String | required |
+| zone | String | required |
+| location.x | Number | embedded |
+| location.y | Number | embedded |
+| status | String | enum: online, offline, alert |
+| resolution | String | default '1080p' |
+| type | String | enum: footfall, security, shelf, checkout |
+| lastFrame | Date | |
+| detections.persons | Number | default 0, embedded |
+| detections.anomaly | Boolean | default false, embedded |
+| detections.crowding | Boolean | default false, embedded |
+| createdAt / updatedAt | Date | timestamps |
+
+### Collection: `footfalls`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| zoneId | String | FK → Camera.zone, required, indexed |
+| zoneName | String | |
+| timestamp | Date | indexed, TTL 7 days |
+| count | Number | default 0 |
+| entering | Number | default 0 |
+| exiting | Number | default 0 |
+| dwellTime | Number | seconds, default 0 |
+| source | String | default 'mock' |
+
+### Collection: `inventories`
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| sku | String | required, unique |
+| name | String | required |
+| category | String | required |
+| zone | String | |
+| shelf | String | |
+| stockLevel | Number | default 100 |
+| minStock | Number | default 20 |
+| maxStock | Number | default 200 |
+| unitCost | Number | |
+| sellPrice | Number | |
+| imageUrl | String | |
+| lastRestock | Date | |
+| lastSold | Date | |
+| status | String | enum: in_stock, low_stock, out_of_stock, overstocked |
+| createdAt / updatedAt | Date | timestamps |
+
+### Collection: `alerts` (SmartRetail)
+| Field | Type | Constraints |
+|---|---|---|
+| _id | ObjectId | PK, auto |
+| type | String | enum: SHRINKAGE, LOW_STOCK, CROWDING, CAMERA_DOWN, PRICE_ANOMALY, FOOTFALL_SPIKE, SYSTEM |
+| severity | String | enum: info, warning, critical |
+| zone | String | |
+| message | String | required |
+| metadata | Mixed | |
+| acknowledged | Boolean | default false |
+| acknowledgedBy | String | |
+| resolved | Boolean | default false |
+| source | String | default 'system' |
+| createdAt / updatedAt | Date | timestamps |
+
+---
+
+## Cross-System Relationships (Logical)
+
+| From | Field | To | Nature |
+|---|---|---|---|
+| SafeSight Patient | homeUserId | MedicalUser._id | Many-to-one (home patient linked to user account) |
+| SafeSight VitalLog | patientId | Patient._id | Many-to-one (each log belongs to one patient) |
+| SafeSight MedicalAlert | patientId | Patient._id | Many-to-one |
+| SafeSight LabReport | patientId | Patient._id | Many-to-one |
+| MedFlow2 VitalLog | patientId | MedFlow2 Patient.bedId | Many-to-one |
+| MedFlow2 Alert | patientId / bedId | MedFlow2 Patient.bedId | Many-to-one |
+| MedFlow2 Task | bedId | MedFlow2 Patient.bedId | Many-to-one |
+| MedFlow2 PoseFrame | bedId | MedFlow2 Patient.bedId | Many-to-one |
+| EcoTrack WasteLog | vehicleId | Vehicle.vehicleId | Many-to-one |
+| EcoTrack WasteLog | binId | Bin.binId | Many-to-one |
+| EcoTrack WasteLog | driverId | User._id (driver role) | Many-to-one |
+| EcoTrack Route | vehicleId | Vehicle.vehicleId | Many-to-one |
+| EcoTrack Route | driverId | User._id | Many-to-one |
+| EcoTrack Route waypoints | binId | Bin.binId | Many-to-many (embedded) |
+| EcoTrack Schedule | vehicleId | Vehicle.vehicleId | Many-to-one |
+| EcoTrack Alert | vehicleId | Vehicle.vehicleId | Many-to-one |
+| EcoTrack Alert | binId | Bin.binId | Many-to-one |
+| SmartRetail Footfall | zoneId | Camera.zone | Many-to-one |
+| SmartRetail Alert | zone | Camera.zone | Many-to-one (logical) |
+
+---
+
+## AI Engine (Python / No DB)
+The **AI Engine** (`ai-engine/src/detection.py`) is a Python service using:
+- **YOLOv8** for object detection (persons, fall detection)
+- **YOLOv8-Pose** for pose estimation (17-keypoint skeleton)
+- **OpenCV** for video/frame processing
+- **FastAPI** (Port 4000) serving REST endpoints
+- It **does not have its own database** — it pushes results (alerts, pose frames) to the **SafeSight Web Dashboard** via REST API calls authenticated with API keys from the `apikeys` collection.
+
+---
+
+## Instructions for the diagram
+
+1. Use **Mermaid `erDiagram`** syntax.
+2. Group entities with comment headers for each sub-system.
+3. Show **all fields** from the tables above.
+4. Use these Mermaid types: `string`, `number`, `boolean`, `date`, `objectId`, `mixed`, `array`.
+5. Mark PKs with `PK` and FKs with `FK` in attribute comments.
+6. Show **all relationships** from the Cross-System table above with proper cardinality (one-to-many, many-to-one etc.).
+7. Add a note/legend explaining the 4 sub-systems and the AI Engine's role.
+8. Make the diagram thesis-quality, clean, and well-organized.

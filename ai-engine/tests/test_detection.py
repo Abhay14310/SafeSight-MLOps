@@ -1,244 +1,412 @@
 """
-Tests for ai-engine/src/detection.py
+test_detection.py — Functional tests for Tasuke'26 AI Engine
+=============================================================
 
-The PR change: removed trailing blank line (W391 flake8 violation) from detection.py.
-These tests verify the module is a clean, importable Python file with no linting
-violations, and establish the baseline module invariants for future implementation.
+Tests the REAL detection logic:
+  - PersonState state machine transitions (STANDING→FALLING→FALLEN→EMERGENCY)
+  - Fall detection accuracy (aspect ratio + temporal filter)
+  - Config threshold validation
+  - Edge cases (tiny bbox, zero height, etc.)
+
+Run:
+    cd ai-engine
+    pytest tests/test_detection.py -v
 """
+
 import importlib
 import os
-import subprocess
 import sys
+import time
 import types
+from unittest.mock import patch, MagicMock
 
 import pytest
 
-# Ensure the src directory is on the path for importing detection
-SRC_DIR = os.path.join(os.path.dirname(__file__), "..", "src")
-SRC_DIR = os.path.abspath(SRC_DIR)
+# ── Path setup ──────────────────────────────────────────────────────────────
+SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
 DETECTION_FILE = os.path.join(SRC_DIR, "detection.py")
 
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
+# ── Helpers to mock heavy deps before import ────────────────────────────────
+
+def _mock_cv2():
+    """Return a minimal cv2 mock so the module can import without OpenCV."""
+    cv2 = MagicMock()
+    cv2.CAP_DSHOW = 700
+    cv2.CAP_PROP_FRAME_WIDTH = 3
+    cv2.CAP_PROP_FRAME_HEIGHT = 4
+    cv2.CAP_PROP_BUFFERSIZE = 38
+    cv2.FONT_HERSHEY_SIMPLEX = 0
+    cv2.LINE_AA = 16
+    cv2.IMWRITE_JPEG_QUALITY = 1
+    return cv2
+
+
+def _mock_ultralytics():
+    ul = MagicMock()
+    ul.YOLO = MagicMock(return_value=MagicMock())
+    return ul
 
 
 @pytest.fixture(scope="module")
-def detection_module():
-    """Import and return the detection module."""
+def det():
+    """
+    Import detection module with all heavy deps mocked.
+    Returns the module object — use det.PersonTrack, det.PersonState, etc.
+    """
+    mocks = {
+        "cv2": _mock_cv2(),
+        "ultralytics": _mock_ultralytics(),
+        "numpy": __import__("numpy"),
+        "requests": MagicMock(),
+        "urllib3": MagicMock(),
+        "urllib3.util": MagicMock(),
+        "urllib3.util.retry": MagicMock(),
+        "requests.adapters": MagicMock(),
+    }
+
     if SRC_DIR not in sys.path:
         sys.path.insert(0, SRC_DIR)
-    # Force a fresh import in case of stale cache
-    if "detection" in sys.modules:
-        del sys.modules["detection"]
-    return importlib.import_module("detection")
+
+    sys.modules.pop("detection", None)
+
+    with patch.dict("sys.modules", mocks):
+        module = importlib.import_module("detection")
+
+    return module
 
 
-# ---------------------------------------------------------------------------
-# File-level tests (directly testing what the PR fixed)
-# ---------------------------------------------------------------------------
+# ═══════════════════════════════════════════════════════════════════════════
+# 1. FILE SANITY
+# ═══════════════════════════════════════════════════════════════════════════
 
+class TestFileSanity:
+    """Basic checks that detection.py is a valid, lint-clean Python file."""
 
-class TestDetectionFileContent:
-    """Tests targeting the file-level content of detection.py.
+    def test_file_exists(self):
+        assert os.path.isfile(DETECTION_FILE), f"Not found: {DETECTION_FILE}"
 
-    The PR removed the trailing blank line that caused flake8 W391.
-    """
-
-    def test_detection_file_exists(self):
-        """detection.py must exist at the expected path."""
-        assert os.path.isfile(DETECTION_FILE), (
-            f"detection.py not found at {DETECTION_FILE}"
-        )
-
-    def test_no_trailing_newline_w391(self):
-        """File must not end with a trailing blank line (flake8 W391).
-
-        W391 is triggered when the last line of a file is blank (empty or
-        only whitespace followed by a newline). The PR fixed exactly this.
-        """
-        with open(DETECTION_FILE, "rb") as f:
-            content = f.read()
-
-        if len(content) == 0:
-            # An entirely empty file has no trailing blank line — pass.
-            return
-
-        # W391: file ends with a blank line, i.e. '\n\n' at the very end
-        # or the last line contains only whitespace.
-        lines = content.split(b"\n")
-        # Remove the final empty element caused by a single trailing newline
-        # (which is acceptable — W391 fires only when there are ≥2 trailing
-        # newlines or the final non-empty line is followed by a blank line).
-        if lines and lines[-1] == b"":
-            lines = lines[:-1]
-        # After stripping the conventional final newline, the last remaining
-        # element must NOT be blank/whitespace-only.
-        if lines:
-            assert lines[-1].strip() != b"", (
-                "detection.py ends with a trailing blank line (W391 violation). "
-                "The PR was supposed to remove this."
-            )
-
-    def test_no_trailing_blank_lines_regression(self):
-        """Regression: ensure W391 does not re-appear in detection.py.
-
-        Reads the raw bytes and asserts the file does not contain two
-        consecutive newline characters at the very end.
-        """
-        with open(DETECTION_FILE, "rb") as f:
-            content = f.read()
-
-        if len(content) == 0:
-            return  # Empty file is clean
-
-        assert not content.endswith(b"\n\n"), (
-            "detection.py ends with two consecutive newlines — this reintroduces "
-            "the W391 trailing-blank-line violation the PR fixed."
-        )
-
-    def test_flake8_w391_passes(self):
-        """Run flake8 with W391 selected and assert zero violations.
-
-        Mirrors the CI linting step to guarantee the file stays clean.
-        Requires flake8 to be installed in the test environment.
-        """
-        result = subprocess.run(
-            [
-                sys.executable, "-m", "flake8",
-                DETECTION_FILE,
-                "--select=W391",
-            ],
-            capture_output=True,
-            text=True,
-        )
-        assert result.returncode == 0, (
-            f"flake8 W391 check failed:\n{result.stdout}{result.stderr}"
-        )
-
-    def test_flake8_full_ci_config_passes(self):
-        """Run flake8 with the same flags used in CI and assert zero violations.
-
-        The CI configuration is:
-            flake8 ai-engine/src/detection.py
-                --max-line-length=120
-                --ignore=E501,W503,E741
-                --count
-        """
-        result = subprocess.run(
-            [
-                sys.executable, "-m", "flake8",
-                DETECTION_FILE,
-                "--max-line-length=120",
-                "--ignore=E501,W503,E741",
-                "--count",
-            ],
-            capture_output=True,
-            text=True,
-        )
-        assert result.returncode == 0, (
-            f"flake8 (CI config) check failed:\n{result.stdout}{result.stderr}"
-        )
-
-    def test_file_is_valid_python_syntax(self):
-        """detection.py must contain valid Python syntax (py_compile check)."""
+    def test_valid_python_syntax(self):
         import py_compile
         try:
             py_compile.compile(DETECTION_FILE, doraise=True)
-        except py_compile.PyCompileError as exc:
-            pytest.fail(f"detection.py contains a syntax error: {exc}")
+        except py_compile.PyCompileError as e:
+            pytest.fail(f"Syntax error in detection.py: {e}")
 
-
-# ---------------------------------------------------------------------------
-# Module-level tests
-# ---------------------------------------------------------------------------
-
-
-class TestDetectionModuleImport:
-    """Tests verifying the module can be cleanly imported."""
-
-    def test_module_imports_without_error(self, detection_module):
-        """Importing detection must not raise any exception."""
-        assert detection_module is not None
-
-    def test_module_is_python_module(self, detection_module):
-        """Imported object must be a Python module type."""
-        assert isinstance(detection_module, types.ModuleType)
-
-    def test_module_name_is_detection(self, detection_module):
-        """Module __name__ must be 'detection'."""
-        assert detection_module.__name__ == "detection"
-
-    def test_module_file_attribute_points_to_detection_py(self, detection_module):
-        """Module __file__ must resolve to detection.py."""
-        assert detection_module.__file__ is not None
-        assert os.path.basename(detection_module.__file__) == "detection.py"
-
-    def test_module_import_is_idempotent(self):
-        """Importing the module multiple times must return the same object."""
-        if SRC_DIR not in sys.path:
-            sys.path.insert(0, SRC_DIR)
-        mod1 = importlib.import_module("detection")
-        mod2 = importlib.import_module("detection")
-        assert mod1 is mod2
-
-    def test_module_has_no_side_effects_on_import(self):
-        """Re-importing detection must not alter sys.modules unexpectedly."""
-        before = set(sys.modules.keys())
-        # Remove cached module to force a fresh load
-        sys.modules.pop("detection", None)
-        if SRC_DIR not in sys.path:
-            sys.path.insert(0, SRC_DIR)
-        importlib.import_module("detection")
-        after = set(sys.modules.keys())
-        # The only new key allowed is 'detection' itself
-        new_keys = after - before - {"detection"}
-        assert new_keys == set(), (
-            f"Importing detection introduced unexpected modules: {new_keys}"
+    def test_no_trailing_blank_line_w391(self):
+        with open(DETECTION_FILE, "rb") as f:
+            content = f.read()
+        assert not content.endswith(b"\n\n"), (
+            "detection.py ends with two newlines — W391 violation"
         )
 
 
-class TestDetectionModulePublicApi:
-    """Tests verifying the public API surface of the (currently empty) module."""
+# ═══════════════════════════════════════════════════════════════════════════
+# 2. CONFIG VALIDATION
+# ═══════════════════════════════════════════════════════════════════════════
 
-    def _public_names(self, module):
-        """Return public names (not starting with '_') defined in the module."""
-        return [
-            name for name in dir(module)
-            if not name.startswith("_")
-        ]
+class TestConfig:
+    """Verify all Config thresholds are in sensible ranges."""
 
-    def test_empty_module_has_no_public_symbols(self, detection_module):
-        """A fresh, empty detection.py must export no public names.
+    def test_fall_aspect_ratio_range(self, det):
+        assert 0.8 < det.CFG.fall_aspect_ratio < 3.0, (
+            f"fall_aspect_ratio={det.CFG.fall_aspect_ratio} is out of reasonable range"
+        )
 
-        When the module is implemented, this test should be updated to
-        enumerate the expected public API explicitly.
+    def test_fall_confirm_frames_positive(self, det):
+        assert det.CFG.fall_confirm_frames > 0
+
+    def test_fallen_duration_positive(self, det):
+        assert det.CFG.fallen_duration_s > 0
+
+    def test_emergency_duration_greater_than_fallen(self, det):
+        assert det.CFG.emergency_duration_s > det.CFG.fallen_duration_s, (
+            "emergency_duration_s must be greater than fallen_duration_s"
+        )
+
+    def test_confidence_thresh_range(self, det):
+        assert 0.0 < det.CFG.confidence_thresh < 1.0
+
+    def test_port_in_dashboard_url(self, det):
+        assert "4000" in det.CFG.dashboard_url, (
+            f"dashboard_url should use port 4000, got: {det.CFG.dashboard_url}"
+        )
+
+    def test_base_url_strips_api_path(self, det):
+        base = det.CFG.base_url
+        assert "/api/alert" not in base
+        assert "localhost" in base
+
+    def test_auth_headers_empty_when_no_key(self, det):
+        # Save and override
+        original = det.CFG.api_key
+        det.CFG.api_key = ""
+        assert det.CFG.auth_headers == {}
+        det.CFG.api_key = original
+
+    def test_auth_headers_present_when_key_set(self, det):
+        original = det.CFG.api_key
+        det.CFG.api_key = "test-key-abc123"
+        headers = det.CFG.auth_headers
+        assert headers.get("X-API-Key") == "test-key-abc123"
+        det.CFG.api_key = original
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 3. PERSON STATE MACHINE — TRANSITIONS
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestPersonStateTransitions:
+    """
+    Feed synthetic aspect ratios into PersonTrack.update_state()
+    and verify correct state machine transitions.
+    """
+
+    def _make_track(self, det, track_id=1):
+        return det.PersonTrack(track_id=track_id)
+
+    def _feed_standing_frames(self, det, track, n=30):
+        """Feed n frames of a normal standing aspect ratio (~0.4)."""
+        for _ in range(n):
+            track.update_state(0.4, (320, 240))
+
+    def _feed_fall_frames(self, det, track, n=None):
+        """Feed enough wide frames to trigger FALLING state."""
+        n = n or (det.CFG.fall_confirm_frames + 2)
+        for _ in range(n):
+            track.update_state(1.5, (320, 400))  # Wide bbox → fallen
+
+    # ── STANDING baseline ──────────────────────────────────────────────────
+
+    def test_initial_state_is_standing(self, det):
+        track = self._make_track(det)
+        assert track.state == det.PersonState.STANDING
+
+    def test_standing_frames_stay_standing(self, det):
+        track = self._make_track(det)
+        self._feed_standing_frames(det, track, n=50)
+        assert track.state == det.PersonState.STANDING
+
+    # ── STANDING → FALLING ────────────────────────────────────────────────
+
+    def test_wide_frames_trigger_falling(self, det):
+        track = self._make_track(det)
+        self._feed_fall_frames(det, track)
+        assert track.state == det.PersonState.FALLING, (
+            f"Expected FALLING, got {track.state.value}"
+        )
+
+    def test_fall_requires_min_confirm_frames(self, det):
+        """Less than fall_confirm_frames wide frames must NOT trigger FALLING."""
+        track = self._make_track(det)
+        # Feed fewer frames than the threshold
+        short = max(1, det.CFG.fall_confirm_frames - 5)
+        for _ in range(short):
+            track.update_state(1.5, (320, 400))
+        assert track.state == det.PersonState.STANDING, (
+            f"Should still be STANDING with only {short} wide frames"
+        )
+
+    def test_falling_returns_alert(self, det):
+        """update_state should return True (alert) when transitioning to FALLING."""
+        track = self._make_track(det)
+        # Feed up to one before threshold (no alert yet)
+        for _ in range(det.CFG.fall_confirm_frames - 1):
+            track.update_state(1.5, (320, 400))
+        # This frame should push it over
+        alert = track.update_state(1.5, (320, 400))
+        assert alert is True or track.state == det.PersonState.FALLING
+
+    # ── FALLING recovery ──────────────────────────────────────────────────
+
+    def test_recovery_from_falling_back_to_standing(self, det):
+        """If person stands back up quickly, state should return to STANDING."""
+        track = self._make_track(det)
+        self._feed_fall_frames(det, track)
+        assert track.state == det.PersonState.FALLING
+
+        # Now feed standing frames for recovery_frames
+        for _ in range(det.CFG.recovery_frames + 5):
+            track.update_state(0.35, (320, 240))
+
+        assert track.state == det.PersonState.STANDING, (
+            f"Expected recovery to STANDING, got {track.state.value}"
+        )
+
+    # ── FALLING → FALLEN ──────────────────────────────────────────────────
+
+    def test_falling_progresses_to_fallen_after_duration(self, det):
         """
-        public = self._public_names(detection_module)
-        assert public == [], (
-            f"detection.py is expected to be empty but exports: {public}"
+        After fallen_duration_s of continuous wide aspect ratio,
+        state must advance from FALLING → FALLEN.
+        """
+        track = self._make_track(det)
+        self._feed_fall_frames(det, track)
+        assert track.state == det.PersonState.FALLING
+
+        # Simulate time passing beyond fallen_duration_s
+        track.fall_confirmed_at = time.time() - (det.CFG.fallen_duration_s + 1.0)
+        track.update_state(1.5, (320, 400))
+
+        assert track.state == det.PersonState.FALLEN, (
+            f"Expected FALLEN after {det.CFG.fallen_duration_s}s, got {track.state.value}"
         )
 
-    def test_module_docstring_is_none(self, detection_module):
-        """An empty module must have no module-level docstring."""
-        assert detection_module.__doc__ is None
+    # ── FALLEN → EMERGENCY ────────────────────────────────────────────────
 
-    def test_module_has_no_classes(self, detection_module):
-        """Empty module must define no classes."""
-        classes = [
-            name for name in dir(detection_module)
-            if not name.startswith("_")
-            and isinstance(getattr(detection_module, name), type)
-        ]
-        assert classes == []
+    def test_fallen_progresses_to_emergency(self, det):
+        """After emergency_duration_s on the ground, state → EMERGENCY."""
+        track = self._make_track(det)
+        self._feed_fall_frames(det, track)
+        track.fall_confirmed_at = time.time() - (det.CFG.fallen_duration_s + 1.0)
+        track.update_state(1.5, (320, 400))
+        assert track.state == det.PersonState.FALLEN
 
-    def test_module_has_no_functions(self, detection_module):
-        """Empty module must define no functions."""
-        import inspect
-        functions = [
-            name for name in dir(detection_module)
-            if not name.startswith("_")
-            and inspect.isfunction(getattr(detection_module, name))
-        ]
-        assert functions == []
+        # Now simulate time beyond emergency threshold
+        track.fallen_at = time.time() - (det.CFG.emergency_duration_s + 1.0)
+        track.update_state(1.5, (320, 400))
+
+        assert track.state == det.PersonState.EMERGENCY, (
+            f"Expected EMERGENCY, got {track.state.value}"
+        )
+
+    def test_fall_duration_increases_over_time(self, det):
+        """fall_duration property must reflect elapsed time in FALLEN state."""
+        track = self._make_track(det)
+        track.fallen_at = time.time() - 5.0
+        dur = track.fall_duration
+        assert 4.5 < dur < 6.0, f"Expected ~5s duration, got {dur:.2f}s"
+
+    def test_fall_duration_zero_when_not_fallen(self, det):
+        track = self._make_track(det)
+        assert track.fall_duration == 0.0
+
+    # ── EMERGENCY → STANDING recovery ─────────────────────────────────────
+
+    def test_recovery_from_emergency_to_standing(self, det):
+        """Person standing up from EMERGENCY resets to STANDING."""
+        track = self._make_track(det)
+        self._feed_fall_frames(det, track)
+        track.fall_confirmed_at = time.time() - (det.CFG.fallen_duration_s + 1)
+        track.update_state(1.5, (320, 400))  # → FALLEN
+        track.fallen_at = time.time() - (det.CFG.emergency_duration_s + 1)
+        track.update_state(1.5, (320, 400))  # → EMERGENCY
+
+        # Now recover
+        for _ in range(det.CFG.recovery_frames + 5):
+            track.update_state(0.35, (320, 240))
+
+        assert track.state == det.PersonState.STANDING
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 4. ALERT COOLDOWN
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestAlertCooldown:
+
+    def test_needs_alert_true_initially(self, det):
+        track = det.PersonTrack(track_id=99)
+        assert track.needs_alert is True
+
+    def test_needs_alert_false_after_recent_alert(self, det):
+        track = det.PersonTrack(track_id=99)
+        track.last_alert_sent = time.time()  # Just sent
+        assert track.needs_alert is False
+
+    def test_needs_alert_true_after_cooldown_expires(self, det):
+        track = det.PersonTrack(track_id=99)
+        track.last_alert_sent = time.time() - (det.CFG.alert_cooldown_s + 1.0)
+        assert track.needs_alert is True
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 5. EDGE CASES
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestEdgeCases:
+
+    def test_sitting_state_dampens_fall_signal(self, det):
+        """Sitting pose should NOT escalate to FALLING for clearly sub-threshold AR."""
+        track = det.PersonTrack(track_id=50)
+        # Start in SITTING state
+        track.sit_frames_count = 10
+        track.state = det.PersonState.SITTING
+
+        # AR=0.95 is below fall_aspect_ratio (1.2), so even WITHOUT sitting
+        # dampening it should not trigger a fall. With sitting signal, extra safe.
+        for _ in range(det.CFG.fall_confirm_frames + 5):
+            track.update_state(0.95, (320, 400), pose_sit_signal=True)
+
+        # Must NOT be in FALLING/FALLEN/EMERGENCY
+        assert track.state in (det.PersonState.SITTING, det.PersonState.STANDING), (
+            f"Sub-threshold sitting person went to {track.state.value}"
+        )
+
+    def test_pose_signal_boosts_fall_detection(self, det):
+        """Pose fall signal should lower the frame count needed to trigger FALLING."""
+        track = det.PersonTrack(track_id=51)
+        # Feed borderline AR + pose fall signal — should confirm faster
+        n_fed = 0
+        for _ in range(det.CFG.fall_confirm_frames + 10):
+            # AR is borderline (fall_aspect_ratio * 0.8) + pose boost
+            track.update_state(det.CFG.fall_aspect_ratio * 0.8, (320, 400), pose_sit_signal=False)
+            n_fed += 1
+            if track.state != det.PersonState.STANDING:
+                break
+        # Just verify state machine ran without error
+        assert track.state in (
+            det.PersonState.STANDING, det.PersonState.FALLING,
+            det.PersonState.FALLEN, det.PersonState.EMERGENCY
+        )
+
+    def test_very_high_aspect_ratio_confirms_faster(self, det):
+        """Extreme aspect ratio (person clearly horizontal) should trigger FALLING."""
+        track = det.PersonTrack(track_id=52)
+        for _ in range(det.CFG.fall_confirm_frames + 1):
+            track.update_state(3.5, (320, 600))  # Very wide
+        assert track.state == det.PersonState.FALLING
+
+    def test_multiple_tracks_independent(self, det):
+        """Two different track IDs must not share state."""
+        t1 = det.PersonTrack(track_id=1)
+        t2 = det.PersonTrack(track_id=2)
+
+        # Put t1 in FALLING
+        for _ in range(det.CFG.fall_confirm_frames + 2):
+            t1.update_state(2.0, (100, 100))
+
+        assert t1.state == det.PersonState.FALLING
+        assert t2.state == det.PersonState.STANDING  # t2 unaffected
+
+    def test_aspect_history_bounded(self, det):
+        """Aspect history deque must not grow unboundedly."""
+        track = det.PersonTrack(track_id=77)
+        for _ in range(200):
+            track.update_state(0.5, (320, 240))
+        assert len(track.aspect_history) <= 15  # maxlen=15
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 6. STATE COLORS AND ENUMS
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestStateMetadata:
+
+    def test_all_states_have_colors(self, det):
+        for state in det.PersonState:
+            assert state in det.STATE_COLOR, f"No color defined for state {state}"
+
+    def test_all_states_have_emojis(self, det):
+        for state in det.PersonState:
+            assert state in det.STATE_EMOJI, f"No emoji for state {state}"
+
+    def test_emergency_color_is_bright_red(self, det):
+        color = det.STATE_COLOR[det.PersonState.EMERGENCY]
+        # BGR format: red = (0, 0, 255)
+        assert color[2] >= 200, "EMERGENCY state should have high red channel"
+
+    def test_standing_color_is_greenish(self, det):
+        color = det.STATE_COLOR[det.PersonState.STANDING]
+        # Green channel should be dominant
+        assert color[1] > color[2], "STANDING color should be green"

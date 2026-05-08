@@ -264,7 +264,11 @@ SafeSight-MLOps/
 │   └── server/                 # Node.js + Express + MongoDB + MySQL
 │
 ├── 🤖  ai-engine/              # YOLOv8 Computer Vision Core
-│   ├── src/detection.py        # Main processing hub
+│   ├── src/detection.py        # Main AI engine — state machine + fall detection
+│   ├── tests/
+│   │   ├── test_detection.py   # Unit tests — state machine, config, edge cases
+│   │   ├── test_accuracy.py    # Precision / Recall / F1 accuracy benchmark
+│   │   └── test_camera_benchmark.py  # Camera pipeline + FPS performance tests
 │   ├── yolov8n-pose.pt         # Pose estimation model
 │   └── requirements.txt
 │
@@ -276,6 +280,89 @@ SafeSight-MLOps/
 ```
 
 ---
+
+## 🧪 AI Engine — Testing & Accuracy
+
+The AI Engine includes a full test suite for validating fall detection accuracy **without needing a live camera**. Tests use synthetic frame sequences fed through the real state machine.
+
+### What's Tested (56 tests)
+
+| Test File | Coverage |
+|---|---|
+| `test_detection.py` | State machine transitions, config thresholds, cooldowns, edge cases |
+| `test_accuracy.py` | Precision, Recall, F1 across 9 real-world fall scenarios |
+| `test_camera_benchmark.py` | Camera pipeline, inference skipping, stale track pruning, FPS speed |
+
+### Accuracy Scenarios
+
+| Scenario | Expected | What It Tests |
+|---|---|---|
+| Normal standing (60 frames) | ✅ No alert | False positive guard |
+| Normal walking (varying AR) | ✅ No alert | Motion noise tolerance |
+| Clear fall (AR=2.0 for 30 frames) | 🔴 Alert | Core fall detection |
+| Slow progressive fall (AR 0.4 → 1.8) | 🔴 Alert | Gradual fall detection |
+| Extreme fall (AR=3.5) | 🔴 Alert | Obvious fall sensitivity |
+| Sitting (AR=0.9 + pose signal) | ✅ No alert | Sitting vs. falling |
+| Brief stumble + recovery | ✅ No alert | False positive guard |
+| Borderline fall (AR=1.25) | 🔴 Alert | Threshold boundary |
+| Quick crouch (3 frames wide) | ✅ No alert | Temporal filter validation |
+
+**Minimum Accuracy Targets:**
+
+```
+Precision  ≥ 80%    (not too many false alarms)
+Recall     ≥ 80%    (catches real falls)
+F1 Score   ≥ 80%    (balanced)
+FPR        ≤ 30%    (false positive rate)
+```
+
+### Running the Tests
+
+```bash
+cd ai-engine
+
+# Install dependencies (first time only)
+pip install -r requirements.txt
+
+# Run all 56 tests
+python -m pytest tests/ -v
+
+# Run accuracy benchmark with full report table
+python -m pytest tests/test_accuracy.py -v -s
+
+# Run with coverage
+python -m pytest tests/ --cov=src --cov-report=term-missing
+```
+
+**Sample accuracy report output:**
+```
+========================================================================
+  TASUKE'26 FALL DETECTION -- ACCURACY REPORT
+  Thresholds: AR>1.2  confirm_frames=18  fallen_after=3.0s
+========================================================================
+  SCENARIO                                           EXPECTED      GOT  PASS
+------------------------------------------------------------------------
+  Normal standing (60 frames)                            SAFE     SAFE  [OK]
+  Clear fall (wide AR for 30 frames)                     FALL     FALL  [OK]
+  Sitting down (AR=0.9, pose sit signal)                 SAFE     SAFE  [OK]
+  ...
+------------------------------------------------------------------------
+
+  Confusion Matrix:
+    TP=4  FP=0  FN=0  TN=5
+
+  Metrics:
+    Precision           : 100.0%
+    Recall (sensitivity): 100.0%
+    F1 Score            : 100.0%
+    False Positive Rate : 0.0%
+    Overall Accuracy    : 100.0%
+========================================================================
+```
+
+> **Note:** "Training" the AI engine means **calibrating the fall-detection thresholds** (aspect ratio, confirm frames, duration timers) — not retraining YOLOv8 itself. The YOLO model weights are pre-trained and used as-is.
+
+
 
 ## 🌐 Service Map
 
