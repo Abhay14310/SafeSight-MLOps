@@ -10,12 +10,13 @@ import { alertApi,patientApi,taskApi } from '../lib/api';
 import type { VitalSnapshot,ECGPoint,PoseFrame,Alert,Patient } from '../types';
 
 const NAV=[
-  { to:'/',       label:'Dashboard',       icon:<LayoutDashboard size={16}/> },
-  { to:'/monitor',label:'Patient Monitor', icon:<Activity size={16}/> },
-  { to:'/pose',   label:'AI Pose Analysis',icon:<Scan size={16}/> },
-  { to:'/nurse',  label:'Nurse Station',   icon:<Users size={16}/> },
-  { to:'/docker', label:'Docker Deploy',   icon:<Container size={16}/> },
-  { to:'/alerts', label:'Alerts',          icon:<Bell size={16}/> },
+  { to:'/',         label:'Dashboard',       icon:<LayoutDashboard size={16}/> },
+  { to:'/patients', label:'Patients',        icon:<Users size={16}/> },
+  { to:'/monitor',  label:'Patient Monitor', icon:<Activity size={16}/> },
+  { to:'/pose',     label:'AI Pose Analysis',icon:<Scan size={16}/> },
+  { to:'/nurse',    label:'Nurse Station',   icon:<Users size={16}/> },
+  { to:'/docker',   label:'Docker Deploy',   icon:<Container size={16}/> },
+  { to:'/alerts',   label:'Alerts',          icon:<Bell size={16}/> },
 ];
 
 function Clock(){

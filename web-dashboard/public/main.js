@@ -357,8 +357,8 @@ function initScrollAnimations() {
     });
   }, { threshold: .15 });
 
-  document.querySelectorAll('.feat-card, .module-card').forEach((el, i) => {
-    el.style.transitionDelay = (i % 3) * .1 + 's';
+  document.querySelectorAll('.feat-card, .module-card, .bento-card, .showcase-card').forEach((el, i) => {
+    el.style.transitionDelay = (i % 4) * .09 + 's';
     obs.observe(el);
   });
 }
@@ -425,6 +425,33 @@ function initMagneticButtons() {
     btn.addEventListener('mouseleave', () => {
       btn.style.transform = '';
     });
+  });
+}
+
+/* ═══════════════════════════════════════
+   BILLING TOGGLE (Pricing section)
+═══════════════════════════════════════ */
+const PRICES = {
+  monthly: { core: '$299', pro: '$799',   elite: '$1,999' },
+  annual:  { core: '$239', pro: '$639',   elite: '$1,599' },
+};
+let billingMode = 'monthly';
+
+function toggleBilling() {
+  setBilling(billingMode === 'monthly' ? 'annual' : 'monthly');
+}
+function setBilling(mode) {
+  billingMode = mode;
+  const sw   = document.querySelector('.bt-switch');
+  const mLbl = document.getElementById('bt-monthly');
+  const aLbl = document.getElementById('bt-annual');
+  if (sw)   sw.classList.toggle('annual', mode === 'annual');
+  if (mLbl) mLbl.classList.toggle('active', mode === 'monthly');
+  if (aLbl) aLbl.classList.toggle('active', mode === 'annual');
+  const p = PRICES[mode];
+  ['core','pro','elite'].forEach(k => {
+    const el = document.getElementById('price-' + k);
+    if (el) el.innerHTML = p[k] + '<span>/mo</span>';
   });
 }
 

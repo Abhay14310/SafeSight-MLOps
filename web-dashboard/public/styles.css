@@ -959,3 +959,153 @@ input, select, textarea { font-family: var(--fp); }
 .tier-pill.core { background: var(--sky-dim); color: var(--sky); border: 1px solid var(--sky-bdr); }
 .tier-pill.pro { background: var(--am-dim); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
 .tier-pill.elite { background: var(--ro-dim); color: var(--rose); border: 1px solid rgba(244,63,94,0.2); }
+
+/* ══════════════════════════════════════
+   BENTO GRID (Features section)
+══════════════════════════════════════ */
+.bento-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 12px;
+}
+.bento-card {
+  background: var(--navy);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 36px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .3s, background .3s, transform .3s;
+  opacity: 0; transform: translateY(24px);
+}
+.bento-card.visible { opacity: 1; transform: translateY(0); }
+.bento-card:hover { border-color: rgba(56,189,248,.28); background: var(--slate); transform: translateY(-3px); }
+.bento-card::before { content:''; position:absolute; inset:0; background: radial-gradient(ellipse 60% 60% at 10% 10%, rgba(56,189,248,0.04), transparent); pointer-events:none; }
+/* Sizing variants */
+.bento-large { grid-column: span 2; }
+.bento-small { grid-column: span 1; }
+.bento-wide  { grid-column: span 3; display:flex; align-items:center; gap:40px; }
+.bento-wide .feat-icon { flex-shrink:0; }
+.bento-wide > div:nth-child(2) { flex:1; }
+/* Tag */
+.bento-tag {
+  position: absolute; top: 20px; right: 20px;
+  font-family: var(--fm); font-size: 8px; letter-spacing: .14em;
+  background: var(--sky-dim); color: var(--sky); border: 1px solid var(--sky-bdr);
+  padding: 3px 9px; border-radius: 4px;
+}
+/* Pills */
+.bento-pills { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
+.bento-pill {
+  font-family: var(--fm); font-size: 10px; letter-spacing:.06em;
+  padding: 4px 10px; border-radius: 100px; border: 1px solid;
+  transition: opacity .2s;
+}
+/* Stats row on wide card */
+.bento-stat-row { display:flex; gap:32px; flex-shrink:0; }
+.bento-stat { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.bento-stat span { font-size:26px; font-weight:800; color:var(--sky); letter-spacing:-.03em; }
+.bento-stat small { font-family:var(--fm); font-size:10px; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; }
+
+/* ══════════════════════════════════════
+   SHOWCASE GRID (Modules section)
+══════════════════════════════════════ */
+.showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+.showcase-card {
+  background: var(--slate);
+  border: 1px solid var(--border2);
+  border-radius: 18px;
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  transition: transform .3s, border-color .3s, box-shadow .3s;
+  opacity: 0; transform: translateY(30px);
+}
+.showcase-card.visible { opacity: 1; transform: translateY(0); }
+.showcase-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--mod-color, var(--sky-bdr));
+  box-shadow: 0 20px 60px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.03);
+  background: var(--mod-bg, var(--slate));
+}
+/* Colored top accent bar */
+.showcase-accent {
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--mod-color, var(--sky));
+  opacity: .7;
+}
+.showcase-head { display:flex; align-items:center; gap:16px; margin-bottom:18px; }
+.showcase-emoji { font-size: 36px; line-height:1; }
+.showcase-badge {
+  font-family: var(--fm); font-size: 8px; letter-spacing: .14em;
+  padding: 3px 9px; border-radius: 4px; border: 1px solid;
+  margin-bottom: 6px; display: inline-block;
+}
+.showcase-title { font-size: 20px; font-weight: 800; letter-spacing: -.03em; }
+.showcase-desc {
+  font-family: var(--fm); font-size: 12px; color: var(--dim);
+  line-height: 1.85; margin-bottom: 20px;
+}
+.showcase-features {
+  list-style: none; padding: 0; margin: 0 0 24px;
+  display: flex; flex-direction: column; gap: 8px; flex:1;
+}
+.showcase-features li {
+  font-family: var(--fm); font-size: 12px; color: var(--dim);
+  padding: 6px 0; border-bottom: 1px solid var(--border);
+  letter-spacing: .02em;
+}
+.showcase-features li:last-child { border-bottom: none; }
+.showcase-footer { display:flex; justify-content:space-between; align-items:center; margin-top: auto; }
+.showcase-link {
+  font-family: var(--fm); font-size: 11px; letter-spacing: .1em;
+  transition: letter-spacing .3s;
+}
+.showcase-link:hover { letter-spacing: .18em; }
+
+/* ══════════════════════════════════════
+   BILLING TOGGLE (Pricing section)
+══════════════════════════════════════ */
+.billing-toggle {
+  display: flex; align-items: center; gap: 14px;
+  justify-content: center; margin-bottom: 48px;
+}
+.bt-label {
+  font-family: var(--fm); font-size: 12px; letter-spacing: .06em;
+  color: var(--muted); cursor: pointer; transition: color .2s;
+  display: flex; align-items: center; gap: 8px;
+}
+.bt-label.active { color: var(--text); }
+.bt-switch {
+  width: 44px; height: 24px; background: var(--faint); border-radius: 100px;
+  position: relative; cursor: pointer; border: 1px solid var(--border2);
+  transition: background .3s;
+}
+.bt-switch.annual { background: rgba(56,189,248,.3); border-color: var(--sky-bdr); }
+.bt-knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--muted); transition: transform .3s, background .3s;
+}
+.bt-switch.annual .bt-knob { transform: translateX(20px); background: var(--sky); }
+.bt-save {
+  font-family: var(--fm); font-size: 9px; letter-spacing: .1em;
+  background: var(--em-dim); color: var(--emerald);
+  border: 1px solid rgba(16,185,129,.3); padding: 2px 7px; border-radius: 4px;
+}
+/* Module chips on pricing cards */
+.saas-card { transition: transform .3s, box-shadow .3s; }
+.pc-modules-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px; }
+.pcm-chip {
+  font-family: var(--fm); font-size: 9px; letter-spacing: .06em;
+  padding: 3px 8px; border-radius: 5px;
+  border: 1px solid var(--border2); transition: all .2s;
+}
+.pcm-chip.active { background: var(--sky-dim); color: var(--sky); border-color: var(--sky-bdr); }
+.pcm-chip.locked { color: var(--muted); background: transparent; opacity: .45; }

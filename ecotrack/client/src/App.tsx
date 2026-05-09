@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import useStore from '@/store/useStore';
 import Layout      from '@/components/Layout';
 import Login       from '@/pages/Login';
+import Register    from '@/pages/Register';
 import Dashboard   from '@/pages/Dashboard';
 import WasteLogPage from '@/pages/WasteLogPage';
 import FleetPage   from '@/pages/FleetPage';
@@ -33,6 +34,7 @@ export default function App() {
     <AnimatePresence mode="wait">
       <Routes location={loc} key={loc.pathname}>
         <Route path="/login"    element={<W><Login /></W>} />
+        <Route path="/register" element={<W><Register /></W>} />
         <Route path="/tasuke"   element={<Guard><W><TasukeRedirect /></W></Guard>} />
         <Route path="/"         element={<Guard><Layout><W><Dashboard /></W></Layout></Guard>} />
         <Route path="/waste"    element={<Guard><Layout><W><WasteLogPage /></W></Layout></Guard>} />

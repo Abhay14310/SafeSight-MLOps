@@ -1,6 +1,6 @@
 // src/pages/Login.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import gsap from 'gsap';
 import { Leaf, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { authApi } from '@/lib/api';
@@ -131,9 +131,13 @@ export default function Login() {
                 </button>
               </div>
             </form>
-            <div className="eco-divider mt-6 mb-4"/>
             <p className="text-center font-mono text-slate-400" style={{fontSize:'0.75rem'}}>
               Demo: manager@ecotrack.io · eco123
+            </p>
+            <div className="eco-divider mt-4 mb-3"/>
+            <p className="text-center font-mono" style={{fontSize:'0.75rem',color:'#334155'}}>
+              Don't have an account?{' '}
+              <Link to="/register" className="font-bold" style={{color:'#15803d'}}>Create account →</Link>
             </p>
           </div>
         </div>

@@ -4,6 +4,22 @@ const jwt = require('jsonwebtoken');
 const { User } = require('../models/index');
 const sign = id => jwt.sign({id}, process.env.JWT_SECRET||'eco_secret',{expiresIn:'7d'});
 
+r.post('/register', async(req,res)=>{
+  try{
+    const {name,email,password,phone,role,zone}=req.body;
+    if(!name||!email||!password) return res.status(400).json({error:'Name, email and password are required'});
+    if(password.length<8) return res.status(400).json({error:'Password must be at least 8 characters'});
+    const exists=await User.findOne({email:email.toLowerCase().trim()});
+    if(exists) return res.status(409).json({error:'An account with this email already exists'});
+    const user=await User.create({
+      name:name.trim(), email:email.toLowerCase().trim(),
+      password, phone:phone||'', role:role||'manager', zone:zone||'',
+      isActive:true,
+    });
+    res.status(201).json({message:'Account created successfully',userId:user._id});
+  }catch(e){res.status(500).json({error:e.message});}
+});
+
 r.post('/login', async(req,res)=>{
   try{
     const {email,password}=req.body;

@@ -1,0 +1,333 @@
+# Tasuke'26 — 20-Slide PPT Generation Prompt
+
+Paste the following into any AI PPT tool (Gamma, Beautiful.ai, Tome, ChatGPT, etc.):
+
+---
+
+## PROMPT
+
+Create a professional 20-slide PowerPoint presentation titled **"TASUKE'26 — The Unified Intelligent Platform"**.
+
+**Design theme:** Premium dark-mode. Dark navy/charcoal backgrounds (#0a0a1a). Neon cyan (#00FFFF) and gold (#FFD700) accents. Modern sans-serif typography (Inter or Outfit). Subtle grid/circuit-board texture. Each slide should feel like a premium tech product pitch deck.
+
+---
+
+### SLIDE 1 — TITLE SLIDE
+**Title:** TASUKE'26  
+**Subtitle:** Four Platforms. One Command. Zero Chaos.  
+**Tagline:** *"Assist humans. Automate the noise. Build what matters."*  
+**Team:** Bharati, Snigdha & Abhay  
+**Visual:** Four platform icons in a row — 🛡️ SafeSight | 🏥 MedFlow 2 | 🌿 EcoTrack | 🛒 SmartRetail
+
+---
+
+### SLIDE 2 — PROBLEM STATEMENT
+**Title:** The Problem We Solved  
+Four real-world domain problems:
+- Physical security systems lack automated, real-time AI fall/threat detection
+- Hospital workflows are fragmented and paper-heavy with no unified digital system
+- Waste logistics have no real-time route optimization or sustainability tracking
+- Retail businesses are data-rich but insight-poor with no analytics layer
+
+*"We didn't build one solution. We built an ecosystem."*
+
+---
+
+### SLIDE 3 — PLATFORM ECOSYSTEM OVERVIEW
+**Title:** Platform Ecosystem — At a Glance  
+Table with 5 rows:
+
+| Platform | Domain | Port | Stack |
+|---|---|---|---|
+| 🛡️ SafeSight | AI Surveillance & VMS | :4000 | Node.js · MongoDB · YOLOv8 · Three.js |
+| 🏥 MedFlow 2 | Hospital Management | :3010 | React · Node.js · MongoDB · GSAP |
+| 🌿 EcoTrack | Waste Logistics | :3008 | React · Node.js · MongoDB |
+| 🛒 SmartRetail | Retail Intelligence | :3005 | React · Node.js · MongoDB · MySQL |
+| 🤖 AI Engine | Computer Vision Core | internal | Python · YOLOv8 · OpenCV |
+
+*All platforms share one Docker network. Launched with one command.*
+
+---
+
+### SLIDE 4 — UNIFIED ARCHITECTURE DIAGRAM
+**Title:** One Monorepo. Five Services. One Network.  
+Show a system architecture diagram:
+- Single `docker-compose.yml` with Docker Compose Profile-based selective startup
+- 4 React/Node.js app containers + 4 MongoDB instances + 1 MySQL 8.0 + 1 Python AI Engine
+- All connected via `safesight-network` Docker bridge network
+- Cross-platform launch: `start.sh` (Linux/macOS) and `start.bat` (Windows)
+- Interactive CLI launcher menu — launch any combination of platforms
+- GitHub Actions CI/CD pipeline with audit reports
+
+---
+
+### SLIDE 5 — 🛡️ SAFESIGHT — CYBER SENTINEL VMS
+**Title:** SafeSight — AI-Powered Video Management System  
+**Subtitle:** Next-Gen Threat Detection, Zero Latency
+
+Key features:
+- YOLOv8-Pose: Real-time human pose estimation from any camera
+- State Machine: Standing → Falling → Fallen → Emergency
+- Three.js 3D wireframe cyberpunk UI dashboard
+- Socket.io live data streaming to the browser
+- Edge Node Auth: UUID X-API-Key M2M machine authentication
+- Audit Logging: Every login, API call, and alert stored in MongoDB
+- Subscription Modules: Perimeter Security | Industrial PPE | High-Security Intrusion
+
+---
+
+### SLIDE 6 — SAFESIGHT AI ENGINE — HOW IT WORKS
+**Title:** The Brain Behind SafeSight — YOLOv8 State Machine  
+Step-by-step numbered flow:
+
+1. Webcam/RTSP feed → OpenCV frame capture at configurable FPS
+2. YOLOv8n-pose inference → 17 keypoint skeleton detected per person
+3. Bounding box Aspect Ratio (AR = width ÷ height) calculated per track
+4. AR > 1.2 sustained for 18+ consecutive frames → "FALLING" state triggered
+5. 3+ seconds in FALLEN state → "EMERGENCY" alert generated
+6. Alert POSTed to SafeSight REST API using X-API-Key authentication
+7. Socket.io pushes real-time notification to all connected dashboards
+
+---
+
+### SLIDE 7 — SAFESIGHT TESTING & ACCURACY METRICS
+**Title:** AI Accuracy Validated — 56 Tests, 100% F1 Score  
+
+Test suite breakdown:
+- `test_detection.py` — State machine transitions, config thresholds, cooldowns, edge cases
+- `test_accuracy.py` — Precision/Recall/F1 across 9 real-world fall scenarios
+- `test_camera_benchmark.py` — Pipeline FPS, inference skipping, stale track pruning
+
+9 Accuracy Scenarios tested:
+- Normal standing (60 frames) → No Alert ✅
+- Clear fall (AR=2.0 for 30 frames) → Alert 🔴
+- Sitting down (AR=0.9) → No Alert ✅
+- Slow progressive fall (AR 0.4→1.8) → Alert 🔴
+- Brief stumble + recovery → No Alert ✅
+- Borderline fall (AR=1.25) → Alert 🔴
+- Quick crouch (3 frames) → No Alert ✅
+
+**Results: Precision 100% | Recall 100% | F1 Score 100% | FPR 0.0%**
+
+*No live camera required — tests use synthetic frame injection*
+
+---
+
+### SLIDE 8 — 🏥 MEDFLOW 2 — HOSPITAL MANAGEMENT SYSTEM
+**Title:** MedFlow 2 — Streamlining Clinical Workflows  
+**Subtitle:** React 18 + Node.js + MongoDB + GSAP Animations
+
+Features:
+- Patient registration, medical records & history management
+- Doctor scheduling and appointment booking system
+- Role-based access control: Admin | Doctor | Staff
+- GSAP-powered animated transitions throughout the UI
+- JWT-secured REST API backend with bcrypt password hashing
+- Full CRUD operations backed by MongoDB
+
+Ports: Client :3010 | API Server :5060 | MongoDB :27020
+
+---
+
+### SLIDE 9 — 🌿 ECOTRACK — WASTE LOGISTICS INTELLIGENCE
+**Title:** EcoTrack — Making Sustainability Measurable  
+**Subtitle:** React + Node.js + MongoDB
+
+Features:
+- Real-time waste collection route tracking
+- Sustainability analytics and KPI dashboards
+- Driver and agent management system
+- Full REST API with MongoDB backend
+- Environmental reporting with exportable metrics
+
+Ports: Client :3008 | API Server :5055 | MongoDB :27019
+
+*"Digitizing sustainability — one route at a time."*
+
+---
+
+### SLIDE 10 — 🛒 SMARTRETAIL — RETAIL INTELLIGENCE PLATFORM
+**Title:** SmartRetail — Turning Transactions Into Insights  
+**Subtitle:** React + Node.js + Dual Database Architecture
+
+Features:
+- Product catalog and inventory management
+- ACID-compliant sales transaction tracking via MySQL 8.0
+- Customer analytics and behavior pattern insights
+- Dark-mode React dashboard with premium typography
+- Dual-database design: MongoDB (operational speed) + MySQL (transactional integrity)
+
+Ports: Client :3005 | API Server :5050 | MongoDB :27018 | MySQL :3307
+
+---
+
+### SLIDE 11 — COMPLETE TECHNOLOGY STACK
+**Title:** The Complete Stack — Every Layer Engineered  
+
+| Layer | Technologies |
+|---|---|
+| AI / ML | Python 3.10+, YOLOv8 (Pose + Detection), OpenCV, NumPy |
+| Backend | Node.js, Express.js, REST APIs, Socket.io, JWT Auth, bcrypt |
+| Frontend | React 18, GSAP, Three.js, Vanilla JS ES6+, CSS Variables |
+| Databases | MongoDB (Mongoose ODM), MySQL 8.0 |
+| Infrastructure | Docker, Docker Compose (Profiles), GitHub Actions CI/CD |
+| DevOps | Shell Automation, start.sh / start.bat, Docker Healthchecks |
+| Security | X-API-Key M2M Auth, JWT Sessions, Audit Logging, bcrypt |
+
+---
+
+### SLIDE 12 — DEVOPS & DOCKER ORCHESTRATION
+**Title:** DevOps — Containerized, Orchestrated, Production-Ready  
+
+Architecture highlights:
+- Single `docker-compose.yml` with 10 named services and Docker Compose profiles
+- Profile-based selective startup: launch any 1, 2, 3, or all 4 platforms
+- Automatic `.env` generation from `.env.example` on first run
+- Docker healthcheck probes on all services before dependent services start
+- Named Docker volumes for persistent data across container restarts
+- All services communicate over isolated `safesight-network` bridge
+- GitHub Actions workflow for automated CI/CD audit and validation
+
+---
+
+### SLIDE 13 — SECURITY ARCHITECTURE
+**Title:** Security — Layered, Audited, Production-Grade  
+
+| Layer | Implementation |
+|---|---|
+| Machine Auth | AI nodes authenticate via UUID X-API-Key headers |
+| User Auth | JWT-signed tokens with configurable expiry |
+| Password Security | bcrypt hashing (salt rounds configurable) |
+| Audit Trail | Every login, API call, and alert logged in MongoDB |
+| Network Isolation | All services on isolated safesight-network Docker bridge |
+| Secrets Management | .env file (gitignored) — never hard-coded in images |
+| Environment Safety | .env.example template — zero secrets in repository |
+
+---
+
+### SLIDE 14 — REPOSITORY STRUCTURE
+**Title:** Monorepo Architecture — Clean, Modular, Scalable  
+
+Show file tree visualization:
+```
+SafeSight-MLOps/
+├── web-dashboard/      ← SafeSight VMS (Three.js, Socket.io, Express)
+├── medflow2/
+│   ├── client/         ← React 18 + GSAP frontend
+│   └── server/         ← Node.js + Express + MongoDB
+├── ecotrack/
+│   ├── client/         ← React frontend
+│   └── server/         ← Node.js + Express + MongoDB
+├── smartretail/
+│   ├── client/         ← React dark-mode dashboard
+│   └── server/         ← Node.js + Express + MongoDB + MySQL
+├── ai-engine/
+│   ├── src/detection.py
+│   └── tests/          ← 56-test suite
+├── docker-compose.yml  ← Unified orchestration
+├── start.sh / start.bat← Interactive launcher
+└── .env.example
+```
+
+---
+
+### SLIDE 15 — SAFESIGHT LIVE DEMO FLOW
+**Title:** SafeSight — From Launch to Live Alert in 60 Seconds  
+
+Step-by-step demo walkthrough:
+1. Run `start.bat` → Select [7] SafeSight + AI Engine
+2. Open `http://localhost:4000` → Login (admin / password123)
+3. Navigate to Edge Nodes → Copy API Key
+4. Set env: `set SAFESIGHT_API_KEY=<key>`
+5. Run: `python src/detection.py` in ai-engine folder
+6. Click "START UPLINK" in dashboard
+7. Live webcam feed activates — state machine begins tracking
+8. Simulate fall → Dashboard shows real-time EMERGENCY alert 🔴
+
+---
+
+### SLIDE 16 — SERVICE MAP & PORT REFERENCE
+**Title:** Service Map — All Platforms, All Ports  
+
+Visual service map (use icons + port labels):
+```
+localhost:4000  →  SafeSight Dashboard (Web)
+localhost:3010  →  MedFlow 2 React Client
+localhost:3008  →  EcoTrack React Client
+localhost:3005  →  SmartRetail React Client
+
+localhost:5060  →  MedFlow 2 API Server
+localhost:5055  →  EcoTrack API Server
+localhost:5050  →  SmartRetail API Server
+
+localhost:27017 →  SafeSight MongoDB
+localhost:27020 →  MedFlow 2 MongoDB
+localhost:27019 →  EcoTrack MongoDB
+localhost:27018 →  SmartRetail MongoDB
+localhost:3307  →  SmartRetail MySQL
+```
+
+---
+
+### SLIDE 17 — MLOps PIPELINE
+**Title:** MLOps — From Model to Production  
+
+Highlight the MLOps workflow:
+- Pre-trained YOLOv8n-pose weights (6.5 MB, no GPU needed)
+- Threshold calibration system (AR ratio, confirm frames, fall duration)
+- Synthetic test frame injection for CI/CD accuracy validation
+- 56-test regression suite runs on every commit via GitHub Actions
+- Accuracy targets enforced: Precision ≥ 80%, Recall ≥ 80%, F1 ≥ 80%
+- Camera benchmark tests validate FPS performance and pipeline throughput
+- Model upgrade path: swap `.pt` file, re-calibrate thresholds, re-run tests
+
+---
+
+### SLIDE 18 — KEY ACHIEVEMENTS & METRICS
+**Title:** What We Built — By the Numbers  
+
+Achievement metrics to display prominently:
+- 4 fully independent, production-ready platforms
+- 1 unified Docker orchestration system with profile-based selective startup
+- 56 automated AI tests with 100% F1 Score achieved
+- 5 databases (4× MongoDB + 1× MySQL) all containerized
+- 10 Docker services in one compose file
+- 7 distinct security layers implemented
+- 2 cross-platform launcher scripts (Windows + Linux/macOS)
+- 1 monorepo — zero dependency conflicts between platforms
+
+---
+
+### SLIDE 19 — FUTURE ROADMAP
+**Title:** Tasuke'27 — What's Next  
+
+Planned enhancements:
+- SafeSight: Multi-camera RTSP stream support + cloud recording
+- MedFlow 2: Telemedicine module + prescription management
+- EcoTrack: ML-based route optimization using historical data
+- SmartRetail: Demand forecasting with time-series ML models
+- Platform-wide: Centralized SSO (Single Sign-On) across all 4 apps
+- Unified Admin Dashboard: Monitor all 4 platforms from one pane
+- Cloud Deployment: Kubernetes orchestration on AWS/GCP
+- Mobile apps: React Native companion apps for each platform
+
+---
+
+### SLIDE 20 — THANK YOU / CONCLUSION
+**Title:** TASUKE'26  
+**Subtitle:** Built with purpose. Engineered for impact.
+
+Closing message:
+*"Four platforms. One vision. Assist humans, automate the noise, and build what matters."*
+
+Team: **Bharati · Snigdha · Abhay**
+
+Links/References:
+- GitHub: github.com/Abhay14310/SafeSight-MLOps
+- Stack: Python · Node.js · React · MongoDB · MySQL · Docker · YOLOv8
+
+Final tagline: *Tasuke (助け) — Japanese for "help." Every system in this platform exists to assist humans make faster, smarter, better decisions.*
+
+---
+
+END OF PROMPT
