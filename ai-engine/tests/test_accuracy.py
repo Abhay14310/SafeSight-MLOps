@@ -37,12 +37,12 @@ if SRC_DIR not in sys.path:
 
 def _load_detection():
     """
-    Import and return the project's `detection` module with several heavy external dependencies replaced by mocks.
+    Import the 'detection' module while substituting heavy external dependencies with safe mocks.
     
-    The function ensures any previously loaded `detection` entry is removed from sys.modules, then patches import resolution so that modules like `cv2`, `ultralytics`, `requests`, and `urllib3` (and select submodules) resolve to MagicMock instances while the real `numpy` is preserved. It then imports and returns the freshly loaded `detection` module.
+    This forces a fresh import (clearing any cached 'detection' entry) and injects mock objects for modules like `cv2`, `ultralytics`, `requests`, and `urllib3` while preserving a real `numpy` import to enable deterministic testing without native/network dependencies.
     
     Returns:
-        module: The imported `detection` module.
+        module: The imported `detection` module with external dependencies replaced by mocks.
     """
     mocks = {
         "cv2": MagicMock(),
@@ -80,10 +80,10 @@ class ScenarioResult:
     @property
     def correct(self) -> bool:
         """
-        Indicates whether the scenario's alert outcome matches the expected fall label.
+        Indicates whether the scenario outcome matches the expectation.
         
         Returns:
-            bool: `true` if `alert_fired` equals `expected_fall`, `false` otherwise.
+            bool: `True` if the observed alert state (`alert_fired`) equals the expected fall outcome (`expected_fall`), `False` otherwise.
         """
         return self.alert_fired == self.expected_fall
 
@@ -96,20 +96,22 @@ def run_scenario(
     pose_sit_signals: List[bool] = None,
 ) -> ScenarioResult:
     """
-    Run a sequence of aspect-ratio frames through a PersonTrack and record whether a fall alert occurred.
+    Feed a sequence of aspect ratios into a PersonTrack and record whether a fall alert occurred.
+    
+    Processes each frame by updating the track state; optionally applies time injections to simulate elapsed time and accepts per-frame sitting signals.
     
     Parameters:
-        name (str): Scenario name for the returned result.
-        aspect_ratios (List[float]): Per-frame aspect-ratio values fed to PersonTrack.update_state.
-        expected_fall (bool): Whether the scenario is expected to produce a fall alert.
-        time_injections (List[Tuple[int, float]], optional): List of (frame_index, seconds_backdate) pairs.
-            For each pair, when the loop reaches frame_index the track's timestamps (if set) are moved
-            backwards by seconds_backdate to simulate elapsed time.
-        pose_sit_signals (List[bool], optional): Per-frame sitting signals; defaults to all False.
+        name (str): Scenario identifier used in the returned result.
+        aspect_ratios (List[float]): Per-frame aspect ratios to feed to the tracker.
+        expected_fall (bool): Whether a fall alert is expected for the scenario.
+        time_injections (List[Tuple[int, float]], optional): List of (frame_index, seconds_to_subtract)
+            used to adjust internal timestamps at the specified frame to simulate time passing.
+        pose_sit_signals (List[bool], optional): Per-frame boolean indicating a detected sitting pose;
+            defaults to False for all frames.
     
     Returns:
-        ScenarioResult: Aggregated result containing the scenario name, expected outcome, whether an
-        alert fired at any frame, and the track's final state string.
+        ScenarioResult: Summary of the run containing the scenario name, expected_fall,
+        whether an alert was observed (alert_fired), and the track's final state string.
     """
     track = PersonTrack(track_id=1)
     alert_fired = False
@@ -204,14 +206,16 @@ class TestAccuracyScenarios:
     @pytest.mark.parametrize("scenario", SCENARIOS, ids=[s["name"] for s in SCENARIOS])
     def test_scenario(self, scenario):
         """
-        Execute a predefined scenario through the scenario runner and assert the observed alert outcome matches the scenario's expectation.
+        Run a predefined scenario through the scenario runner and assert the observed alert matches the scenario expectation.
+        
+        This test invokes run_scenario with the scenario's name, aspect ratio sequence, expected outcome, and optional sitting signals, then fails with a diagnostic message if the observed alert does not match the expected result.
         
         Parameters:
-        	scenario (dict): Scenario definition with keys:
-        		- "name" (str): Human-readable scenario name.
-        		- "aspect_ratios" (List[float]): Per-frame aspect-ratio sequence fed to the track.
-        		- "expected_fall" (bool): Whether a fall alert is expected for this scenario.
-        		- "pose_sit_signals" (Optional[List[bool]]): Optional per-frame sit signals.
+            scenario (dict): Scenario specification with keys:
+                - "name" (str): scenario identifier used for diagnostics.
+                - "aspect_ratios" (List[float]): per-frame aspect-ratio sequence to feed the tracker.
+                - "expected_fall" (bool): whether a fall alert is expected for this scenario.
+                - "pose_sit_signals" (Optional[List[bool]]): optional per-frame sitting pose signals.
         """
         result = run_scenario(
             name=scenario["name"],
@@ -237,9 +241,9 @@ class TestAccuracyMetrics:
 
     def test_overall_accuracy_report(self, capsys):
         """
-        Compute and print aggregated detection metrics across the predefined scenarios and assert minimum performance thresholds.
+        Compute aggregate accuracy metrics across the predefined scenarios, print a formatted report, and assert minimum performance thresholds.
         
-        For each scenario this test runs the scenario runner, tallies true/false positives/negatives, derives precision, recall, F1 score, false-positive rate, and overall accuracy, prints a formatted report with the confusion matrix and per-scenario results, and asserts that precision, recall, and F1 are at least 80% while the false-positive rate is at most 30%.
+        Calculates the confusion-matrix counts (TP, FP, FN, TN) from ScenarioResult objects, derives precision, recall (sensitivity), F1 score, false positive rate (FPR), and overall accuracy, and prints a detailed report that includes per-scenario outcomes, the confusion matrix, and each metric. Fails the test if precision, recall, or F1 is below 80% or if the false positive rate exceeds 30%.
         """
         results = []
         for scenario in SCENARIOS:

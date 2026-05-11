@@ -345,12 +345,11 @@ function initCameraWireframe() {
 }
 
 /**
- * Initializes scroll-reveal behavior for feature and card elements.
+ * Reveals feature and module cards as they enter the viewport with a staggered transition delay.
  *
- * Adds a staggered `transitionDelay` to elements matching
- * `.feat-card, .module-card, .bento-card, .showcase-card` and observes them.
- * When an element crosses a 0.15 intersection threshold the function adds the
- * `visible` class and stops observing that element.
+ * Observes elements matching `.feat-card, .module-card, .bento-card, .showcase-card` and adds the `visible`
+ * class when each element crosses a 15% intersection threshold. Applies a staggered `transitionDelay`
+ * to each element based on its index ((index % 4) * 0.09s) and stops observing elements after they become visible.
  */
 function initScrollAnimations() {
   const obs = new IntersectionObserver(entries => {
@@ -417,9 +416,9 @@ function startEntrance() {
 }
 
 /**
- * Adds a "magnetic" hover interaction to all elements with the `.mag-btn` class.
+ * Applies a subtle "magnetic" translate effect to elements with the `.mag-btn` class based on pointer position.
  *
- * On pointer move over a button, the element is translated toward the cursor by a small scaled offset; the transform is cleared when the pointer leaves.
+ * Each matched button is translated a small distance toward the cursor while the pointer is over it; the transform is cleared when the pointer leaves.
  */
 function initMagneticButtons() {
   document.querySelectorAll('.mag-btn').forEach(btn => {
@@ -445,18 +444,18 @@ const PRICES = {
 let billingMode = 'monthly';
 
 /**
- * Toggle the global billing mode between monthly and annual and update the pricing UI.
- *
- * This flips the module-level `billingMode` and refreshes displayed prices and switch state in the DOM.
+ * Toggle the pricing billing mode between monthly and annual and update the UI accordingly.
  */
 function toggleBilling() {
   setBilling(billingMode === 'monthly' ? 'annual' : 'monthly');
 }
 /**
- * Update the active billing mode and refresh the pricing UI accordingly.
+ * Switches the active billing mode and updates the UI to reflect monthly or annual pricing.
  *
- * Toggles the switch and label active states for monthly/annual modes and replaces the displayed prices for core, pro, and elite plans using the PRICES mapping.
- * @param {'monthly'|'annual'} mode - The billing mode to apply.
+ * Updates the billing switch state, activates the corresponding monthly/annual label, and replaces
+ * the displayed prices for the core, pro, and elite plan elements.
+ *
+ * @param {'monthly'|'annual'} mode - The billing mode to activate.
  */
 function setBilling(mode) {
   billingMode = mode;

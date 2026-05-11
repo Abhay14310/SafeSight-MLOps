@@ -8,14 +8,11 @@ import { settingsApi } from '../lib/api';
 const STEPS=['Verifying MedFlow session…','Packaging clinical context…','Establishing Tasuke connection…','Launching AI hub…'];
 
 /**
- * Renders an animated "Connecting to Tasuke AI" gateway UI that shows multi-step progress,
- * displays the destination URL, and redirects to that URL when progress completes.
+ * Shows a progress UI that connects the user to the Tasuke AI platform and then redirects to the destination URL.
  *
- * The component fetches the destination from settingsApi, animates entrance and a progress bar,
- * updates visible step state during the animation, and performs an automatic redirect when done.
- * It also exposes controls to cancel back to the app or trigger an immediate redirect.
+ * Displays an animated progress bar with step indicators, fetches the target Tasuke URL, and auto-redirects the browser when the progress completes. Provides controls to cancel and return to the app or to immediately navigate to the destination.
  *
- * @returns The rendered gateway UI as a React element.
+ * @returns The component's rendered JSX element.
  */
 export default function TasukeGateway(){
   const navigate=useNavigate();

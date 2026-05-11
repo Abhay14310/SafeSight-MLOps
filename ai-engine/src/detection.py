@@ -867,9 +867,9 @@ class AIEngine:
 
     def _open_camera(self) -> None:
         """
-        Open and configure the camera capture used by the engine.
+        Open and configure the video capture device using the DirectShow backend.
         
-        Initializes self._cap as an OpenCV VideoCapture using the DirectShow backend, sets the requested frame width, height, and a minimal buffer size for low latency, performs a brief warm-up to allow driver negotiation, and logs the resolved resolution.
+        Initializes self._cap for CFG.camera_index, sets the requested frame width, height, and a minimal capture buffer to reduce latency, performs a short warm-up to allow driver format negotiation, and logs the negotiated resolution.
         """
         log.info(f"📷  Opening camera index {CFG.camera_index} (backend: DirectShow) ...")
         # Use CAP_DSHOW instead of the default MSMF backend.

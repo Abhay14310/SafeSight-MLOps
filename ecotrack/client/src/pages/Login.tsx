@@ -8,12 +8,12 @@ import useStore from '@/store/useStore';
 import HeroScene from '@/components/HeroScene';
 
 /**
- * Renders the login page with a sign-in form and a 3D hero scene.
+ * Render the login page with an animated sign-in form, client-side form handling, and redirect when authenticated.
  *
- * Redirects authenticated users to the root route and handles form submission to authenticate,
- * update application authentication state, and display loading/error feedback.
+ * The component displays controlled email/password inputs with a password visibility toggle, shows validation error feedback,
+ * performs authentication via `authApi.login`, updates global auth state on success, and plays entrance and error animations using GSAP.
  *
- * @returns The React element for the login page UI
+ * @returns The rendered login page JSX element.
  */
 export default function Login() {
   const navigate   = useNavigate();

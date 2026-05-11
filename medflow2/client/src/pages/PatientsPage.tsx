@@ -44,11 +44,11 @@ const WARDS  = ['ICU-4A','ICU-4B','Ward-5','Ward-6','CCU','NICU','Emergency','St
 const BLOODS = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
 
 /**
- * Render the patient registry page with patient list, search and status filters, KPI cards, and admit/edit modal.
+ * Renders the Patient Registry page with patient listing, search and status filters, KPI summaries, admit/edit modal, and discharge actions.
  *
- * The page loads patients from the API, supports refresh, admit/edit flows (modal form), and discharge actions with confirmation. It shows loading skeletons, computes status and Morse risk indicators, and uses GSAP and Framer Motion for entry and modal animations.
+ * The component fetches and displays patients from the API, provides client-side filtering and search, animates entries with GSAP, and exposes controls to admit new patients, edit existing records, and discharge patients (via API calls). It also shows loading states and toasts for operation results.
  *
- * @returns The PatientsPage React element
+ * @returns The JSX element that renders the patient registry UI (KPIs, searchable/filterable table, and admit/edit modal).
  */
 export default function PatientsPage() {
   const ref = useRef<HTMLDivElement>(null);
@@ -93,9 +93,9 @@ export default function PatientsPage() {
   });
 
   /**
-   * Open the admit-patient modal and initialize the form for creating a new patient.
+   * Open the patient admission modal and reset form state.
    *
-   * Clears any current editing context, resets the form to default values, and shows the modal.
+   * Clears any currently editing patient, resets the form to `EMPTY_FORM`, and shows the modal.
    */
   function openAdd() {
     setEditing(null);
@@ -104,9 +104,12 @@ export default function PatientsPage() {
   }
 
   /**
-   * Open the patient edit modal and populate the form with the provided patient's data.
+   * Open the admit/edit modal and populate the form with the given patient's data.
    *
-   * @param p - The patient whose values will prefill the edit form and be set as the active editing target
+   * Populates the form state from `p` (including baseline vitals and comma-separated allergies),
+   * sets the current editing patient, and opens the modal for editing.
+   *
+   * @param p - The patient whose values will populate the edit form
    */
   function openEdit(p: Patient) {
     setEditing(p);
@@ -127,14 +130,13 @@ export default function PatientsPage() {
   }
 
   /**
-   * Create or update a patient record from the modal form and refresh the patient list.
+   * Submit the patient form to create a new patient or update an existing one.
    *
-   * Validates required fields (bed ID and name), builds a normalized payload from the form
-   * (converting numeric fields and parsing allergies/baseline vitals), then sends it to the
-   * backend to either update the current patient or admit a new one. Shows success or error
-   * toasts, closes the modal on success, and ensures the saving state is cleared after completion.
+   * Validates required fields, builds and sends the normalized payload to the API
+   * (POST for new patients, PATCH for edits), shows success or error toasts,
+   * closes the modal and refreshes the patient list.
    *
-   * @param e - The form submission event
+   * @param e - Form submission event (preventDefault is called)
    */
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -171,11 +173,11 @@ export default function PatientsPage() {
   }
 
   /**
-   * Prompt the user to confirm and, if confirmed, discharge the specified patient via the API and update UI state.
+   * Initiates and executes the discharge of a patient after user confirmation.
    *
-   * Prompts with a confirmation dialog; if confirmed, sets the discharge-in-progress state for the patient, sends a DELETE request to remove the patient, shows a success or error toast depending on the outcome, refreshes the patient list on success, and always clears the discharge-in-progress state when finished.
+   * Attempts to delete the given patient's record from the server, shows a success or error toast, refreshes the patient list, and manages the local discharging state for UI feedback.
    *
-   * @param p - The patient to discharge (used for confirmation text, API id, and toast messaging)
+   * @param p - The patient to discharge (used for confirmation text and identifying the record to delete)
    */
   async function discharge(p: Patient) {
     if (!confirm(`Discharge ${p.name} from ${p.bedId}?`)) return;
@@ -189,17 +191,19 @@ export default function PatientsPage() {
   }
 
   /**
- * Update a top-level field on the form state with a new string value.
+ * Update a top-level field in the form state with the provided string value.
  *
- * @param k - The form field name to set
- * @param v - The new string value for the field
+ * @param k - The form field key to update
+ * @param v - The string value to set for the field
  */
   function setF(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
   /**
- * Update a single baseline vital field on the form model.
+ * Update a single baseline vital field on the current form state.
  *
- * @param k - Baseline field key to update (e.g., "hr", "spo2", "resp", "sbp", "dbp", "temp")
- * @param v - New string value for the specified baseline field
+ * Sets `form.baseline[k]` to the provided string value while preserving other form fields and baseline entries.
+ *
+ * @param k - The baseline field key to update (for example: `"hr"`, `"spo2"`, `"resp"`, `"sbp"`, `"dbp"`, `"temp"`).
+ * @param v - The string value to assign to the specified baseline field
  */
 function setBL(k: string, v: string) { setForm(f => ({ ...f, baseline: { ...f.baseline, [k]: v } })); }
   const counts = { total: patients.length, critical: patients.filter(p=>p.status==='critical').length, warning: patients.filter(p=>p.status==='warning').length, stable: patients.filter(p=>p.status==='stable').length };

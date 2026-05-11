@@ -20,9 +20,9 @@ const NAV=[
 ];
 
 /**
- * Displays a live clock showing hours, minutes, and seconds updated every second.
+ * Displays the current local time in `HH:MM:SS`, updating once per second.
  *
- * @returns A span element containing the current time formatted as `HH:MM:SS` (two-digit zero padding), styled with a monospace font and a greenish color.
+ * @returns A `<span>` element showing the formatted time (`HH:MM:SS`).
  */
 function Clock(){
   const [t,setT]=React.useState(new Date());
