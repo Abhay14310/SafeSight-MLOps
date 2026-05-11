@@ -30,7 +30,12 @@ DETECTION_FILE = os.path.join(SRC_DIR, "detection.py")
 # ── Helpers to mock heavy deps before import ────────────────────────────────
 
 def _mock_cv2():
-    """Return a minimal cv2 mock so the module can import without OpenCV."""
+    """
+    Create a minimal cv2-like mock exposing the OpenCV constants required by the tests.
+    
+    Returns:
+        MagicMock: Mocked cv2 object with attributes CAP_DSHOW, CAP_PROP_FRAME_WIDTH, CAP_PROP_FRAME_HEIGHT, CAP_PROP_BUFFERSIZE, FONT_HERSHEY_SIMPLEX, LINE_AA, and IMWRITE_JPEG_QUALITY.
+    """
     cv2 = MagicMock()
     cv2.CAP_DSHOW = 700
     cv2.CAP_PROP_FRAME_WIDTH = 3
@@ -43,6 +48,12 @@ def _mock_cv2():
 
 
 def _mock_ultralytics():
+    """
+    Create a minimal ultralytics-like mock exposing a `YOLO` constructor.
+    
+    Returns:
+        MagicMock: A mock object with a `YOLO` attribute that is callable and returns another mock when invoked.
+    """
     ul = MagicMock()
     ul.YOLO = MagicMock(return_value=MagicMock())
     return ul
@@ -51,8 +62,12 @@ def _mock_ultralytics():
 @pytest.fixture(scope="module")
 def det():
     """
-    Import detection module with all heavy deps mocked.
-    Returns the module object — use det.PersonTrack, det.PersonState, etc.
+    Provide the detection module with heavy dependencies mocked for testing.
+    
+    The function imports src/detection.py while injecting mocks for heavy external libraries (e.g., cv2, ultralytics, requests, urllib3) so tests can exercise the module without those real dependencies.
+    
+    Returns:
+        module: The imported `detection` module object (with mocks applied). Use attributes like `PersonTrack` and `PersonState` from this module in tests.
     """
     mocks = {
         "cv2": _mock_cv2(),
@@ -94,6 +109,11 @@ class TestFileSanity:
             pytest.fail(f"Syntax error in detection.py: {e}")
 
     def test_no_trailing_blank_line_w391(self):
+        """
+        Check that detection.py does not end with a trailing blank line.
+        
+        Asserts the file's raw bytes do not end with two consecutive newline characters (a W391 trailing-blank-line violation).
+        """
         with open(DETECTION_FILE, "rb") as f:
             content = f.read()
         assert not content.endswith(b"\n\n"), (
@@ -163,15 +183,39 @@ class TestPersonStateTransitions:
     """
 
     def _make_track(self, det, track_id=1):
+        """
+        Create a PersonTrack instance for tests.
+        
+        Parameters:
+            det (module): The detection module that defines `PersonTrack`.
+            track_id (int): Identifier to assign to the new PersonTrack (default 1).
+        
+        Returns:
+            PersonTrack: A new PersonTrack initialized with the provided `track_id`.
+        """
         return det.PersonTrack(track_id=track_id)
 
     def _feed_standing_frames(self, det, track, n=30):
-        """Feed n frames of a normal standing aspect ratio (~0.4)."""
+        """
+        Simulate sending n standing-like frames (aspect ratio ~0.4) to a PersonTrack.
+        
+        Parameters:
+            det: detection module placeholder (not modified)
+            track: the PersonTrack instance to update
+            n (int): number of frames to feed; defaults to 30
+        """
         for _ in range(n):
             track.update_state(0.4, (320, 240))
 
     def _feed_fall_frames(self, det, track, n=None):
-        """Feed enough wide frames to trigger FALLING state."""
+        """
+        Feed a sequence of wide-aspect-ratio frames to a PersonTrack to drive it toward the FALLING state.
+        
+        Parameters:
+            det (module): The imported detection module (provides CFG).
+            track (det.PersonTrack): The person track to update.
+            n (int, optional): Number of frames to send. Defaults to det.CFG.fall_confirm_frames + 2.
+        """
         n = n or (det.CFG.fall_confirm_frames + 2)
         for _ in range(n):
             track.update_state(1.5, (320, 400))  # Wide bbox → fallen
@@ -197,7 +241,9 @@ class TestPersonStateTransitions:
         )
 
     def test_fall_requires_min_confirm_frames(self, det):
-        """Less than fall_confirm_frames wide frames must NOT trigger FALLING."""
+        """
+        Verify that feeding fewer than the configured confirmation frames does not transition a track to FALLING.
+        """
         track = self._make_track(det)
         # Feed fewer frames than the threshold
         short = max(1, det.CFG.fall_confirm_frames - 5)
@@ -344,7 +390,11 @@ class TestEdgeCases:
         )
 
     def test_pose_signal_boosts_fall_detection(self, det):
-        """Pose fall signal should lower the frame count needed to trigger FALLING."""
+        """
+        Verify that a pose-based fall signal accelerates detection so borderline aspect ratios can transition out of STANDING faster.
+        
+        Feeds borderline aspect-ratio frames with a pose fall signal and asserts the track ends in one of the valid states (STANDING, FALLING, FALLEN, EMERGENCY) to confirm the state machine progresses without error.
+        """
         track = det.PersonTrack(track_id=51)
         # Feed borderline AR + pose fall signal — should confirm faster
         n_fed = 0

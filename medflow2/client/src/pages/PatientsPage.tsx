@@ -43,7 +43,13 @@ const STATUS_META: Record<string,{label:string;cls:string;dot:string}> = {
 const WARDS  = ['ICU-4A','ICU-4B','Ward-5','Ward-6','CCU','NICU','Emergency','Step-Down'];
 const BLOODS = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
 
-/* ── Component ─────────────────────────────────────────────── */
+/**
+ * Render the patient registry page with patient list, search and status filters, KPI cards, and admit/edit modal.
+ *
+ * The page loads patients from the API, supports refresh, admit/edit flows (modal form), and discharge actions with confirmation. It shows loading skeletons, computes status and Morse risk indicators, and uses GSAP and Framer Motion for entry and modal animations.
+ *
+ * @returns The PatientsPage React element
+ */
 export default function PatientsPage() {
   const ref = useRef<HTMLDivElement>(null);
   const { addToast } = (useStore as any)();
@@ -86,14 +92,22 @@ export default function PatientsPage() {
     return matchQ && matchS;
   });
 
-  /* Open Add */
+  /**
+   * Open the admit-patient modal and initialize the form for creating a new patient.
+   *
+   * Clears any current editing context, resets the form to default values, and shows the modal.
+   */
   function openAdd() {
     setEditing(null);
     setForm(EMPTY_FORM);
     setShowModal(true);
   }
 
-  /* Open Edit */
+  /**
+   * Open the patient edit modal and populate the form with the provided patient's data.
+   *
+   * @param p - The patient whose values will prefill the edit form and be set as the active editing target
+   */
   function openEdit(p: Patient) {
     setEditing(p);
     setForm({
@@ -112,7 +126,16 @@ export default function PatientsPage() {
     setShowModal(true);
   }
 
-  /* Save */
+  /**
+   * Create or update a patient record from the modal form and refresh the patient list.
+   *
+   * Validates required fields (bed ID and name), builds a normalized payload from the form
+   * (converting numeric fields and parsing allergies/baseline vitals), then sends it to the
+   * backend to either update the current patient or admit a new one. Shows success or error
+   * toasts, closes the modal on success, and ensures the saving state is cleared after completion.
+   *
+   * @param e - The form submission event
+   */
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!form.bedId || !form.name) { addToast?.('warning','Bed ID and Name are required'); return; }
@@ -147,7 +170,13 @@ export default function PatientsPage() {
     } finally { setSaving(false); }
   }
 
-  /* Discharge */
+  /**
+   * Prompt the user to confirm and, if confirmed, discharge the specified patient via the API and update UI state.
+   *
+   * Prompts with a confirmation dialog; if confirmed, sets the discharge-in-progress state for the patient, sends a DELETE request to remove the patient, shows a success or error toast depending on the outcome, refreshes the patient list on success, and always clears the discharge-in-progress state when finished.
+   *
+   * @param p - The patient to discharge (used for confirmation text, API id, and toast messaging)
+   */
   async function discharge(p: Patient) {
     if (!confirm(`Discharge ${p.name} from ${p.bedId}?`)) return;
     setDischarging(p._id);
@@ -159,9 +188,20 @@ export default function PatientsPage() {
     finally { setDischarging(null); }
   }
 
-  /* Helpers */
+  /**
+ * Update a top-level field on the form state with a new string value.
+ *
+ * @param k - The form field name to set
+ * @param v - The new string value for the field
+ */
   function setF(k: string, v: string) { setForm(f => ({ ...f, [k]: v })); }
-  function setBL(k: string, v: string) { setForm(f => ({ ...f, baseline: { ...f.baseline, [k]: v } })); }
+  /**
+ * Update a single baseline vital field on the form model.
+ *
+ * @param k - Baseline field key to update (e.g., "hr", "spo2", "resp", "sbp", "dbp", "temp")
+ * @param v - New string value for the specified baseline field
+ */
+function setBL(k: string, v: string) { setForm(f => ({ ...f, baseline: { ...f.baseline, [k]: v } })); }
   const counts = { total: patients.length, critical: patients.filter(p=>p.status==='critical').length, warning: patients.filter(p=>p.status==='warning').length, stable: patients.filter(p=>p.status==='stable').length };
 
   return (

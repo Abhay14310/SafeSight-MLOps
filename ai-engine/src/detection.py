@@ -866,6 +866,11 @@ class AIEngine:
     # ── Camera management ─────────────────────────────────────────────
 
     def _open_camera(self) -> None:
+        """
+        Open and configure the camera capture used by the engine.
+        
+        Initializes self._cap as an OpenCV VideoCapture using the DirectShow backend, sets the requested frame width, height, and a minimal buffer size for low latency, performs a brief warm-up to allow driver negotiation, and logs the resolved resolution.
+        """
         log.info(f"📷  Opening camera index {CFG.camera_index} (backend: DirectShow) ...")
         # Use CAP_DSHOW instead of the default MSMF backend.
         # MSMF frequently fails with error -1072875772 on Windows when a camera

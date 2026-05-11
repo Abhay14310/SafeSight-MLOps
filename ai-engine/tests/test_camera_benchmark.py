@@ -30,7 +30,14 @@ except ImportError:
 
 
 def _load_detection():
-    """Load detection with all heavy deps mocked except numpy."""
+    """
+    Import the `detection` module while substituting heavy external dependencies with lightweight mocks (numpy is preserved).
+    
+    This temporarily patches `sys.modules` so imports of `cv2`, `ultralytics`, `requests`, and related packages resolve to mocks during the import of `detection`.
+    
+    Returns:
+        tuple: `(detection_module, cv2_mock)` where `detection_module` is the imported `detection` package and `cv2_mock` is the MagicMock used to simulate OpenCV functionality.
+    """
     cv2_mock = MagicMock()
     cv2_mock.CAP_DSHOW = 700
     cv2_mock.CAP_PROP_FRAME_WIDTH = 3
@@ -70,19 +77,51 @@ CFG = det.CFG
 # ═══════════════════════════════════════════════════════════════════════════
 
 def make_synthetic_frame(h=480, w=640, channels=3):
-    """Create a blank black frame (numpy array)."""
+    """
+    Create a black image frame as a NumPy uint8 array.
+    
+    Parameters:
+        h (int): Frame height in pixels.
+        w (int): Frame width in pixels.
+        channels (int): Number of color channels.
+    
+    Returns:
+        numpy.ndarray: Zero-filled uint8 array with shape (h, w, channels).
+    """
     return np.zeros((h, w, channels), dtype=np.uint8)
 
 
 def make_empty_results():
-    """Return a mock YOLO result with zero detections."""
+    """
+    Create a mocked YOLO result representing no detections.
+    
+    Returns:
+        results (list): A list containing one mock result object whose `boxes` attribute is an empty list (no detections).
+    """
     result = MagicMock()
     result.boxes = []
     return [result]
 
 
 def make_person_result(x1=100, y1=50, x2=200, y2=400, conf=0.85, track_id=1):
-    """Return a mock YOLO result with one standing person detection."""
+    """
+    Create a mocked YOLO-style result containing a single person detection.
+    
+    Parameters:
+        x1 (int): Left x-coordinate of the bounding box.
+        y1 (int): Top y-coordinate of the bounding box.
+        x2 (int): Right x-coordinate of the bounding box.
+        y2 (int): Bottom y-coordinate of the bounding box.
+        conf (float): Confidence score for the detection.
+        track_id (int): Track identifier for the detected person.
+    
+    Returns:
+        list: A one-element list with a mocked result object whose `boxes` contains a box mock. The box mock exposes:
+            - `xyxy`: list whose first element supports `.cpu().numpy()` and yields the `[x1, y1, x2, y2]` array,
+            - `conf`: list containing `conf`,
+            - `id`: list containing `track_id`,
+            - `cls`: list containing `0`.
+    """
     import numpy as _np
 
     # detection.py calls box.xyxy[0].cpu().numpy().astype(int)
@@ -154,7 +193,14 @@ class TestInferenceSkipping:
 class TestFramePipeline:
 
     def _make_engine(self):
-        """Build a minimal AIEngine without a real camera or model."""
+        """
+        Constructs a minimal AIEngine instance configured for tests without a real camera or model.
+        
+        The instance is created without invoking its constructor and is populated with empty tracks, a short FPS history, a mocked model that returns no detections, and a mocked sender with camera_active set to True.
+        
+        Returns:
+            engine (det.AIEngine): A test-ready AIEngine instance with mocked `_model` and `_sender`.
+        """
         engine = object.__new__(det.AIEngine)
         engine._tracks = {}
         engine._frame_count = 0
@@ -243,7 +289,11 @@ class TestFramePipeline:
         assert 42 not in engine._tracks, "Stale track should have been pruned"
 
     def test_frame_count_increments(self):
-        """_frame_count is external to _process_frame; test the run loop increments it."""
+        """
+        Verify that the external run loop (not _process_frame) is responsible for incrementing engine._frame_count.
+        
+        Calls _process_frame multiple times while manually incrementing _frame_count to simulate the run loop and asserts the counter increases by the expected amount.
+        """
         engine = self._make_engine()
         frame = make_synthetic_frame()
 

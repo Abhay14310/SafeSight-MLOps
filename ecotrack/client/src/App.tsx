@@ -28,6 +28,13 @@ function W({ children }: { children: React.ReactNode }) {
   return <motion.div variants={PV} initial="initial" animate="animate" exit="exit" style={{width:'100%',height:'100%'}}>{children}</motion.div>;
 }
 
+/**
+ * Top-level route table that renders application pages with authentication gating and animated transitions.
+ *
+ * Renders react-router Routes keyed by location inside an AnimatePresence container so route elements remount on pathname changes and animate on enter/exit. Public routes (login, register) render without the auth guard; other routes are wrapped with the Guard and Layout as appropriate. A catch-all route redirects to `/`.
+ *
+ * @returns The root React element containing the app's routed pages and transition wrapper
+ */
 export default function App() {
   const loc = useLocation();
   return (

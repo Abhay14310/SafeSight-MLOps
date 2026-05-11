@@ -17,9 +17,22 @@ import TasukeGateway  from './pages/TasukeGateway';
 import PatientsPage   from './pages/PatientsPage';
 
 const PV={ initial:{opacity:0,y:8},animate:{opacity:1,y:0,transition:{duration:0.3,ease:[.16,1,.3,1]}},exit:{opacity:0,y:-8,transition:{duration:0.18}} };
+/**
+ * Renders its children for authenticated users and redirects unauthenticated users to the login page.
+ *
+ * @param children - Content to render when the user is authenticated
+ * @returns The provided `children` when authenticated, otherwise a `Navigate` element that redirects to `"/login"`
+ */
 function Guard({children}:{children:React.ReactNode}){ return useStore(s=>s.isAuth)?<>{children}</>:<Navigate to="/login" replace/>; }
 function W({children}:{children:React.ReactNode}){ return <motion.div variants={PV} initial="initial" animate="animate" exit="exit" style={{width:'100%',height:'100%'}}>{children}</motion.div>; }
 
+/**
+ * Application root component that defines client routes and coordinates animated page transitions.
+ *
+ * Renders route definitions for public and authenticated pages, wraps authenticated routes with the app layout and guards, and uses AnimatePresence to animate route changes.
+ *
+ * @returns A React element that renders the application's routes with authentication guards and animated transitions.
+ */
 export default function App(){
   const loc=useLocation();
   return (

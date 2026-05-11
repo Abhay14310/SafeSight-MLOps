@@ -344,9 +344,14 @@ function initCameraWireframe() {
   });
 }
 
-/* ═══════════════════════════════════════
-   8. SCROLL ANIMATIONS
-═══════════════════════════════════════ */
+/**
+ * Initializes scroll-reveal behavior for feature and card elements.
+ *
+ * Adds a staggered `transitionDelay` to elements matching
+ * `.feat-card, .module-card, .bento-card, .showcase-card` and observes them.
+ * When an element crosses a 0.15 intersection threshold the function adds the
+ * `visible` class and stops observing that element.
+ */
 function initScrollAnimations() {
   const obs = new IntersectionObserver(entries => {
     entries.forEach(e => {
@@ -411,9 +416,11 @@ function startEntrance() {
   animateCounters();
 }
 
-/* ═══════════════════════════════════════
-   11. MAGNETIC BUTTONS
-═══════════════════════════════════════ */
+/**
+ * Adds a "magnetic" hover interaction to all elements with the `.mag-btn` class.
+ *
+ * On pointer move over a button, the element is translated toward the cursor by a small scaled offset; the transform is cleared when the pointer leaves.
+ */
 function initMagneticButtons() {
   document.querySelectorAll('.mag-btn').forEach(btn => {
     btn.addEventListener('mousemove', e => {
@@ -437,9 +444,20 @@ const PRICES = {
 };
 let billingMode = 'monthly';
 
+/**
+ * Toggle the global billing mode between monthly and annual and update the pricing UI.
+ *
+ * This flips the module-level `billingMode` and refreshes displayed prices and switch state in the DOM.
+ */
 function toggleBilling() {
   setBilling(billingMode === 'monthly' ? 'annual' : 'monthly');
 }
+/**
+ * Update the active billing mode and refresh the pricing UI accordingly.
+ *
+ * Toggles the switch and label active states for monthly/annual modes and replaces the displayed prices for core, pro, and elite plans using the PRICES mapping.
+ * @param {'monthly'|'annual'} mode - The billing mode to apply.
+ */
 function setBilling(mode) {
   billingMode = mode;
   const sw   = document.querySelector('.bt-switch');

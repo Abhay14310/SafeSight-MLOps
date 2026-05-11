@@ -36,6 +36,14 @@ if SRC_DIR not in sys.path:
 
 
 def _load_detection():
+    """
+    Import and return the project's `detection` module with several heavy external dependencies replaced by mocks.
+    
+    The function ensures any previously loaded `detection` entry is removed from sys.modules, then patches import resolution so that modules like `cv2`, `ultralytics`, `requests`, and `urllib3` (and select submodules) resolve to MagicMock instances while the real `numpy` is preserved. It then imports and returns the freshly loaded `detection` module.
+    
+    Returns:
+        module: The imported `detection` module.
+    """
     mocks = {
         "cv2": MagicMock(),
         "ultralytics": MagicMock(),
@@ -71,6 +79,12 @@ class ScenarioResult:
 
     @property
     def correct(self) -> bool:
+        """
+        Indicates whether the scenario's alert outcome matches the expected fall label.
+        
+        Returns:
+            bool: `true` if `alert_fired` equals `expected_fall`, `false` otherwise.
+        """
         return self.alert_fired == self.expected_fall
 
 
@@ -82,11 +96,20 @@ def run_scenario(
     pose_sit_signals: List[bool] = None,
 ) -> ScenarioResult:
     """
-    Run a sequence of aspect_ratios through PersonTrack and check if a
-    fall alert was fired.
-
-    time_injections: list of (frame_index, timestamp_override) to fast-forward time
-    pose_sit_signals: per-frame sitting signals (defaults to all False)
+    Run a sequence of aspect-ratio frames through a PersonTrack and record whether a fall alert occurred.
+    
+    Parameters:
+        name (str): Scenario name for the returned result.
+        aspect_ratios (List[float]): Per-frame aspect-ratio values fed to PersonTrack.update_state.
+        expected_fall (bool): Whether the scenario is expected to produce a fall alert.
+        time_injections (List[Tuple[int, float]], optional): List of (frame_index, seconds_backdate) pairs.
+            For each pair, when the loop reaches frame_index the track's timestamps (if set) are moved
+            backwards by seconds_backdate to simulate elapsed time.
+        pose_sit_signals (List[bool], optional): Per-frame sitting signals; defaults to all False.
+    
+    Returns:
+        ScenarioResult: Aggregated result containing the scenario name, expected outcome, whether an
+        alert fired at any frame, and the track's final state string.
     """
     track = PersonTrack(track_id=1)
     alert_fired = False
@@ -180,6 +203,16 @@ class TestAccuracyScenarios:
 
     @pytest.mark.parametrize("scenario", SCENARIOS, ids=[s["name"] for s in SCENARIOS])
     def test_scenario(self, scenario):
+        """
+        Execute a predefined scenario through the scenario runner and assert the observed alert outcome matches the scenario's expectation.
+        
+        Parameters:
+        	scenario (dict): Scenario definition with keys:
+        		- "name" (str): Human-readable scenario name.
+        		- "aspect_ratios" (List[float]): Per-frame aspect-ratio sequence fed to the track.
+        		- "expected_fall" (bool): Whether a fall alert is expected for this scenario.
+        		- "pose_sit_signals" (Optional[List[bool]]): Optional per-frame sit signals.
+        """
         result = run_scenario(
             name=scenario["name"],
             aspect_ratios=scenario["aspect_ratios"],
@@ -203,6 +236,11 @@ class TestAccuracyMetrics:
     """
 
     def test_overall_accuracy_report(self, capsys):
+        """
+        Compute and print aggregated detection metrics across the predefined scenarios and assert minimum performance thresholds.
+        
+        For each scenario this test runs the scenario runner, tallies true/false positives/negatives, derives precision, recall, F1 score, false-positive rate, and overall accuracy, prints a formatted report with the confusion matrix and per-scenario results, and asserts that precision, recall, and F1 are at least 80% while the false-positive rate is at most 30%.
+        """
         results = []
         for scenario in SCENARIOS:
             r = run_scenario(

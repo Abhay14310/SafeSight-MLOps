@@ -7,6 +7,14 @@ import { authApi } from '@/lib/api';
 import useStore from '@/store/useStore';
 import HeroScene from '@/components/HeroScene';
 
+/**
+ * Renders the login page with a sign-in form and a 3D hero scene.
+ *
+ * Redirects authenticated users to the root route and handles form submission to authenticate,
+ * update application authentication state, and display loading/error feedback.
+ *
+ * @returns The React element for the login page UI
+ */
 export default function Login() {
   const navigate   = useNavigate();
   const { login, isAuth } = useStore();

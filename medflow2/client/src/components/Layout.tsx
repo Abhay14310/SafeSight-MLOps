@@ -19,6 +19,11 @@ const NAV=[
   { to:'/alerts',   label:'Alerts',          icon:<Bell size={16}/> },
 ];
 
+/**
+ * Displays a live clock showing hours, minutes, and seconds updated every second.
+ *
+ * @returns A span element containing the current time formatted as `HH:MM:SS` (two-digit zero padding), styled with a monospace font and a greenish color.
+ */
 function Clock(){
   const [t,setT]=React.useState(new Date());
   useEffect(()=>{ const id=setInterval(()=>setT(new Date()),1000); return()=>clearInterval(id); },[]);
