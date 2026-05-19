@@ -27,13 +27,13 @@ interface FormState {
 }
 
 /**
- * Render the two-step registration page for creating an EcoTrack account.
+ * Registration page component for a two-step account creation flow.
  *
- * The component provides a two-step form (account info then password), client-side validation,
- * animated UI transitions, submission to the backend registration endpoint, and a success state
- * shown after a successful registration.
+ * Manages form state and validation (step 1: name and email; step 2: password length and match),
+ * performs the registration POST to the backend, shows animated UI transitions and feedback,
+ * and displays a success card when account creation completes or an error message on failure.
  *
- * @returns The JSX element for the registration page UI.
+ * @returns The registration page UI as JSX.Element
  */
 export default function Register() {
   const navigate  = useNavigate();

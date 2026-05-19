@@ -18,20 +18,18 @@ import PatientsPage   from './pages/PatientsPage';
 
 const PV={ initial:{opacity:0,y:8},animate:{opacity:1,y:0,transition:{duration:0.3,ease:[.16,1,.3,1]}},exit:{opacity:0,y:-8,transition:{duration:0.18}} };
 /**
- * Renders its children for authenticated users and redirects unauthenticated users to the login page.
+ * Renders the provided children when the current user is authenticated; otherwise redirects to the login route.
  *
- * @param children - Content to render when the user is authenticated
- * @returns The provided `children` when authenticated, otherwise a `Navigate` element that redirects to `"/login"`
+ * @param children - The element(s) to render for authenticated users
+ * @returns `children` when the user is authenticated, otherwise a `<Navigate>` element that redirects to `/login`
  */
 function Guard({children}:{children:React.ReactNode}){ return useStore(s=>s.isAuth)?<>{children}</>:<Navigate to="/login" replace/>; }
 function W({children}:{children:React.ReactNode}){ return <motion.div variants={PV} initial="initial" animate="animate" exit="exit" style={{width:'100%',height:'100%'}}>{children}</motion.div>; }
 
 /**
- * Application root component that defines client routes and coordinates animated page transitions.
+ * Root application component that defines the route tree, wrapping pages with animated transitions and authentication guards.
  *
- * Renders route definitions for public and authenticated pages, wraps authenticated routes with the app layout and guards, and uses AnimatePresence to animate route changes.
- *
- * @returns A React element that renders the application's routes with authentication guards and animated transitions.
+ * @returns The root React element rendering the application's routes with animated page transitions and guarded layout where applicable.
  */
 export default function App(){
   const loc=useLocation();

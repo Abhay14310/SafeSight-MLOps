@@ -31,10 +31,10 @@ DETECTION_FILE = os.path.join(SRC_DIR, "detection.py")
 
 def _mock_cv2():
     """
-    Create a minimal cv2-like mock exposing the OpenCV constants required by the tests.
+    Create a minimal `cv2`-like mock with a small set of attributes needed for importing when OpenCV is not available.
     
     Returns:
-        MagicMock: Mocked cv2 object with attributes CAP_DSHOW, CAP_PROP_FRAME_WIDTH, CAP_PROP_FRAME_HEIGHT, CAP_PROP_BUFFERSIZE, FONT_HERSHEY_SIMPLEX, LINE_AA, and IMWRITE_JPEG_QUALITY.
+        MagicMock: A mock object exposing commonly used `cv2` constants (e.g., `CAP_DSHOW`, `CAP_PROP_FRAME_WIDTH`, `CAP_PROP_FRAME_HEIGHT`, `CAP_PROP_BUFFERSIZE`, `FONT_HERSHEY_SIMPLEX`, `LINE_AA`, `IMWRITE_JPEG_QUALITY`).
     """
     cv2 = MagicMock()
     cv2.CAP_DSHOW = 700
@@ -49,10 +49,12 @@ def _mock_cv2():
 
 def _mock_ultralytics():
     """
-    Create a minimal ultralytics-like mock exposing a `YOLO` constructor.
+    Create a lightweight mock of the `ultralytics` module for testing.
     
+    The returned object is a `MagicMock` with a `YOLO` attribute that, when called, returns another `MagicMock` (simulating a model instance).
+     
     Returns:
-        MagicMock: A mock object with a `YOLO` attribute that is callable and returns another mock when invoked.
+        MagicMock: Mocked `ultralytics` module whose `YOLO(...)` call yields a mock model.
     """
     ul = MagicMock()
     ul.YOLO = MagicMock(return_value=MagicMock())
@@ -62,12 +64,12 @@ def _mock_ultralytics():
 @pytest.fixture(scope="module")
 def det():
     """
-    Provide the detection module with heavy dependencies mocked for testing.
+    Import the project's detection module with heavy external dependencies replaced by test mocks.
     
-    The function imports src/detection.py while injecting mocks for heavy external libraries (e.g., cv2, ultralytics, requests, urllib3) so tests can exercise the module without those real dependencies.
+    The imported module is isolated from the real environment so tests can exercise detection.PersonTrack, detection.PersonState, and configuration without requiring OpenCV, Ultralytics, or network libraries to be installed.
     
     Returns:
-        module: The imported `detection` module object (with mocks applied). Use attributes like `PersonTrack` and `PersonState` from this module in tests.
+        module: The imported `detection` module object with heavy deps mocked. 
     """
     mocks = {
         "cv2": _mock_cv2(),
@@ -99,9 +101,20 @@ class TestFileSanity:
     """Basic checks that detection.py is a valid, lint-clean Python file."""
 
     def test_file_exists(self):
+        """
+        Assert that the detection.py source file exists at the expected path.
+        
+        Raises:
+            AssertionError: If DETECTION_FILE does not exist.
+        """
         assert os.path.isfile(DETECTION_FILE), f"Not found: {DETECTION_FILE}"
 
     def test_valid_python_syntax(self):
+        """
+        Verify that detection.py is syntactically valid Python.
+        
+        Attempts to compile DETECTION_FILE; if compilation fails, the test is failed and the compile error message is included.
+        """
         import py_compile
         try:
             py_compile.compile(DETECTION_FILE, doraise=True)
@@ -109,11 +122,6 @@ class TestFileSanity:
             pytest.fail(f"Syntax error in detection.py: {e}")
 
     def test_no_trailing_blank_line_w391(self):
-        """
-        Check that detection.py does not end with a trailing blank line.
-        
-        Asserts the file's raw bytes do not end with two consecutive newline characters (a W391 trailing-blank-line violation).
-        """
         with open(DETECTION_FILE, "rb") as f:
             content = f.read()
         assert not content.endswith(b"\n\n"), (
@@ -148,6 +156,11 @@ class TestConfig:
         assert 0.0 < det.CFG.confidence_thresh < 1.0
 
     def test_port_in_dashboard_url(self, det):
+        """
+        Checks that the configured dashboard URL includes port 4000.
+        
+        This test asserts that `det.CFG.dashboard_url` contains the string "4000" and fails with the actual URL when it does not.
+        """
         assert "4000" in det.CFG.dashboard_url, (
             f"dashboard_url should use port 4000, got: {det.CFG.dashboard_url}"
         )
@@ -183,39 +196,21 @@ class TestPersonStateTransitions:
     """
 
     def _make_track(self, det, track_id=1):
-        """
-        Create a PersonTrack instance for tests.
-        
-        Parameters:
-            det (module): The detection module that defines `PersonTrack`.
-            track_id (int): Identifier to assign to the new PersonTrack (default 1).
-        
-        Returns:
-            PersonTrack: A new PersonTrack initialized with the provided `track_id`.
-        """
         return det.PersonTrack(track_id=track_id)
 
     def _feed_standing_frames(self, det, track, n=30):
         """
-        Simulate sending n standing-like frames (aspect ratio ~0.4) to a PersonTrack.
+        Feed the track with n standing-like frames (aspect ratio ≈ 0.4) to simulate normal posture.
         
         Parameters:
-            det: detection module placeholder (not modified)
-            track: the PersonTrack instance to update
-            n (int): number of frames to feed; defaults to 30
+            track (PersonTrack): The track object to update.
+            n (int): Number of frames to feed (default 30).
         """
         for _ in range(n):
             track.update_state(0.4, (320, 240))
 
     def _feed_fall_frames(self, det, track, n=None):
-        """
-        Feed a sequence of wide-aspect-ratio frames to a PersonTrack to drive it toward the FALLING state.
-        
-        Parameters:
-            det (module): The imported detection module (provides CFG).
-            track (det.PersonTrack): The person track to update.
-            n (int, optional): Number of frames to send. Defaults to det.CFG.fall_confirm_frames + 2.
-        """
+        """Feed enough wide frames to trigger FALLING state."""
         n = n or (det.CFG.fall_confirm_frames + 2)
         for _ in range(n):
             track.update_state(1.5, (320, 400))  # Wide bbox → fallen
@@ -241,9 +236,7 @@ class TestPersonStateTransitions:
         )
 
     def test_fall_requires_min_confirm_frames(self, det):
-        """
-        Verify that feeding fewer than the configured confirmation frames does not transition a track to FALLING.
-        """
+        """Less than fall_confirm_frames wide frames must NOT trigger FALLING."""
         track = self._make_track(det)
         # Feed fewer frames than the threshold
         short = max(1, det.CFG.fall_confirm_frames - 5)
@@ -390,11 +383,7 @@ class TestEdgeCases:
         )
 
     def test_pose_signal_boosts_fall_detection(self, det):
-        """
-        Verify that a pose-based fall signal accelerates detection so borderline aspect ratios can transition out of STANDING faster.
-        
-        Feeds borderline aspect-ratio frames with a pose fall signal and asserts the track ends in one of the valid states (STANDING, FALLING, FALLEN, EMERGENCY) to confirm the state machine progresses without error.
-        """
+        """Pose fall signal should lower the frame count needed to trigger FALLING."""
         track = det.PersonTrack(track_id=51)
         # Feed borderline AR + pose fall signal — should confirm faster
         n_fed = 0

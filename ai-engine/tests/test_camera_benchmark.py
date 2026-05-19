@@ -31,12 +31,12 @@ except ImportError:
 
 def _load_detection():
     """
-    Import the `detection` module while substituting heavy external dependencies with lightweight mocks (numpy is preserved).
+    Load the `detection` module while replacing heavy external dependencies with lightweight mocks and preserving NumPy.
     
-    This temporarily patches `sys.modules` so imports of `cv2`, `ultralytics`, `requests`, and related packages resolve to mocks during the import of `detection`.
+    This imports the `detection` package in a controlled environment where common external modules (e.g., `cv2`, `ultralytics`, `requests`, `urllib3`) are substituted with mocks so tests can run without those native dependencies.
     
     Returns:
-        tuple: `(detection_module, cv2_mock)` where `detection_module` is the imported `detection` package and `cv2_mock` is the MagicMock used to simulate OpenCV functionality.
+        tuple: `(detection_module, cv2_mock)` where `detection_module` is the imported `detection` package and `cv2_mock` is a MagicMock preconfigured to emulate commonly used OpenCV attributes and functions.
     """
     cv2_mock = MagicMock()
     cv2_mock.CAP_DSHOW = 700
@@ -78,25 +78,25 @@ CFG = det.CFG
 
 def make_synthetic_frame(h=480, w=640, channels=3):
     """
-    Create a black image frame as a NumPy uint8 array.
+    Create a blank black image frame with the specified height, width, and number of channels.
     
     Parameters:
-        h (int): Frame height in pixels.
-        w (int): Frame width in pixels.
-        channels (int): Number of color channels.
+    	h (int): Frame height in pixels (default 480).
+    	w (int): Frame width in pixels (default 640).
+    	channels (int): Number of color channels (default 3).
     
     Returns:
-        numpy.ndarray: Zero-filled uint8 array with shape (h, w, channels).
+    	frame (numpy.ndarray): Zero-filled array of shape (h, w, channels) with dtype uint8.
     """
     return np.zeros((h, w, channels), dtype=np.uint8)
 
 
 def make_empty_results():
     """
-    Create a mocked YOLO result representing no detections.
+    Create a mocked YOLO results list containing a single result with no detections.
     
     Returns:
-        results (list): A list containing one mock result object whose `boxes` attribute is an empty list (no detections).
+        list: A list with one mock result object whose `boxes` attribute is an empty list.
     """
     result = MagicMock()
     result.boxes = []
@@ -105,22 +105,25 @@ def make_empty_results():
 
 def make_person_result(x1=100, y1=50, x2=200, y2=400, conf=0.85, track_id=1):
     """
-    Create a mocked YOLO-style result containing a single person detection.
+    Create a mocked YOLO results list containing a single person detection.
     
     Parameters:
         x1 (int): Left x-coordinate of the bounding box.
         y1 (int): Top y-coordinate of the bounding box.
         x2 (int): Right x-coordinate of the bounding box.
         y2 (int): Bottom y-coordinate of the bounding box.
-        conf (float): Confidence score for the detection.
+        conf (float): Detection confidence score.
         track_id (int): Track identifier for the detected person.
     
     Returns:
-        list: A one-element list with a mocked result object whose `boxes` contains a box mock. The box mock exposes:
-            - `xyxy`: list whose first element supports `.cpu().numpy()` and yields the `[x1, y1, x2, y2]` array,
-            - `conf`: list containing `conf`,
-            - `id`: list containing `track_id`,
-            - `cls`: list containing `0`.
+        list: A list with one MagicMock result. The result has:
+            - result.boxes: a list containing one box mock with attributes:
+                - box.xyxy: a list whose first element supports the call
+                  sequence `.cpu().numpy().astype(int)` and yields [x1, y1, x2, y2].
+                - box.conf: list containing `conf`.
+                - box.id: list containing `track_id`.
+                - box.cls: list containing class id `0`.
+            - result.keypoints: None
     """
     import numpy as _np
 
@@ -194,12 +197,12 @@ class TestFramePipeline:
 
     def _make_engine(self):
         """
-        Constructs a minimal AIEngine instance configured for tests without a real camera or model.
+        Create a minimal AIEngine instance with mocked model and sender for tests.
         
-        The instance is created without invoking its constructor and is populated with empty tracks, a short FPS history, a mocked model that returns no detections, and a mocked sender with camera_active set to True.
+        The instance is initialized for running frame-pipeline tests without a real camera or model: `engine._tracks` is empty, `engine._frame_count` is 0, `engine._fps_history` is a deque (maxlen 30), `engine._last_frame_time` is set, `engine._last_results` contains no detections, and `engine._running` is True. `engine._model.track` is mocked to return empty results and `engine._sender.camera_active` is True.
         
         Returns:
-            engine (det.AIEngine): A test-ready AIEngine instance with mocked `_model` and `_sender`.
+            engine: an `AIEngine` instance configured for unit tests with mocked dependencies.
         """
         engine = object.__new__(det.AIEngine)
         engine._tracks = {}
@@ -289,11 +292,7 @@ class TestFramePipeline:
         assert 42 not in engine._tracks, "Stale track should have been pruned"
 
     def test_frame_count_increments(self):
-        """
-        Verify that the external run loop (not _process_frame) is responsible for incrementing engine._frame_count.
-        
-        Calls _process_frame multiple times while manually incrementing _frame_count to simulate the run loop and asserts the counter increases by the expected amount.
-        """
+        """_frame_count is external to _process_frame; test the run loop increments it."""
         engine = self._make_engine()
         frame = make_synthetic_frame()
 
