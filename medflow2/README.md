@@ -15,7 +15,7 @@ docker-compose up --build
 docker exec mf2-server node services/seedService.js
 
 # Open browser
-open http://localhost:3010
+open http://localhos3333333333333333333333333333333333333333333333333333333333333333333333333333333333222
 
 # Credentials
 # nurse@medflow.io  / medflow123

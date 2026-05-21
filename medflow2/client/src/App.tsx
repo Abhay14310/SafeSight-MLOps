@@ -14,11 +14,23 @@ import AlertsPage     from './pages/AlertsPage';
 import ProfilePage    from './pages/ProfilePage';
 import SettingsPage   from './pages/SettingsPage';
 import TasukeGateway  from './pages/TasukeGateway';
+import PatientsPage   from './pages/PatientsPage';
 
 const PV={ initial:{opacity:0,y:8},animate:{opacity:1,y:0,transition:{duration:0.3,ease:[.16,1,.3,1]}},exit:{opacity:0,y:-8,transition:{duration:0.18}} };
+/**
+ * Renders the provided children when the current user is authenticated; otherwise redirects to the login route.
+ *
+ * @param children - The element(s) to render for authenticated users
+ * @returns `children` when the user is authenticated, otherwise a `<Navigate>` element that redirects to `/login`
+ */
 function Guard({children}:{children:React.ReactNode}){ return useStore(s=>s.isAuth)?<>{children}</>:<Navigate to="/login" replace/>; }
 function W({children}:{children:React.ReactNode}){ return <motion.div variants={PV} initial="initial" animate="animate" exit="exit" style={{width:'100%',height:'100%'}}>{children}</motion.div>; }
 
+/**
+ * Root application component that defines the route tree, wrapping pages with animated transitions and authentication guards.
+ *
+ * @returns The root React element rendering the application's routes with animated page transitions and guarded layout where applicable.
+ */
 export default function App(){
   const loc=useLocation();
   return (
@@ -27,7 +39,8 @@ export default function App(){
         <Route path="/login"   element={<W><Login/></W>}/>
         <Route path="/tasuke"  element={<Guard><W><TasukeGateway/></W></Guard>}/>
         <Route path="/"        element={<Guard><Layout><W><Dashboard/></W></Layout></Guard>}/>
-        <Route path="/monitor" element={<Guard><Layout><W><PatientMonitor/></W></Layout></Guard>}/>
+        <Route path="/monitor"  element={<Guard><Layout><W><PatientMonitor/></W></Layout></Guard>}/>
+        <Route path="/patients" element={<Guard><Layout><W><PatientsPage/></W></Layout></Guard>}/>
         <Route path="/pose"    element={<Guard><Layout><W><PoseAnalysis/></W></Layout></Guard>}/>
         <Route path="/nurse"   element={<Guard><Layout><W><NurseStation/></W></Layout></Guard>}/>
         <Route path="/docker"  element={<Guard><Layout><W><DockerDeploy/></W></Layout></Guard>}/>

@@ -9,7 +9,7 @@ let settings={
   currency:'INR',
   alertThresholds:{ binFull:80, vehicleLoad:90, missedPickupHrs:4 },
   notifications:{ email:true, sms:false, push:true },
-  integrations:{ tasukeUrl: process.env.TASUKE_URL||'http://localhost:3000' },
+  integrations:{ tasukeUrl: process.env.TASUKE_URL||'http://localhost:4000' },
 };
 r.get('/',      (req,res)=>res.json({data:settings}));
 r.patch('/',    (req,res)=>{ settings={...settings,...req.body}; res.json({data:settings}); });

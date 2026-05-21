@@ -344,9 +344,13 @@ function initCameraWireframe() {
   });
 }
 
-/* ═══════════════════════════════════════
-   8. SCROLL ANIMATIONS
-═══════════════════════════════════════ */
+/**
+ * Reveals feature and module cards as they enter the viewport with a staggered transition delay.
+ *
+ * Observes elements matching `.feat-card, .module-card, .bento-card, .showcase-card` and adds the `visible`
+ * class when each element crosses a 15% intersection threshold. Applies a staggered `transitionDelay`
+ * to each element based on its index ((index % 4) * 0.09s) and stops observing elements after they become visible.
+ */
 function initScrollAnimations() {
   const obs = new IntersectionObserver(entries => {
     entries.forEach(e => {
@@ -357,8 +361,8 @@ function initScrollAnimations() {
     });
   }, { threshold: .15 });
 
-  document.querySelectorAll('.feat-card, .module-card').forEach((el, i) => {
-    el.style.transitionDelay = (i % 3) * .1 + 's';
+  document.querySelectorAll('.feat-card, .module-card, .bento-card, .showcase-card').forEach((el, i) => {
+    el.style.transitionDelay = (i % 4) * .09 + 's';
     obs.observe(el);
   });
 }
@@ -411,9 +415,11 @@ function startEntrance() {
   animateCounters();
 }
 
-/* ═══════════════════════════════════════
-   11. MAGNETIC BUTTONS
-═══════════════════════════════════════ */
+/**
+ * Applies a subtle "magnetic" translate effect to elements with the `.mag-btn` class based on pointer position.
+ *
+ * Each matched button is translated a small distance toward the cursor while the pointer is over it; the transform is cleared when the pointer leaves.
+ */
 function initMagneticButtons() {
   document.querySelectorAll('.mag-btn').forEach(btn => {
     btn.addEventListener('mousemove', e => {
@@ -425,6 +431,44 @@ function initMagneticButtons() {
     btn.addEventListener('mouseleave', () => {
       btn.style.transform = '';
     });
+  });
+}
+
+/* ═══════════════════════════════════════
+   BILLING TOGGLE (Pricing section)
+═══════════════════════════════════════ */
+const PRICES = {
+  monthly: { core: '$299', pro: '$799',   elite: '$1,999' },
+  annual:  { core: '$239', pro: '$639',   elite: '$1,599' },
+};
+let billingMode = 'monthly';
+
+/**
+ * Toggle the pricing billing mode between monthly and annual and update the UI accordingly.
+ */
+function toggleBilling() {
+  setBilling(billingMode === 'monthly' ? 'annual' : 'monthly');
+}
+/**
+ * Switches the active billing mode and updates the UI to reflect monthly or annual pricing.
+ *
+ * Updates the billing switch state, activates the corresponding monthly/annual label, and replaces
+ * the displayed prices for the core, pro, and elite plan elements.
+ *
+ * @param {'monthly'|'annual'} mode - The billing mode to activate.
+ */
+function setBilling(mode) {
+  billingMode = mode;
+  const sw   = document.querySelector('.bt-switch');
+  const mLbl = document.getElementById('bt-monthly');
+  const aLbl = document.getElementById('bt-annual');
+  if (sw)   sw.classList.toggle('annual', mode === 'annual');
+  if (mLbl) mLbl.classList.toggle('active', mode === 'monthly');
+  if (aLbl) aLbl.classList.toggle('active', mode === 'annual');
+  const p = PRICES[mode];
+  ['core','pro','elite'].forEach(k => {
+    const el = document.getElementById('price-' + k);
+    if (el) el.innerHTML = p[k] + '<span>/mo</span>';
   });
 }
 

@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import useStore from '@/store/useStore';
 import Layout      from '@/components/Layout';
 import Login       from '@/pages/Login';
+import Register    from '@/pages/Register';
 import Dashboard   from '@/pages/Dashboard';
 import WasteLogPage from '@/pages/WasteLogPage';
 import FleetPage   from '@/pages/FleetPage';
@@ -27,12 +28,22 @@ function W({ children }: { children: React.ReactNode }) {
   return <motion.div variants={PV} initial="initial" animate="animate" exit="exit" style={{width:'100%',height:'100%'}}>{children}</motion.div>;
 }
 
+/**
+ * Application root that defines client-side routes and coordinates animated page transitions.
+ *
+ * Renders the app's route configuration inside an AnimatePresence wrapper so route changes
+ * use the motion-based page wrapper (`W`). Protects authenticated routes with `Guard`
+ * and composes pages with `Layout` where appropriate.
+ *
+ * @returns The root JSX element containing the application's routed UI
+ */
 export default function App() {
   const loc = useLocation();
   return (
     <AnimatePresence mode="wait">
       <Routes location={loc} key={loc.pathname}>
         <Route path="/login"    element={<W><Login /></W>} />
+        <Route path="/register" element={<W><Register /></W>} />
         <Route path="/tasuke"   element={<Guard><W><TasukeRedirect /></W></Guard>} />
         <Route path="/"         element={<Guard><Layout><W><Dashboard /></W></Layout></Guard>} />
         <Route path="/waste"    element={<Guard><Layout><W><WasteLogPage /></W></Layout></Guard>} />

@@ -7,16 +7,23 @@ import { settingsApi } from '../lib/api';
 
 const STEPS=['Verifying MedFlow session…','Packaging clinical context…','Establishing Tasuke connection…','Launching AI hub…'];
 
+/**
+ * Shows a progress UI that connects the user to the Tasuke AI platform and then redirects to the destination URL.
+ *
+ * Displays an animated progress bar with step indicators, fetches the target Tasuke URL, and auto-redirects the browser when the progress completes. Provides controls to cancel and return to the app or to immediately navigate to the destination.
+ *
+ * @returns The component's rendered JSX element.
+ */
 export default function TasukeGateway(){
   const navigate=useNavigate();
   const ref=useRef<HTMLDivElement>(null);
   const tlRef=useRef<gsap.core.Timeline|null>(null);
   const[step,setStep]=useState(0);
   const[done,setDone]=useState(false);
-  const[tasukeUrl,setTasukeUrl]=useState('http://localhost:3000');
+  const[tasukeUrl,setTasukeUrl]=useState('http://localhost:4000');
 
   useEffect(()=>{
-    settingsApi.tasukeUrl().then(r=>setTasukeUrl(r.data.url??'http://localhost:3000')).catch(()=>{});
+    settingsApi.tasukeUrl().then(r=>setTasukeUrl(r.data.url??'http://localhost:4llhhlkll;jyhjjmklkkl;lll;l;lll000')).catch(()=>{});
     const ctx=gsap.context(()=>{
       gsap.fromTo('.tg-logo',   {scale:.7,opacity:0},{scale:1,opacity:1,duration:.7,ease:'back.out(1.5)'});
       gsap.fromTo('.tg-title',  {y:20,opacity:0},{y:0,opacity:1,duration:.5,ease:'power3.out',delay:.2});

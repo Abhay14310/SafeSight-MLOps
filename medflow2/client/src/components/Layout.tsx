@@ -10,14 +10,20 @@ import { alertApi,patientApi,taskApi } from '../lib/api';
 import type { VitalSnapshot,ECGPoint,PoseFrame,Alert,Patient } from '../types';
 
 const NAV=[
-  { to:'/',       label:'Dashboard',       icon:<LayoutDashboard size={16}/> },
-  { to:'/monitor',label:'Patient Monitor', icon:<Activity size={16}/> },
-  { to:'/pose',   label:'AI Pose Analysis',icon:<Scan size={16}/> },
-  { to:'/nurse',  label:'Nurse Station',   icon:<Users size={16}/> },
-  { to:'/docker', label:'Docker Deploy',   icon:<Container size={16}/> },
-  { to:'/alerts', label:'Alerts',          icon:<Bell size={16}/> },
+  { to:'/',         label:'Dashboard',       icon:<LayoutDashboard size={16}/> },
+  { to:'/patients', label:'Patients',        icon:<Users size={16}/> },
+  { to:'/monitor',  label:'Patient Monitor', icon:<Activity size={16}/> },
+  { to:'/pose',     label:'AI Pose Analysis',icon:<Scan size={16}/> },
+  { to:'/nurse',    label:'Nurse Station',   icon:<Users size={16}/> },
+  { to:'/docker',   label:'Docker Deploy',   icon:<Container size={16}/> },
+  { to:'/alerts',   label:'Alerts',          icon:<Bell size={16}/> },
 ];
 
+/**
+ * Displays the current local time in `HH:MM:SS`, updating once per second.
+ *
+ * @returns A `<span>` element showing the formatted time (`HH:MM:SS`).
+ */
 function Clock(){
   const [t,setT]=React.useState(new Date());
   useEffect(()=>{ const id=setInterval(()=>setT(new Date()),1000); return()=>clearInterval(id); },[]);
