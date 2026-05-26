@@ -1,44 +1,64 @@
 # Server Seeding and Authentication Issues Analysis
 
-This document summarizes the root causes of the database seeding and authentication issues across the SafeSight-MLOps (Tasuke'26) monorepo and details the corrective actions taken.
+This document summarizes the root causes of the database seeding, authentication, and routing issues across the SafeSight-MLOps (Tasuke'26) monorepo and details the corrective actions taken.
 
 ---
 
 ## 1. Root Cause of "Invalid Credentials" in MedFlow 2
-* **The Seeding Bug**: Previously, the MedFlow 2 serverless API (`api/medflow.js`) checked if database seeding was needed by calling `User.countDocuments().catch(() => 1)`. If that database call failed due to a transient cold-start connectivity delay, or if any document already existed in the collection (even if it was a custom user without the default credentials), `count` returned a non-zero value, and the seeding service skipped.
-* **The Resolution**: Updated the serverless lazy-seeding logic in `api/medflow.js` to check specifically for the presence of the default clinical nurse email:
-  ```javascript
-  const nurseExists = await User.findOne({ email: 'nurse@medflow.io' }).catch(() => null);
-  if (!nurseExists) { ... }
+The MedFlow 2 clinical ward login was returning "Invalid Credentials" due to a combination of two major factors:
+
+### A. Dynamic API Routing & Pathing Mismatch (The Primary Blocker)
+* **The Problem**: When deployed under Vercel's unified production hosting, each sub-project's front-end is mounted at a distinct pathname sub-path:
+  - MedFlow 2 client: `/medflow/*`
+  - EcoTrack client: `/ecotrack/*`
+  - SmartRetail client: `/retail/*`
+  
+  However, the compiled front-end Axios clients were hardcoded to make request calls to `/api/auth/...`, `/api/patients/...` etc. On Vercel, requests to `/api/*` were caught by the wildcard route and sent to `/api/index.js` (the SafeSight root server) instead of their respective serverless gateways (`/api/medflow.js`, `/api/ecotrack.js`, `/api/retail.js`). 
+  
+  The root SafeSight server returned an HTTP `404 Not Found` for these endpoints. The client-side login caught this error and immediately mapped all HTTP failures to the hardcoded display message: `"Invalid credentials. Try nurse@medflow.io / medflow123"`.
+  
+* **The Resolution**: Created dynamic baseURL path-prefix detectors in all client connection configuration files:
+  - [medflow2/client/src/lib/api.ts](file:///c:/Users/abhay/SafeSight-MLOps/medflow2/client/src/lib/api.ts) & [PatientsPage.tsx](file:///c:/Users/abhay/SafeSight-MLOps/medflow2/client/src/pages/PatientsPage.tsx)
+  - [ecotrack/client/src/lib/api.ts](file:///c:/Users/abhay/SafeSight-MLOps/ecotrack/client/src/lib/api.ts) & [Register.tsx](file:///c:/Users/abhay/SafeSight-MLOps/ecotrack/client/src/pages/Register.tsx)
+  - [smartretail/client/src/lib/api.ts](file:///c:/Users/abhay/SafeSight-MLOps/smartretail/client/src/lib/api.ts)
+  
+  They now compute base URLs dynamically on Vercel using:
+  ```typescript
+  const getBaseURL = () => {
+    if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL + '/api';
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/medflow')) {
+      return '/api/medflow2';
+    }
+    return '/api';
+  };
   ```
-  This guarantees that if the `nurse@medflow.io` user is missing (whether in an empty database or an incomplete schema), the system will automatically re-seed the required clinical demo credentials.
+  This ensures that when hosted in production, requests are correctly directed to `/api/medflow2/*`, which Vercel properly routes to `/api/medflow.js` serverless function.
+
+### B. Cold Start Lazy-Seeding Skip
+* **The Problem**: Previously, `api/medflow.js` and `api/ecotrack.js` checked if database seeding was needed by calling `User.countDocuments().catch(() => 1)`. If that database call failed due to connection timing, or if any document already existed in the collection (even if it was a custom user without the default credentials), `count` returned a non-zero value and seeding was completely skipped.
+* **The Resolution**: Updated the serverless lazy-seeding logic to check specifically for the presence of the default credential user's email:
+  - **MedFlow**: Checks specifically for `nurse@medflow.io`.
+  - **EcoTrack**: Checks specifically for `manager@ecotrack.io`.
+  If the default user is not found, the system runs the seeding service to ensure correct credential structures are present.
 
 ---
 
-## 2. Multi-Module Seeding Integrity Audit
-The other modules were audited for similar lazy-seeding vulnerabilities:
+## 2. Multi-Module Seeding & Routing Integrity Audit
+The other modules were successfully audited and fixed for matching routing vulnerabilities:
 
 * **EcoTrack (Fixed)**: 
-  * *Audit*: Discovered the exact same global collection count check inside the EcoTrack seeding script.
-  * *Resolution*: Modified `seedUsers()` in `ecotrack/server/config/seed.js` to check specifically for the default manager email:
-    ```javascript
-    const managerExists = await User.findOne({ email: 'manager@ecotrack.io' });
-    if (managerExists) return;
-    ```
-    This ensures that default EcoTrack credentials (`manager@ecotrack.io` / `eco123`) are safely seeded if missing.
-* **SmartRetail (Secure)**: 
-  * *Audit*: Audited `smartretail/server/routes/auth.js`.
-  * *Status*: User credentials (`manager@store.io`, `analyst@store.io`, `security@store.io`) are managed directly in-memory, meaning database seeding failures cannot affect login availability.
+  * *Routing*: Patched `api.ts` and `Register.tsx` to dynamically detect `/ecotrack` pathname and prefix with `/api/ecotrack`.
+  * *Seeding*: Modified `seedUsers()` in `ecotrack/server/config/seed.js` to check specifically for `manager@ecotrack.io`.
+* **SmartRetail (Fixed)**: 
+  * *Routing*: Patched `api.ts` to dynamically detect `/retail` pathname and prefix with `/api/retail`.
+  * *Seeding*: Hardcoded user array in `routes/auth.js` (`manager@store.io` / `retail123`) is in-memory and thus unaffected by seeding.
 * **SafeSight Web Dashboard (Secure)**: 
-  * *Audit*: Audited `web-dashboard/services/dbService.js`.
-  * *Status*: Already implements a robust user check (`SecurityUser.findOne({ username: 'admin' })`) to seed `admin` / `password123`.
+  * *Routing*: Root application handles all `/api/*` matching correctly.
+  * *Seeding*: Already implements `SecurityUser.findOne({ username: 'admin' })` to safely seed `admin` / `password123`.
 
 ---
 
 ## 3. Local vs. Cloud Databases Guidance
-* **Local Compass Databases**: These databases are highly useful for local testing and offline development on `localhost`.
-* **Cloud Database Requirement**: Because Vercel is a public serverless hosting provider, it runs entirely in the cloud and cannot access your local computer's MongoDB instances. For production builds on Vercel, you must use a cloud database like MongoDB Atlas.
-* **MongoDB Atlas Whitelist Warning**: The connection to your Atlas cluster is blocking serverless and external calls with a `MongooseServerSelectionError`. To enable your deployed Vercel apps to successfully write and seed data:
-  1. Log into your MongoDB Atlas Console.
-  2. Navigate to **Security** > **Network Access**.
-  3. Edit your IP access list and add **`0.0.0.0/0`** (allow access from anywhere). This is required because Vercel serverless functions use dynamic cloud IP addresses that cannot be predicted.
+* **Local Compass Databases**: Highly useful for offline testing and development on `localhost`.
+* **Cloud Database Requirement**: Vercel runs entirely in the cloud and cannot access your local computer's MongoDB instances. You must use a cloud database like MongoDB Atlas.
+* **MongoDB Atlas Whitelist**: The connection to your Atlas cluster blocks serverless/external calls with a `MongooseServerSelectionError`. You must log into the MongoDB Atlas Console, navigate to **Security** > **Network Access**, and add **`0.0.0.0/0`** (allow access from anywhere) to white-list Vercel's dynamic IP range.
