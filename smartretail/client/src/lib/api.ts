@@ -1,7 +1,14 @@
 // src/lib/api.ts
 import axios from 'axios';
+const getBaseURL = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL + '/api';
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/retail')) {
+    return '/api/retail';
+  }
+  return '/api';
+};
 const api = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL || '') + '/api',
+  baseURL: getBaseURL(),
   timeout: 12000,
 });
 api.interceptors.request.use(c => {
