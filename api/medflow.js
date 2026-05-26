@@ -51,14 +51,15 @@ app.use(async (req, res, next) => {
   if (!seeded) {
     try {
       const { User } = require(path.join(SERVER_DIR, 'models/index'));
-      const count = await User.countDocuments().catch(() => 1);
-      if (!count) {
+      const nurseExists = await User.findOne({ email: 'nurse@medflow.io' }).catch(() => null);
+      if (!nurseExists) {
+        console.log('[MedFlow] Default nurse not found in database. Seeding demo data...');
         const seedDemoData = require(path.join(SERVER_DIR, 'services/seedService'));
         await seedDemoData();
       }
       seeded = true;
     } catch (e) {
-      console.warn('[MedFlow] Seed skipped:', e.message);
+      console.warn('[MedFlow] Seed skipped or failed:', e.message);
       seeded = true;
     }
   }
