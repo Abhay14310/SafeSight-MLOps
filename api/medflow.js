@@ -33,11 +33,17 @@ let seeded  = false;
 app.use(async (req, res, next) => {
   if (!dbReady) {
     try {
-      const uri = process.env.MEDFLOW_MONGO_URI
-        || process.env.MONGO_URI
-        || 'mongodb://localhost:27020/medflow2';
+      const uri = process.env.MEDFLOW_MONGO_URI || process.env.MONGO_URI;
+      if (!uri) {
+        console.error('[MedFlow] CRITICAL: No MongoDB URI found in environment variables.');
+        console.error('[MedFlow] Set either MEDFLOW_MONGO_URI or MONGO_URI on Vercel.');
+        return res.status(503).json({ 
+          error: 'Database not configured',
+          message: 'Missing MEDFLOW_MONGO_URI or MONGO_URI environment variable. Configure in Vercel project settings.'
+        });
+      }
       if (mongoose.connection.readyState === 0) {
-        await mongoose.connect(uri);
+        await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
         console.log('[MedFlow] MongoDB connected');
       }
       dbReady = true;
