@@ -1,0 +1,51 @@
+# Vercel ignore — exclude large/unnecessary files from Vercel deployment
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Python AI Engine (runs locally only — 6.5MB YOLOv8 weights)
+ai-engine/
+yolov8n.pt
+
+# Docker files (not needed on Vercel)
+docker-compose.yml
+start.sh
+start.bat
+start1.bat
+
+# Dev artifacts (resolved markdown docs)
+*.md.resolved
+
+# ── Node modules — Vercel installs fresh from package.json ───────────────────
+# Root (unused at runtime — all logic uses sub-project node_modules)
+node_modules/
+
+# SafeSight dashboard
+web-dashboard/node_modules/
+
+# ── Client node_modules — build-time only, NOT needed at runtime ─────────────
+medflow2/client/node_modules/
+ecotrack/client/node_modules/
+smartretail/client/node_modules/
+
+# IMPORTANT: Server node_modules are intentionally NOT excluded here.
+# The api/medflow.js, api/ecotrack.js, api/retail.js serverless functions
+# resolve their require() calls from the sub-project server directories.
+# Vercel needs these present at function runtime:
+#   medflow2/server/node_modules/
+#   ecotrack/server/node_modules/
+#   smartretail/server/node_modules/
+# The vercel-build script runs: npm install --omit=dev in each server dir.
+
+# ── Logs and runtime uploads ──────────────────────────────────────────────────
+web-dashboard/error.log
+web-dashboard/uploads/
+medflow2/server/uploads/
+ecotrack/server/uploads/
+smartretail/server/uploads/
+
+# ── Git & IDE ─────────────────────────────────────────────────────────────────
+.git/
+.github/
+.vscode/
+
+# ── Docker build cache ────────────────────────────────────────────────────────
+**/.dockerignore

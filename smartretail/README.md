@@ -154,3 +154,25 @@ io.emit('footfall_update', [{ zoneId:'Z1', count:12, occupancyPct:24, ... }]);
 ---
 
 *SmartRetail v1.0 · #edf1f5 + #0145f2 · Tasuke Facility 4*
+
+---
+
+## 🚀 Vercel Serverless Deployment
+
+SmartRetail is fully set up for Vercel Serverless hosting.
+* **Production Route**: `/retail`
+* **Vercel API Gateway**: `/api/retail/*` (mapped to serverless function `api/retail.js`)
+* **Environment Variable**: Set `SMARTRETAIL_MONGO_URI` (pointing to your MongoDB Atlas cluster). Set `MYSQL_HOST`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE` if you are using an external MySQL database for transactional sales tracking. If not provided, routes gracefully return static fallback metrics.
+
+---
+
+## 🛠️ Technological Stack
+
+| Component | Technology | Details |
+|---|---|---|
+| **Authentication** | **JWT (JSON Web Tokens)** | Used for secure authorization on all REST routes (`/api/retail/cameras`, etc.). Tokens are generated during login and verified by server-side bearer middleware. |
+| **Real-time Stream** | **Socket.io** | Updates POS transaction feeds, occupancy zones, and camera AI skeletons in local mode. Gracefully scales down to API/REST on Vercel. |
+| **Document Database** | **MongoDB** | Cameras grid setup, footfall live counters, real-time alerts, and store layout setups. |
+| **Relational Database** | **MySQL** | Strict transactional store checkout sales, items, POS logs, and employee lists. (MySQL routes gracefully fall back to default metrics if serverless without MySQL variables). |
+| **Caching / Memory** | **In-Memory** | Caching and temporary stats are handled efficiently in-memory to prevent cold start bottlenecks on serverless endpoints. (Note: **Redis is not used** in this module). |
+| **Frontend Rendering** | **React 18 & Three.js** | R3F 3D Store Floor Map showing live color zones and customer footprints. |

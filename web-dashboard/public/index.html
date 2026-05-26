@@ -400,6 +400,25 @@
   </footer>
 
   <script src="main.js"></script>
+  <script>
+    // Dynamically adjust module links for production Vercel vs local localhost
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+        document.querySelectorAll(".module-link").forEach(link => {
+          const href = link.getAttribute("href");
+          if (href) {
+            if (href.includes("localhost:3010")) {
+              link.setAttribute("href", "/medflow");
+            } else if (href.includes("localhost:3008")) {
+              link.setAttribute("href", "/ecotrack");
+            } else if (href.includes("localhost:3005")) {
+              link.setAttribute("href", "/retail");
+            }
+          }
+        });
+      }
+    });
+  </script>
 </body>
 
 </html>
