@@ -175,3 +175,24 @@ The `/tasuke` route shows an animated bridge page with:
 ---
 
 *EcoTrack v1.0 · Tasuke Facility 3 · #22c55e + #f0fdf4*
+
+---
+
+## 🚀 Vercel Serverless Deployment
+
+EcoTrack is fully set up for Vercel Serverless hosting.
+* **Production Route**: `/ecotrack`
+* **Vercel API Gateway**: `/api/ecotrack/*` (mapped to serverless function `api/ecotrack.js`)
+* **Environment Variable**: Set `ECOTRACK_MONGO_URI` (pointing to your MongoDB Atlas cluster).
+
+---
+
+## 🛠️ Technological Stack
+
+| Component | Technology | Details |
+|---|---|---|
+| **Authentication** | **JWT (JSON Web Tokens)** | Used for secure authorization on all REST routes (`/api/ecotrack/wastelogs`, etc.). Verified by standard server-side bearer middleware. |
+| **Real-time Stream** | **Socket.io** | Updates live fleet GPS locations, bin fills, and collections in local mode. Gracefully scales down to API/REST on Vercel. |
+| **Database** | **MongoDB** | Stores fleet routes, pickup schedules, bin fill records, analytics reports, and waste logs. |
+| **Caching / Memory** | **In-Memory** | Caching and temporary stats are handled efficiently in-memory to prevent cold start bottlenecks on serverless endpoints. (Note: **Redis is not used** in this module). |
+| **Frontend Rendering** | **React 18 & Three.js** | Interactive 3D globe display showcasing waste centers, collection lines, and orbit particles. |

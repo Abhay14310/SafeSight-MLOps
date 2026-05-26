@@ -4,10 +4,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="Tasuke'26 — The Unified Intelligent Platform. SafeSight AI Surveillance, MedFlow 2 Hospital Management, EcoTrack Waste Logistics, and SmartRetail Intelligence. One hub, four AI-powered systems." />
+  <meta name="keywords" content="MLOps, AI surveillance, hospital management, SafeSight, MedFlow, EcoTrack, SmartRetail, YOLOv8, computer vision" />
+  <meta property="og:title" content="Tasuke'26 — One Hub. Four AI Facilities." />
+  <meta property="og:description" content="Four production-grade AI platforms unified under one intelligent control plane." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#00e5ff" />
   <link
     href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
     rel="stylesheet" />
-  <title>Nexus Platform — One Hub. Four Facilities.</title>
+  <title>Tasuke'26 — One Hub. Four AI Facilities.</title>
   <style>
     * {
       box-sizing: border-box;
@@ -1620,7 +1626,7 @@
       <span class="nav-link" onclick="sTo('pricing')">Pricing</span>
       <span class="nav-link" onclick="sTo('cta')">Contact</span>
     </div>
-    <button class="nav-cta" onclick="openMod('retail')">Get Started →</button>
+    <button class="nav-cta" onclick="window.location.href='/app'">Launch App →</button>
   </nav>
 
   <!-- HERO -->
@@ -1633,8 +1639,8 @@
       <p class="hero-sub">Nexus orchestrates MedFlow, EcoTrack, SafeSight and SmartRetail under a single intelligent
         control plane — with modular access, real-time data, and enterprise-grade security.</p>
       <div class="hero-btns">
-        <button class="btn-primary" onclick="sTo('ecosystem')">Explore Platform →</button>
-        <button class="btn-ghost" onclick="sTo('pricing')">View Pricing</button>
+        <button class="btn-primary" onclick="window.location.href='/app'">Launch Platform →</button>
+        <button class="btn-ghost" onclick="sTo('ecosystem')">Explore Features</button>
       </div>
       <div class="hero-badges">
         <span class="hero-badge"
@@ -1686,8 +1692,8 @@
       <div class="eco-center"><span>NEXUS</span><span class="eco-center-sub">HUB</span></div>
 
       <!-- MedFlow -->
-      <div class="mod-card mod-med reveal d1" onclick="window.open('http://localhost:3010','_blank')">
-        <div class="mod-status s-live">● LIVE :3010</div>
+      <div class="mod-card mod-med reveal d1" onclick="window.location.href='/medflow'">
+        <div class="mod-status s-live">● LIVE ON VERCEL</div>
         <div class="mod-icon-wrap i-med">🏥</div>
         <div class="mod-tag t-med">MedFlow · Health</div>
         <div class="mod-name" style="color:var(--med)">MedFlow</div>
@@ -1707,13 +1713,12 @@
             <div class="feat-dot" style="background:var(--med)"></div>HL7 FHIR R4 gateway · 9 Docker containers
           </div>
         </div>
-        <a class="mod-launch" href="http://localhost:3010" target="_blank" onclick="event.stopPropagation()">Launch
-          MedFlow <span class="launch-arr">→</span></a>
+        <a class="mod-launch" href="/medflow" onclick="event.stopPropagation()">Launch MedFlow <span class="launch-arr">→</span></a>
       </div>
 
       <!-- EcoTrack -->
-      <div class="mod-card mod-eco reveal d2" onclick="window.open('http://localhost:3008','_blank')">
-        <div class="mod-status s-live">● LIVE :3008</div>
+      <div class="mod-card mod-eco reveal d2" onclick="window.location.href='/ecotrack'">
+        <div class="mod-status s-live">● LIVE ON VERCEL</div>
         <div class="mod-icon-wrap i-eco">♻️</div>
         <div class="mod-tag t-eco">EcoTrack · Sustainability</div>
         <div class="mod-name" style="color:var(--eco)">EcoTrack</div>
@@ -1733,13 +1738,12 @@
             <div class="feat-dot" style="background:var(--eco)"></div>ESG reporting · CO₂ tracking
           </div>
         </div>
-        <a class="mod-launch" href="http://localhost:3008" target="_blank" onclick="event.stopPropagation()">Launch
-          EcoTrack <span class="launch-arr">→</span></a>
+        <a class="mod-launch" href="/ecotrack" onclick="event.stopPropagation()">Launch EcoTrack <span class="launch-arr">→</span></a>
       </div>
 
       <!-- SafeSight -->
-      <div class="mod-card mod-safe reveal d3" onclick="window.open('http://localhost:4000','_blank')">
-        <div class="mod-status s-phase">PHASE 7</div>
+      <div class="mod-card mod-safe reveal d3" onclick="window.location.href='/app'">
+        <div class="mod-status s-live">● LIVE ON VERCEL</div>
         <div class="mod-icon-wrap i-safe">🛡️</div>
         <div class="mod-tag t-safe">SafeSight · Security</div>
         <div class="mod-name" style="color:var(--safe)">SafeSight</div>
@@ -1759,13 +1763,12 @@
             <div class="feat-dot" style="background:var(--safe)"></div>24/7 automated alert dispatch
           </div>
         </div>
-        <a class="mod-launch" href="http://localhost:4000" target="_blank" onclick="event.stopPropagation()">Launch
-          SafeSight <span class="launch-arr">→</span></a>
+        <a class="mod-launch" href="/app" onclick="event.stopPropagation()">Launch SafeSight <span class="launch-arr">→</span></a>
       </div>
 
       <!-- SmartRetail -->
-      <div class="mod-card mod-retail reveal d4" onclick="window.open('http://localhost:3005','_blank')">
-        <div class="mod-status s-live">● LIVE :3005</div>
+      <div class="mod-card mod-retail reveal d4" onclick="window.location.href='/retail'">
+        <div class="mod-status s-live">● LIVE ON VERCEL</div>
         <div class="mod-icon-wrap i-retail">🛒</div>
         <div class="mod-tag t-retail">SmartRetail · Commerce</div>
         <div class="mod-name" style="color:var(--retail)">SmartRetail</div>
@@ -1782,11 +1785,10 @@
             <div class="feat-dot" style="background:var(--retail)"></div>Inventory MongoDB · shrinkage detection
           </div>
           <div class="mod-feat">
-            <div class="feat-dot" style="background:var(--retail)"></div>Dynamic pricing · MySQL transactions
+            <div class="feat-dot" style="background:var(--retail)"></div>Dynamic pricing · MySQL (Docker only)
           </div>
         </div>
-        <a class="mod-launch" href="http://localhost:3005" target="_blank" onclick="event.stopPropagation()">Launch
-          SmartRetail <span class="launch-arr">→</span></a>
+        <a class="mod-launch" href="/retail" onclick="event.stopPropagation()">Launch SmartRetail <span class="launch-arr">→</span></a>
       </div>
     </div>
   </div>
@@ -2190,30 +2192,30 @@
       med: {
         icon: '🏥', name: 'MedFlow', bg: 'rgba(6,3,10,0.99)', hBorder: 'rgba(255,77,109,0.2)', iBg: 'rgba(255,77,109,0.15)',
         desc: 'MedFlow is a real-time AI clinical monitoring platform for ICU environments. Streams ECG, SpO₂ and respiration waveforms every second. MEDPOSE-v2 skeleton analysis for fall detection. Full nurse station workflow with STAT / URGENT / ROUTINE task queue. 9 Docker containers including GPU-accelerated pose engine.',
-        ports: ['Client :3010', 'API :5060', 'MongoDB :27020'],
+        ports: ['Vercel Serverless', 'Cloud MongoDB'],
         feats: [{ icon: '📈', n: 'Live Vitals', s: 'ECG, SpO₂, Resp, NIBP, Temp' }, { icon: '🦴', n: 'MEDPOSE-v2', s: '17 joints, fall risk, GPU CUDA' }, { icon: '👩‍⚕️', n: 'Nurse Station', s: 'STAT / URGENT task queue' }, { icon: '🏗', n: 'Docker Stack', s: '9 containers, HL7 FHIR R4' }],
-        btnTxt: 'Launch MedFlow → :3010', btnC: '#ff4d6d', btnBg: 'rgba(255,77,109,0.12)'
+        btnTxt: 'Launch MedFlow App →', btnC: '#ff4d6d', btnBg: 'rgba(255,77,109,0.12)', url: '/medflow'
       },
       eco: {
         icon: '♻️', name: 'EcoTrack', bg: 'rgba(2,7,4,0.99)', hBorder: 'rgba(0,255,136,0.2)', iBg: 'rgba(0,255,136,0.12)',
         desc: 'EcoTrack manages waste logistics across city zones. Live vehicle GPS tracking, bin fill monitoring via Socket.io, AI camera waste classification using TF.js COCO-SSD, and collection route optimisation. Full ESG reporting and CO₂ savings tracking built in.',
-        ports: ['Client :3008', 'API :5055', 'MongoDB :27019'],
+        ports: ['Vercel Serverless', 'Cloud MongoDB'],
         feats: [{ icon: '🚛', n: 'Fleet GPS', s: '4 vehicles, live tracking' }, { icon: '🗑', n: 'Bin Monitor', s: '6 bins, fill level alerts' }, { icon: '📷', n: 'AI Camera', s: 'TF.js — plastic/organic/e-waste' }, { icon: '🗺', n: 'Routes', s: 'Optimised collection paths' }],
-        btnTxt: 'Launch EcoTrack → :3008', btnC: '#00ff88', btnBg: 'rgba(0,255,136,0.1)'
+        btnTxt: 'Launch EcoTrack App →', btnC: '#00ff88', btnBg: 'rgba(0,255,136,0.1)', url: '/ecotrack'
       },
       safe: {
         icon: '🛡️', name: 'SafeSight', bg: 'rgba(8,7,2,0.99)', hBorder: 'rgba(255,204,0,0.2)', iBg: 'rgba(255,204,0,0.12)',
-        desc: 'SafeSight is a next-generation AI surveillance command centre arriving in Phase 7. Multi-camera anomaly detection, threat scoring, perimeter breach alerts, and 24/7 automated incident management across your entire physical security estate.',
-        ports: ['Phase 7 — Coming Soon'],
+        desc: 'SafeSight is a next-generation AI surveillance command centre. Multi-camera anomaly detection, threat scoring, perimeter breach alerts, and 24/7 automated incident management across your entire physical security estate.',
+        ports: ['Vercel Serverless', 'Cloud MongoDB'],
         feats: [{ icon: '📹', n: 'Multi-Camera AI', s: 'Anomaly & threat detection' }, { icon: '⚡', n: 'Threat Scoring', s: 'Real-time risk assessment' }, { icon: '🔔', n: 'Alert Dispatch', s: 'Automated incident response' }, { icon: '🔐', n: 'Access Control', s: 'RBAC + full audit trail' }],
-        btnTxt: 'Join SafeSight Waitlist', btnC: '#ffcc00', btnBg: 'rgba(255,204,0,0.1)'
+        btnTxt: 'Launch SafeSight App →', btnC: '#ffcc00', btnBg: 'rgba(255,204,0,0.1)', url: '/app'
       },
       retail: {
         icon: '🛒', name: 'SmartRetail', bg: 'rgba(5,2,10,0.99)', hBorder: 'rgba(168,85,247,0.2)', iBg: 'rgba(168,85,247,0.15)',
         desc: 'SmartRetail delivers AI-powered retail intelligence — live POS stream via Socket.io, footfall counting across 8 camera zones, MongoDB inventory heatmap, shrinkage detection and a dynamic pricing engine. MySQL-backed transactions with full analytics.',
-        ports: ['Client :3005', 'API :5050', 'MongoDB :27018', 'MySQL :3307'],
+        ports: ['Vercel Serverless', 'Cloud MongoDB'],
         feats: [{ icon: '💳', n: 'Live POS Stream', s: 'Socket.io, 4-7s intervals' }, { icon: '👥', n: 'Footfall AI', s: '8 cameras, 6 zones' }, { icon: '📦', n: 'Inventory', s: 'MongoDB stock heatmap' }, { icon: '📊', n: 'Analytics', s: 'Revenue, zone, payment mix' }],
-        btnTxt: 'Launch SmartRetail → :3005', btnC: '#a855f7', btnBg: 'rgba(168,85,247,0.12)'
+        btnTxt: 'Launch SmartRetail App →', btnC: '#a855f7', btnBg: 'rgba(168,85,247,0.12)', url: '/retail'
       },
     };
 
@@ -2229,6 +2231,7 @@
       document.getElementById('modal-feats').innerHTML = d.feats.map(f => `<div class="mfeat"><div class="mfeat-icon">${f.icon}</div><div class="mfeat-name">${f.n}</div><div class="mfeat-sub">${f.s}</div></div>`).join('');
       const btn = document.getElementById('modal-btn');
       btn.textContent = d.btnTxt; btn.style.color = d.btnC; btn.style.background = d.btnBg; btn.style.border = `1px solid ${d.hBorder}`;
+      btn.onclick = () => window.location.href = d.url;
       document.getElementById('modal-ov').classList.add('open');
     }
     function closeMod(e) {

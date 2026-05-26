@@ -2,11 +2,16 @@
 
 # ⚡ TASUKE'26
 
-### *The Unified Intelligent Platform*
+### *The Unified Intelligent Platform — Four AI Systems. One Deployment.*
+
+<br/>
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAbhay14310%2FSafeSight-MLOps&env=MONGO_URI,JWT_SECRET&envDescription=MongoDB%20Atlas%20URI%20%26%20JWT%20Secret%20required%20for%20deployment&envLink=https%3A%2F%2Fgithub.com%2FAbhay14310%2FSafeSight-MLOps%2Fblob%2Fmain%2F.env.example&project-name=tasuke26&repository-name=tasuke26)
 
 <br/>
 
 [![GitHub Stars](https://img.shields.io/github/stars/Abhay14310/SafeSight-MLOps?style=for-the-badge&color=FFD700&labelColor=1a1a2e)](https://github.com/Abhay14310/SafeSight-MLOps/stargazers)
+[![Vercel](https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white&labelColor=1a1a2e)](https://vercel.com)
 [![Maintained](https://img.shields.io/badge/Maintained-YES-00FF88?style=for-the-badge&labelColor=1a1a2e)](https://github.com/Abhay14310/SafeSight-MLOps/graphs/commit-activity)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white&labelColor=1a1a2e)](https://www.docker.com/)
 [![MLOps](https://img.shields.io/badge/MLOps-Pipeline-FF6B35?style=for-the-badge&labelColor=1a1a2e)](#)
@@ -15,13 +20,13 @@
 <br/>
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│   TASUKE'26 — Four Platforms. One Command. Zero Chaos.  │
-│                                                         │
-│   🛡️ SafeSight   🏥 MedFlow 2   🌿 EcoTrack   🛒 SmartRetail │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│   TASUKE'26 — Four Platforms. One Command. Zero Chaos.      │
+│                                                             │
+│   🛡️ SafeSight   🏥 MedFlow 2   🌿 EcoTrack   🛒 SmartRetail  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 </div>
@@ -30,22 +35,20 @@
 
 ## 🧠 What is Tasuke'26?
 
-**Tasuke'26** is a professional-grade, **multi-domain intelligent platform monorepo** — four fully independent, production-ready applications unified under a single Docker orchestration layer. Built as a showcase of real-world MLOps, full-stack engineering, and AI integration, it represents a complete ecosystem of interconnected intelligent systems.
+**Tasuke'26** is a professional-grade, **multi-domain intelligent platform monorepo** — four fully independent, production-ready applications unified under a single Docker orchestration layer and deployable to Vercel in minutes. Built as a showcase of real-world MLOps, full-stack engineering, and AI integration.
 
 > *Tasuke (助け) — Japanese for "help" or "assistance." Every system in this platform exists to assist humans make faster, smarter, better decisions.*
 
-Each sub-platform operates autonomously with its own database, server, and client — but they all share the same Docker network and can be launched from a single interactive script.
-
 ---
 
-## 🗺️ Platform Ecosystem
+## 🌐 Platform Ecosystem
 
 <table>
 <thead>
 <tr>
 <th align="center">Platform</th>
 <th align="center">Domain</th>
-<th align="center">Port</th>
+<th align="center">Port (Local)</th>
 <th align="center">Stack</th>
 </tr>
 </thead>
@@ -85,11 +88,180 @@ Each sub-platform operates autonomously with its own database, server, and clien
 
 ---
 
+## 🚀 Deploy to Vercel (3 Steps)
+
+### Step 1 — MongoDB Atlas (Free Database)
+
+> **Why Atlas?** Vercel is serverless — it can't run a local MongoDB. Atlas gives you a free cloud database in 2 minutes.
+
+1. Go to [cloud.mongodb.com](https://cloud.mongodb.com) → **Sign Up** (free)
+2. Create a **FREE M0 Cluster** (any region)
+3. Go to **Database Access** → Add a user with a password
+4. Go to **Network Access** → Add IP `0.0.0.0/0` (allow all for Vercel)
+5. Click **Connect** → **Drivers** → copy your connection string:
+   ```
+   mongodb+srv://<user>:<password>@<cluster>.mongodb.net/safesight?retryWrites=true&w=majority
+   ```
+
+### Step 2 — Deploy to Vercel
+
+Click the button below — it auto-clones the repo and asks for your env vars:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAbhay14310%2FSafeSight-MLOps&env=MONGO_URI,JWT_SECRET&envDescription=MongoDB%20Atlas%20URI%20%26%20JWT%20Secret%20required&envLink=https%3A%2F%2Fgithub.com%2FAbhay14310%2FSafeSight-MLOps%2Fblob%2Fmain%2F.env.example&project-name=tasuke26)
+
+Or deploy manually:
+
+```bash
+# 1. Install Vercel CLI
+npm i -g vercel
+
+# 2. Login
+vercel login
+
+# 3. Deploy from project root
+vercel
+
+# 4. Follow prompts — set env vars when asked:
+#    MONGO_URI = your Atlas connection string
+#    JWT_SECRET = any random 32-char string
+```
+
+### Step 3 — Set Environment Variables
+
+In your Vercel dashboard → Project → **Settings → Environment Variables**, add:
+
+| Variable | Value | Required |
+|---|---|---|
+| `MONGO_URI` | `mongodb+srv://user:pass@cluster.mongodb.net/safesight` | ✅ Yes (SafeSight) |
+| `MEDFLOW_MONGO_URI` | `mongodb+srv://user:pass@cluster.mongodb.net/medflow2` | ✅ Yes (MedFlow) |
+| `ECOTRACK_MONGO_URI` | `mongodb+srv://user:pass@cluster.mongodb.net/ecotrack` | ✅ Yes (EcoTrack) |
+| `SMARTRETAIL_MONGO_URI` | `mongodb+srv://user:pass@cluster.mongodb.net/smartretail` | ✅ Yes (SmartRetail) |
+| `JWT_SECRET` | Any 32+ char random string | ✅ Yes (all platforms) |
+| `SMTP_HOST` | `smtp.gmail.com` | Optional (email alerts) |
+| `SMTP_USER` | Your Gmail address | Optional |
+| `SMTP_PASS` | Gmail App Password | Optional |
+| `ALERT_EMAIL_TO` | Alert recipient email | Optional |
+
+> **💡 Tip:** You can use ONE free Atlas cluster for all 4 platforms — just set different database names in each URI (`/safesight`, `/medflow2`, `/ecotrack`, `/smartretail`). The free M0 tier supports this.
+
+**Generate a secure JWT secret:**
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+### ✅ You're Live! — All 4 Platforms
+
+After deployment, all platforms are accessible at:
+
+| Platform | URL | Default Login |
+|---|---|---|
+| 🌐 **Landing Hub** | `https://your-project.vercel.app/` | — |
+| 🛡️ **SafeSight** | `https://your-project.vercel.app/app` | `admin` / `password123` |
+| 🏥 **MedFlow 2** | `https://your-project.vercel.app/medflow` | `admin` / `admin123` |
+| 🌿 **EcoTrack** | `https://your-project.vercel.app/ecotrack` | `admin` / `admin123` |
+| 🛒 **SmartRetail** | `https://your-project.vercel.app/retail` | `admin` / `admin123` |
+
+**Health checks:**
+- `https://your-project.vercel.app/api/health`
+- `https://your-project.vercel.app/api/medflow2/health`
+- `https://your-project.vercel.app/api/ecotrack/health`
+- `https://your-project.vercel.app/api/retail/health`
+
+> ⚠️ **Change default passwords immediately after first login!**
+
+> ⚠️ **MySQL (SmartRetail sales)** runs only in local Docker. On Vercel, the `/api/retail/sales` endpoint returns a graceful message and empty array — all other SmartRetail features work fully.
+
+---
+
+## 🐳 Local Development (Full Stack with Docker)
+
+### Prerequisites
+
+| Requirement | Version | Purpose |
+|---|---|---|
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Latest | Runs all services |
+| Python 3.10+ | 3.10+ | AI Engine (optional) |
+| Webcam | Any | SafeSight live feed |
+
+### Option A — Interactive Launcher (Recommended)
+
+**Windows:**
+```batch
+start.bat
+```
+
+**Linux / macOS:**
+```bash
+chmod +x start.sh && ./start.sh
+```
+
+```
+====================================================
+   SafeSight-MLOps — Docker Launcher
+====================================================
+
+ --- START (uses cached images, fast) ---
+ [1] All projects
+ [2] SafeSight only     (web-dashboard)        :4000
+ [3] MedFlow 2 only     (hospital mgmt)        :3010
+ [4] EcoTrack only      (waste logistics)      :3008
+ [5] SmartRetail only   (retail intelligence)  :3005
+ [6] AI Engine only     (YOLOv8 detection)
+ [7] SafeSight + AI     (core system)
+
+ --- REBUILD ---
+ [R] Rebuild all images
+
+ --- STOP ---
+ [8] Stop all containers
+ [9] Stop all and wipe volumes (RESET DATA)
+```
+
+> **First run?** The script auto-creates `.env` from `.env.example` — no manual setup needed.
+
+### Option B — Manual Docker Compose
+
+```bash
+# All platforms
+docker-compose --profile safesight --profile medflow2 --profile ecotrack --profile smartretail --profile ai up --build
+
+# Just one platform
+docker-compose --profile safesight up --build
+
+# Stop everything
+docker-compose down
+
+# Full reset (wipes all data)
+docker-compose down -v
+```
+
+### Activating the SafeSight AI Uplink
+
+1. Launch SafeSight: `docker-compose --profile safesight up`
+2. Open `http://localhost:4000` → login (`admin` / `password123`)
+3. Navigate to **Edge Nodes** → copy your **API Key**
+4. Set env var:
+   ```bash
+   # Windows
+   set SAFESIGHT_API_KEY=<your_key>
+   # Linux/macOS
+   export SAFESIGHT_API_KEY=<your_key>
+   ```
+5. Run AI engine:
+   ```bash
+   cd ai-engine
+   pip install -r requirements.txt
+   python src/detection.py
+   ```
+6. Click **"START UPLINK"** in the dashboard — live feed activates 🔴
+
+---
+
 ## 🛡️ SafeSight — Cyber Sentinel VMS
 
 > *Next-Gen AI Video Management & Real-Time Threat Detection*
 
-SafeSight is the flagship platform — a professional-grade **Video Management System (VMS)** powered by YOLOv8 computer vision. It provides zero-latency human behavior analysis, real-time threat detection, and a premium Cyber Sentinel UI.
+SafeSight is the flagship platform — a professional-grade **Video Management System** powered by YOLOv8 computer vision. It provides real-time human behavior analysis, zero-latency threat detection, and a premium Cyber Sentinel UI.
 
 **Core Capabilities:**
 - **AI Action Recognition** — Real-time human state machine: `Standing → Falling → Fallen → Emergency` using YOLOv8-Pose
@@ -104,22 +276,19 @@ SafeSight is the flagship platform — a professional-grade **Video Management S
 
 > *Streamlining Clinical Workflows & Patient Care*
 
-MedFlow 2 is a full-stack **hospital management platform** built for real-world clinical operations. It handles patient records, appointments, doctor schedules, and administrative workflows in a clean, animated React interface.
-
 **Core Capabilities:**
 - Patient registration, records, and history management
 - Doctor scheduling and appointment booking
 - Role-based access (Admin, Doctor, Staff)
 - GSAP-powered premium UI with smooth transitions
 - JWT-secured REST API backend
+- Real-time vitals monitoring via WebSocket
 
 ---
 
 ## 🌿 EcoTrack — Waste Logistics Intelligence
 
 > *Making Sustainability Measurable*
-
-EcoTrack is an environmental intelligence platform that tracks waste logistics, recycling efficiency, and sustainability metrics across distributed locations.
 
 **Core Capabilities:**
 - Real-time waste collection route tracking
@@ -132,8 +301,6 @@ EcoTrack is an environmental intelligence platform that tracks waste logistics, 
 ## 🛒 SmartRetail — Retail Intelligence Platform
 
 > *Turning Transactions Into Insights*
-
-SmartRetail is a dual-database retail analytics platform that combines MongoDB for operational data with MySQL for transactional integrity — giving businesses a complete view of their retail operations.
 
 **Core Capabilities:**
 - Product catalog and inventory management
@@ -150,93 +317,10 @@ SmartRetail is a dual-database retail analytics platform that combines MongoDB f
 | **AI / ML** | Python 3.10+, YOLOv8 (Pose + Detection), OpenCV, NumPy |
 | **Backend** | Node.js, Express.js, REST APIs, Socket.io, JWT Auth, bcrypt |
 | **Frontend** | React 18, GSAP, Three.js, Vanilla JS (ES6+), CSS Variables |
-| **Databases** | MongoDB (Mongoose), MySQL 8.0 |
-| **Infrastructure** | Docker, Docker Compose (Profiles), GitHub Actions |
-| **DevOps** | Shell Automation, Cross-Platform Scripts (.sh / .bat), Healthchecks |
+| **Databases** | MongoDB Atlas (cloud) / MongoDB (Docker), MySQL 8.0 |
+| **Deployment** | Vercel (serverless), Docker, Docker Compose (Profiles) |
+| **DevOps** | GitHub Actions, Shell Scripts (.sh / .bat), Healthchecks |
 | **Security** | API Key Auth, JWT Sessions, Audit Logging, bcrypt Hashing |
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-| Requirement | Version | Why |
-|---|---|---|
-| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Latest | Runs all services |
-| Webcam | Any | SafeSight AI Engine live feed |
-| Python 3.10+ | 3.10+ | Native AI Engine (optional) |
-
-### Option A — Interactive Launcher (Recommended)
-
-**Windows:**
-```batch
-start.bat
-```
-
-**Linux / macOS:**
-```bash
-chmod +x start.sh
-./start.sh
-```
-
-The launcher presents a menu:
-
-```
-====================================================
-   SafeSight-MLOps — Docker Launcher
-====================================================
-
- --- START (uses cached images, fast) ---
- [1] All projects
- [2] SafeSight only     (web-dashboard)        :4000
- [3] MedFlow 2 only     (hospital mgmt)        :3010
- [4] EcoTrack only      (waste logistics)      :3008
- [5] SmartRetail only   (retail intelligence)  :3005
- [6] AI Engine only     (YOLOv8 detection)
- [7] SafeSight + AI     (core system)
-
- --- REBUILD (downloads + rebuilds images, slow) ---
- [R] Rebuild all images
-
- --- STOP ---
- [8] Stop all containers
- [9] Stop all and wipe volumes (RESET DATA)
-```
-
-> **First run?** The script auto-creates `.env` from `.env.example` — no manual setup needed.
-
----
-
-### Option B — Manual Docker Compose
-
-```bash
-# All platforms at once
-docker-compose --profile safesight --profile medflow2 --profile ecotrack --profile smartretail --profile ai up --build
-
-# Just one platform
-docker-compose --profile ecotrack up --build
-
-# Two platforms
-docker-compose --profile medflow2 --profile smartretail up --build
-
-# Stop everything
-docker-compose down
-
-# Wipe all data (full reset)
-docker-compose down -v
-```
-
----
-
-### Activating the SafeSight AI Uplink
-
-1. Launch SafeSight: `docker-compose --profile safesight up`
-2. Open **`http://localhost:4000`** — log in (`admin` / `password123`)
-3. Navigate to **Edge Nodes** → copy your **API Key**
-4. Set environment: `set SAFESIGHT_API_KEY=<your_key>` (Windows) or `export SAFESIGHT_API_KEY=<your_key>` (Linux)
-5. Run the AI engine: `cd ai-engine && pip install -r requirements.txt && python src/detection.py`
-6. Click **"START UPLINK"** in the dashboard — the live feed goes active 🔴
 
 ---
 
@@ -245,126 +329,86 @@ docker-compose down -v
 ```text
 SafeSight-MLOps/
 │
-├── 🛡️  web-dashboard/          # SafeSight — Cyber Sentinel VMS
-│   ├── public/                 # Frontend (Three.js, Socket.io, CSS)
-│   ├── script.js               # Express API & Socket handlers
-│   ├── db.js                   # Mongoose models & schemas
+├── 🌐  index.html               # Landing page — Nexus Platform Hub
+├── 📦  vercel.json              # Vercel deployment configuration
+├── 📦  package.json             # Root dependencies for Vercel
+├── 📂  api/
+│   └── index.js                 # Vercel serverless function adapter
+│
+├── 🛡️  web-dashboard/           # SafeSight — Cyber Sentinel VMS
+│   ├── app.js                   # Express app (serverless-compatible)
+│   ├── script.js                # Local server entry (Docker / Node)
+│   ├── public/                  # Frontend (Three.js, Socket.io, CSS)
+│   ├── models/                  # Mongoose schemas
+│   ├── routes/                  # Express route handlers
+│   ├── services/                # DB, Vitals mock, Socket services
+│   ├── middleware/              # Auth middleware
 │   └── Dockerfile
 │
-├── 🏥  medflow2/               # Hospital Management System
-│   ├── client/                 # React 18 Frontend (GSAP animations)
-│   └── server/                 # Node.js + Express + MongoDB
+├── 🏥  medflow2/                # Hospital Management System
+│   ├── client/                  # React 18 Frontend (GSAP animations)
+│   └── server/                  # Node.js + Express + MongoDB
 │
-├── 🌿  ecotrack/               # Waste Logistics Intelligence
-│   ├── client/                 # React Frontend
-│   └── server/                 # Node.js + Express + MongoDB
+├── 🌿  ecotrack/                # Waste Logistics Intelligence
+│   ├── client/                  # React Frontend
+│   └── server/                  # Node.js + Express + MongoDB
 │
-├── 🛒  smartretail/            # Retail Intelligence Platform
-│   ├── client/                 # React Frontend (dark mode)
-│   └── server/                 # Node.js + Express + MongoDB + MySQL
+├── 🛒  smartretail/             # Retail Intelligence Platform
+│   ├── client/                  # React Frontend (dark mode)
+│   └── server/                  # Node.js + Express + MongoDB + MySQL
 │
-├── 🤖  ai-engine/              # YOLOv8 Computer Vision Core
-│   ├── src/detection.py        # Main AI engine — state machine + fall detection
-│   ├── tests/
-│   │   ├── test_detection.py   # Unit tests — state machine, config, edge cases
-│   │   ├── test_accuracy.py    # Precision / Recall / F1 accuracy benchmark
-│   │   └── test_camera_benchmark.py  # Camera pipeline + FPS performance tests
-│   ├── yolov8n-pose.pt         # Pose estimation model
+├── 🤖  ai-engine/               # YOLOv8 Computer Vision Core
+│   ├── src/detection.py         # AI engine — state machine + fall detection
+│   ├── tests/                   # 56 unit + accuracy tests
 │   └── requirements.txt
 │
-├── docker-compose.yml          # Unified orchestration (profile-based)
-├── start.sh                    # Linux/macOS interactive launcher
-├── start.bat                   # Windows interactive launcher
-├── .env.example                # Environment variable template
-└── .gitignore
+├── docker-compose.yml           # Unified orchestration (profile-based)
+├── start.sh / start.bat         # Interactive launchers
+└── .env.example                 # Environment variable template
 ```
 
 ---
 
 ## 🧪 AI Engine — Testing & Accuracy
 
-The AI Engine includes a full test suite for validating fall detection accuracy **without needing a live camera**. Tests use synthetic frame sequences fed through the real state machine.
+The AI Engine includes a full test suite for validating fall detection **without a live camera** — synthetic frame sequences fed through the real state machine.
 
 ### What's Tested (56 tests)
 
 | Test File | Coverage |
 |---|---|
-| `test_detection.py` | State machine transitions, config thresholds, cooldowns, edge cases |
+| `test_detection.py` | State machine transitions, config thresholds, cooldowns |
 | `test_accuracy.py` | Precision, Recall, F1 across 9 real-world fall scenarios |
-| `test_camera_benchmark.py` | Camera pipeline, inference skipping, stale track pruning, FPS speed |
+| `test_camera_benchmark.py` | Camera pipeline, inference skipping, stale tracks, FPS |
 
-### Accuracy Scenarios
-
-| Scenario | Expected | What It Tests |
-|---|---|---|
-| Normal standing (60 frames) | ✅ No alert | False positive guard |
-| Normal walking (varying AR) | ✅ No alert | Motion noise tolerance |
-| Clear fall (AR=2.0 for 30 frames) | 🔴 Alert | Core fall detection |
-| Slow progressive fall (AR 0.4 → 1.8) | 🔴 Alert | Gradual fall detection |
-| Extreme fall (AR=3.5) | 🔴 Alert | Obvious fall sensitivity |
-| Sitting (AR=0.9 + pose signal) | ✅ No alert | Sitting vs. falling |
-| Brief stumble + recovery | ✅ No alert | False positive guard |
-| Borderline fall (AR=1.25) | 🔴 Alert | Threshold boundary |
-| Quick crouch (3 frames wide) | ✅ No alert | Temporal filter validation |
-
-**Minimum Accuracy Targets:**
+### Accuracy Results
 
 ```
-Precision  ≥ 80%    (not too many false alarms)
-Recall     ≥ 80%    (catches real falls)
-F1 Score   ≥ 80%    (balanced)
-FPR        ≤ 30%    (false positive rate)
+Precision  : 100.0%   (≥ 80% target)
+Recall     : 100.0%   (≥ 80% target)
+F1 Score   : 100.0%   (≥ 80% target)
+FPR        : 0.0%     (≤ 30% target)
 ```
 
-### Running the Tests
+### Running Tests
 
 ```bash
 cd ai-engine
-
-# Install dependencies (first time only)
 pip install -r requirements.txt
 
-# Run all 56 tests
+# All 56 tests
 python -m pytest tests/ -v
 
-# Run accuracy benchmark with full report table
+# Accuracy benchmark with full table
 python -m pytest tests/test_accuracy.py -v -s
 
-# Run with coverage
+# With coverage
 python -m pytest tests/ --cov=src --cov-report=term-missing
 ```
 
-**Sample accuracy report output:**
-```
-========================================================================
-  TASUKE'26 FALL DETECTION -- ACCURACY REPORT
-  Thresholds: AR>1.2  confirm_frames=18  fallen_after=3.0s
-========================================================================
-  SCENARIO                                           EXPECTED      GOT  PASS
-------------------------------------------------------------------------
-  Normal standing (60 frames)                            SAFE     SAFE  [OK]
-  Clear fall (wide AR for 30 frames)                     FALL     FALL  [OK]
-  Sitting down (AR=0.9, pose sit signal)                 SAFE     SAFE  [OK]
-  ...
-------------------------------------------------------------------------
+---
 
-  Confusion Matrix:
-    TP=4  FP=0  FN=0  TN=5
-
-  Metrics:
-    Precision           : 100.0%
-    Recall (sensitivity): 100.0%
-    F1 Score            : 100.0%
-    False Positive Rate : 0.0%
-    Overall Accuracy    : 100.0%
-========================================================================
-```
-
-> **Note:** "Training" the AI engine means **calibrating the fall-detection thresholds** (aspect ratio, confirm frames, duration timers) — not retraining YOLOv8 itself. The YOLO model weights are pre-trained and used as-is.
-
-
-
-## 🌐 Service Map
+## 🌐 Service Map (Local Docker)
 
 ```
 localhost:4000  ──►  🛡️  SafeSight Web Dashboard
@@ -387,15 +431,14 @@ localhost:3307  ──►  SmartRetail MySQL
 
 ## 🛡️ Security Architecture
 
-Security is layered across every platform:
-
 | Layer | Implementation |
 |---|---|
 | **Machine Auth** | AI nodes authenticate via UUID `X-API-Key` headers |
-| **User Auth** | JWT-signed tokens + bcrypt-hashed passwords |
-| **Audit Trail** | Every action (login, API call, alert) is logged in MongoDB |
-| **Network Isolation** | All services run on an isolated `safesight-network` bridge |
+| **User Auth** | JWT-signed tokens (8h expiry) + bcrypt-hashed passwords (cost 12) |
+| **Audit Trail** | Every action (login, API call, alert) logged in MongoDB |
+| **Network Isolation** | All Docker services on isolated `safesight-network` bridge |
 | **Secrets Management** | `.env` file (gitignored) — never hard-coded in images |
+| **Rate Limiting** | 10 login attempts / 15 min, 200 API req / min |
 
 ---
 
@@ -414,5 +457,7 @@ Security is layered across every platform:
 *Engineered with purpose by **Bharati, Snigdha & Abhay** — Tasuke'26 Project*
 
 **"Assist humans. Automate the noise. Build what matters."**
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAbhay14310%2FSafeSight-MLOps&env=MONGO_URI,JWT_SECRET&envDescription=MongoDB%20Atlas%20URI%20%26%20JWT%20Secret%20required&project-name=tasuke26)
 
 </div>

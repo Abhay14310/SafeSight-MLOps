@@ -15,7 +15,7 @@ docker-compose up --build
 docker exec mf2-server node services/seedService.js
 
 # Open browser
-open http://localhos3333333333333333333333333333333333333333333333333333333333333333333333333333333333222
+open http://localhost:3010
 
 # Credentials
 # nurse@medflow.io  / medflow123
@@ -156,3 +156,21 @@ Set Tasuke URL in Settings → Tasuke AI Integration.
 
 ---
 
+## 🚀 Vercel Serverless Deployment
+
+MedFlow 2 is fully set up for Vercel Serverless hosting.
+* **Production Route**: `/medflow`
+* **Vercel API Gateway**: `/api/medflow2/*` (mapped to serverless function `api/medflow.js`)
+* **Environment Variable**: Set `MEDFLOW_MONGO_URI` (pointing to your MongoDB Atlas cluster).
+
+---
+
+## 🛠️ Technological Stack
+
+| Component | Technology | Details |
+|---|---|---|
+| **Authentication** | **JWT (JSON Web Tokens)** | Used for secure authorization on all REST routes (`/api/medflow2/patients`, etc.). Tokens are generated during login and verified by server-side middleware. |
+| **Real-time Stream** | **Socket.io** | Broadcasts live vitals (ECG/SpO₂/resp) and `MEDPOSE-v2` skeletons in local mode. Vercel gracefully handles REST fallback APIs. |
+| **Database** | **MongoDB** | Real-time clinical records, vital log histories, task queues, and patient schemas. |
+| **Caching / Memory** | **In-Memory** | Caching and temporary stats are handled efficiently in-memory to prevent cold start bottlenecks on serverless endpoints. (Note: **Redis is not used** in this module). |
+| **Frontend Rendering** | **React 18 & Three.js** | Interactive 3D orb displays, vital canvases, and skeleton visualization frames. |

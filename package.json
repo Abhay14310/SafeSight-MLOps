@@ -1,0 +1,50 @@
+{
+  "name": "tasuke26-safesight",
+  "version": "1.0.0",
+  "description": "Tasuke'26 — Unified Intelligent Platform. SafeSight AI Surveillance + MedFlow 2 + EcoTrack + SmartRetail.",
+  "main": "web-dashboard/app.js",
+  "scripts": {
+    "start": "cd web-dashboard && node script.js",
+    "dev": "cd web-dashboard && node script.js",
+    "build:medflow": "cd medflow2/client && npm install && npm run build",
+    "build:ecotrack": "cd ecotrack/client && npm install && npm run build",
+    "build:retail": "cd smartretail/client && npm install && npm run build",
+    "install:servers": "cd medflow2/server && npm install --omit=dev && cd ../../ecotrack/server && npm install --omit=dev && cd ../../smartretail/server && npm install --omit=dev",
+    "build:all": "npm run build:medflow && npm run build:ecotrack && npm run build:retail",
+    "vercel-build": "npm run install:servers && npm run build:medflow && npm run build:ecotrack && npm run build:retail"
+  },
+  "keywords": [
+    "mlops",
+    "safesight",
+    "yolov8",
+    "surveillance",
+    "medflow",
+    "ecotrack",
+    "smartretail",
+    "tasuke26"
+  ],
+  "author": "Bharati, Snigdha & Abhay — Tasuke'26",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^7.2.0",
+    "mongoose": "^9.4.1",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.4",
+    "nodemailer": "^8.0.5",
+    "socket.io": "^4.8.3",
+    "uuid": "^11.1.0"
+  },
+  "overrides": {
+    "path-to-regexp": "^8.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

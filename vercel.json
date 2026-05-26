@@ -1,0 +1,112 @@
+{
+  "version": 2,
+  "name": "tasuke26",
+  "buildCommand": "npm run vercel-build",
+  "installCommand": "npm install && cd medflow2/client && npm install && cd ../../ecotrack/client && npm install && cd ../../smartretail/client && npm install",
+  "outputDirectory": ".",
+  "functions": {
+    "api/index.js":   { "memory": 1024, "maxDuration": 30 },
+    "api/medflow.js": { "memory": 1024, "maxDuration": 30 },
+    "api/ecotrack.js":{ "memory": 1024, "maxDuration": 30 },
+    "api/retail.js":  { "memory": 1024, "maxDuration": 30 }
+  },
+  "routes": [
+    {
+      "src": "/api/medflow2/(.*)",
+      "dest": "/api/medflow"
+    },
+    {
+      "src": "/api/ecotrack/(.*)",
+      "dest": "/api/ecotrack"
+    },
+    {
+      "src": "/api/retail/(.*)",
+      "dest": "/api/retail"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index"
+    },
+    {
+      "src": "/medflow/assets/(.*)",
+      "dest": "/medflow2/client/dist/assets/$1"
+    },
+    {
+      "src": "/medflow/(.*)",
+      "dest": "/medflow2/client/dist/index.html"
+    },
+    {
+      "src": "/medflow",
+      "dest": "/medflow2/client/dist/index.html"
+    },
+    {
+      "src": "/ecotrack/assets/(.*)",
+      "dest": "/ecotrack/client/dist/assets/$1"
+    },
+    {
+      "src": "/ecotrack/(.*)",
+      "dest": "/ecotrack/client/dist/index.html"
+    },
+    {
+      "src": "/ecotrack",
+      "dest": "/ecotrack/client/dist/index.html"
+    },
+    {
+      "src": "/retail/assets/(.*)",
+      "dest": "/smartretail/client/dist/assets/$1"
+    },
+    {
+      "src": "/retail/(.*)",
+      "dest": "/smartretail/client/dist/index.html"
+    },
+    {
+      "src": "/retail",
+      "dest": "/smartretail/client/dist/index.html"
+    },
+    {
+      "src": "/app/assets/(.*)",
+      "dest": "/web-dashboard/public/$1"
+    },
+    {
+      "src": "/app/(.*)",
+      "dest": "/web-dashboard/public/$1"
+    },
+    {
+      "src": "/app",
+      "dest": "/web-dashboard/public/login.html"
+    },
+    {
+      "src": "/(.*\\.(css|js|png|jpg|svg|ico|woff|woff2|ttf|json|map))",
+      "dest": "/$1"
+    },
+    {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin",  "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,PATCH,DELETE,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type,Authorization,X-API-Key" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options",        "value": "DENY" },
+        { "key": "X-XSS-Protection",       "value": "1; mode=block" }
+      ]
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
