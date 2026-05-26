@@ -1,7 +1,14 @@
 // src/lib/api.ts
 /// <reference types="vite/client" />
 import axios from 'axios';
-const api = axios.create({ baseURL:(import.meta.env.VITE_API_URL||'')+'/api', timeout:12000 });
+const getBaseURL = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL + '/api';
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/ecotrack')) {
+    return '/api/ecotrack';
+  }
+  return '/api';
+};
+const api = axios.create({ baseURL: getBaseURL(), timeout:12000 });
 api.interceptors.request.use(c=>{ const t=localStorage.getItem('eco_token'); if(t)c.headers.Authorization=`Bearer ${t}`; return c; });
 api.interceptors.response.use(r=>r,e=>{ if(e.response?.status===401){localStorage.removeItem('eco_token');localStorage.removeItem('eco_user');window.location.href='/login';} return Promise.reject(e); });
 

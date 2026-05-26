@@ -1,6 +1,13 @@
 // src/lib/api.ts
 import axios from 'axios';
-const api = axios.create({ baseURL:(import.meta.env.VITE_API_URL||'')+'/api', timeout:12000 });
+const getBaseURL = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL + '/api';
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/medflow')) {
+    return '/api/medflow2';
+  }
+  return '/api';
+};
+const api = axios.create({ baseURL: getBaseURL(), timeout:12000 });
 api.interceptors.request.use(c=>{ const t=localStorage.getItem('mf2_token'); if(t)c.headers.Authorization=`Bearer ${t}`; return c; });
 api.interceptors.response.use(r=>r,e=>{ if(e.response?.status===401){ localStorage.removeItem('mf2_token'); localStorage.removeItem('mf2_user'); window.location.href='/login'; } return Promise.reject(e); });
 

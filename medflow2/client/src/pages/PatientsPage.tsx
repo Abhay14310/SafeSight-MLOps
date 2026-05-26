@@ -10,7 +10,14 @@ import {
 import axios from 'axios';
 import useStore from '../store/useStore';
 
-const API = (import.meta.env.VITE_API_URL || '') + '/api';
+const getBaseURL = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL + '/api';
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/medflow')) {
+    return '/api/medflow2';
+  }
+  return '/api';
+};
+const API = getBaseURL();
 const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('mf2_token')}` });
 
 /* ── Types ─────────────────────────────────────────────────── */

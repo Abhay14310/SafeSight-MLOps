@@ -100,7 +100,14 @@ export default function Register() {
     setLoading(true);
     setError('');
     try {
-      const base = (import.meta.env.VITE_API_URL || '') + '/api';
+      const getBaseURL = () => {
+        if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL + '/api';
+        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/ecotrack')) {
+          return '/api/ecotrack';
+        }
+        return '/api';
+      };
+      const base = getBaseURL();
       await axios.post(`${base}/auth/register`, {
         name:     form.name.trim(),
         email:    form.email.trim().toLowerCase(),
