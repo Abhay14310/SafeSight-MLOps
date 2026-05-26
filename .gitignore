@@ -26,6 +26,8 @@ yolov8n.pt
 *.env
 !.env.example
 lib/
+!**/src/lib/
+!**/src/lib/**/*
 lib64/
 parts/
 sdist/
