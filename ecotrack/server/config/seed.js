@@ -5,8 +5,8 @@ const bcrypt   = require('bcryptjs');
 const { User, Vehicle, Bin, Route, Schedule, Alert } = require('../models/index');
 
 async function seedUsers() {
-  const count = await User.countDocuments();
-  if (count > 0) return;
+  const managerExists = await User.findOne({ email: 'manager@ecotrack.io' });
+  if (managerExists) return;
   const hash = await bcrypt.hash('eco123', 12);
   await User.insertMany([
     { name: 'EcoTrack Manager', email: 'manager@ecotrack.io', password: hash, role: 'manager', zone: 'Zone A - North', isActive: true },
