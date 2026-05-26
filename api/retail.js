@@ -35,11 +35,17 @@ let dbReady = false;
 app.use(async (req, res, next) => {
   if (!dbReady) {
     try {
-      const uri = process.env.SMARTRETAIL_MONGO_URI
-        || process.env.MONGO_URI
-        || 'mongodb://localhost:27017/smartretail';
+      const uri = process.env.SMARTRETAIL_MONGO_URI || process.env.MONGO_URI;
+      if (!uri) {
+        console.error('[SmartRetail] CRITICAL: No MongoDB URI found in environment variables.');
+        console.error('[SmartRetail] Set either SMARTRETAIL_MONGO_URI or MONGO_URI on Vercel.');
+        return res.status(503).json({ 
+          error: 'Database not configured',
+          message: 'Missing SMARTRETAIL_MONGO_URI or MONGO_URI environment variable. Configure in Vercel project settings.'
+        });
+      }
       if (mongoose.connection.readyState === 0) {
-        await mongoose.connect(uri);
+        await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
         console.log('[SmartRetail] MongoDB connected');
       }
       dbReady = true;

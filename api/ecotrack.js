@@ -32,11 +32,17 @@ let seeded  = false;
 app.use(async (req, res, next) => {
   if (!dbReady) {
     try {
-      const uri = process.env.ECOTRACK_MONGO_URI
-        || process.env.MONGO_URI
-        || 'mongodb://localhost:27019/ecotrack';
+      const uri = process.env.ECOTRACK_MONGO_URI || process.env.MONGO_URI;
+      if (!uri) {
+        console.error('[EcoTrack] CRITICAL: No MongoDB URI found in environment variables.');
+        console.error('[EcoTrack] Set either ECOTRACK_MONGO_URI or MONGO_URI on Vercel.');
+        return res.status(503).json({ 
+          error: 'Database not configured',
+          message: 'Missing ECOTRACK_MONGO_URI or MONGO_URI environment variable. Configure in Vercel project settings.'
+        });
+      }
       if (mongoose.connection.readyState === 0) {
-        await mongoose.connect(uri);
+        await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
         console.log('[EcoTrack] MongoDB connected');
       }
       dbReady = true;

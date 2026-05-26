@@ -1,7 +1,8 @@
 // src/lib/api.ts
 import axios from 'axios';
 const getBaseURL = () => {
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL + '/api';
+  const envUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE;
+  if (envUrl) return envUrl.endsWith('/api') ? envUrl : envUrl + '/api';
   if (typeof window !== 'undefined' && window.location.pathname.startsWith('/retail')) {
     return '/api/retail';
   }
