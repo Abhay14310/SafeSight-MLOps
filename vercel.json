@@ -76,6 +76,10 @@
       "dest": "/web-dashboard/public/login.html"
     },
     {
+      "src": "/(main\\.js|styles\\.css)",
+      "dest": "/web-dashboard/public/$1"
+    },
+    {
       "src": "/(.*\\.(css|js|png|jpg|svg|ico|woff|woff2|ttf|json|map))",
       "dest": "/$1"
     },
