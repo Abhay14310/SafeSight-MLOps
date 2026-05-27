@@ -990,8 +990,27 @@
         return;
       }
 
-      if (id === 'medflow') {
-        window.location.href = 'http://localhost:3010';
+      function getModuleUrl(pId) {
+        const isLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+        if (isLocal) {
+          const ports = {
+            medflow: "http://localhost:3010",
+            ecotrack: "http://localhost:3008",
+            smartretail: "http://localhost:3005"
+          };
+          return ports[pId] || "dashboard.html";
+        } else {
+          const paths = {
+            medflow: "/medflow",
+            ecotrack: "/ecotrack",
+            smartretail: "/retail"
+          };
+          return paths[pId] || "dashboard.html";
+        }
+      }
+
+      if (id !== 'safesight') {
+        window.location.href = getModuleUrl(id);
         return;
       }
 

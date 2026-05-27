@@ -175,7 +175,13 @@ async function audit(action, username, detail = "", ip = "") {
 
 // ── Health / Status ───────────────────────────────────────────────────────────
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", platform: "Tasuke26", ts: new Date().toISOString() });
+  const mongoose = require("mongoose");
+  res.json({
+    status: "ok",
+    platform: "Tasuke26",
+    mongo: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    ts: new Date().toISOString()
+  });
 });
 
 app.post("/api/heartbeat", apiKeyMiddleware, (req, res) => {
@@ -356,7 +362,13 @@ app.post("/api/login", loginLimiter, async (req, res) => {
       tier: user.tier || "core",
       role: user.role || "user",
     });
-  } catch {
+  } catch (err) {
+    const mongoose = require("mongoose");
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        error: "Database offline. Check if your MongoDB Atlas IP Whitelist (0.0.0.0/0) is configured."
+      });
+    }
     res.status(500).json({ error: "Server error during login" });
   }
 });
