@@ -19,11 +19,11 @@ export default function TasukeRedirect() {
   const ref         = useRef<HTMLDivElement>(null);
   const [step,      setStep]      = useState(0);
   const [done,      setDone]      = useState(false);
-  const [tasukeUrl, setTasukeUrl] = useState('http://localhost:3000');
+  const [tasukeUrl, setTasukeUrl] = useState('/');
 
   useEffect(() => {
     settingsApi.tasukeUrl()
-      .then(r => setTasukeUrl(r.data.url ?? 'http://localhost:3000'))
+      .then(r => setTasukeUrl(r.data.url ?? '/'))
       .catch(() => {});
 
     // Entrance animation
