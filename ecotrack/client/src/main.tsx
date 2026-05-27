@@ -40,7 +40,7 @@ class ErrorBoundary extends React.Component<
 // NOTE: StrictMode removed — it double-invokes effects which breaks GSAP animations
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <ErrorBoundary>
-    <BrowserRouter>
+    <BrowserRouter basename="/ecotrack">
       <App />
     </BrowserRouter>
   </ErrorBoundary>

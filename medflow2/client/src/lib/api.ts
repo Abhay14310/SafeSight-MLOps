@@ -1,9 +1,13 @@
 // src/lib/api.ts
 import axios from 'axios';
 const getBaseURL = () => {
-  // Check both VITE_API_URL and VITE_API_BASE for environment override
+  // VITE_API_BASE is set by vite.config.ts:
+  //   dev  → '/api'           (proxied to localhost:5060)
+  //   prod → '/api/medflow2'  (Vercel serverless at api/medflow.js)
+  // Use it directly — do NOT append /api again.
   const envUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE;
-  if (envUrl) return envUrl.endsWith('/api') ? envUrl : envUrl + '/api';
+  if (envUrl) return envUrl;
+  // Fallback: detect from current path
   if (typeof window !== 'undefined' && window.location.pathname.startsWith('/medflow')) {
     return '/api/medflow2';
   }
@@ -11,7 +15,7 @@ const getBaseURL = () => {
 };
 const api = axios.create({ baseURL: getBaseURL(), timeout:12000 });
 api.interceptors.request.use(c=>{ const t=localStorage.getItem('mf2_token'); if(t)c.headers.Authorization=`Bearer ${t}`; return c; });
-api.interceptors.response.use(r=>r,e=>{ if(e.response?.status===401){ localStorage.removeItem('mf2_token'); localStorage.removeItem('mf2_user'); window.location.href='/login'; } return Promise.reject(e); });
+api.interceptors.response.use(r=>r,e=>{ if(e.response?.status===401){ localStorage.removeItem('mf2_token'); localStorage.removeItem('mf2_user'); window.location.href='/medflow/login'; } return Promise.reject(e); });
 
 export const authApi    = { login:(email:string,p:string)=>api.post('/auth/login',{email,password:p}), me:()=>api.get('/auth/me'), profile:(d:Record<string,unknown>)=>api.patch('/auth/profile',d) };
 export const patientApi = { list:()=>api.get('/patients'), get:(id:string)=>api.get(`/patients/${id}`), update:(id:string,d:Record<string,unknown>)=>api.patch(`/patients/${id}`,d) };

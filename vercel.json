@@ -12,6 +12,18 @@
   },
   "routes": [
     {
+      "src": "/api/(.*)",
+      "methods": ["OPTIONS"],
+      "dest": "/api/index",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type,Authorization,X-API-Key",
+        "Access-Control-Max-Age": "86400"
+      },
+      "status": 204
+    },
+    {
       "src": "/api/medflow2/(.*)",
       "dest": "/api/medflow"
     },

@@ -42,7 +42,7 @@ app.use(async (req, res, next) => {
         });
       }
       if (mongoose.connection.readyState === 0) {
-        await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
+        await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000 });
         console.log('[EcoTrack] MongoDB connected');
       }
       dbReady = true;

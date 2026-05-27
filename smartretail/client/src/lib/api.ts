@@ -1,8 +1,13 @@
 // src/lib/api.ts
 import axios from 'axios';
 const getBaseURL = () => {
+  // VITE_API_BASE is set by vite.config.ts:
+  //   dev  → '/api'          (proxied to localhost:5050)
+  //   prod → '/api/retail'   (Vercel serverless at api/retail.js)
+  // Use it directly — do NOT append /api again.
   const envUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE;
-  if (envUrl) return envUrl.endsWith('/api') ? envUrl : envUrl + '/api';
+  if (envUrl) return envUrl;
+  // Fallback: detect from current path when no env var is present
   if (typeof window !== 'undefined' && window.location.pathname.startsWith('/retail')) {
     return '/api/retail';
   }
@@ -21,7 +26,7 @@ api.interceptors.response.use(r => r, e => {
   if (e.response?.status === 401) {
     localStorage.removeItem('sr_token');
     localStorage.removeItem('sr_user');
-    window.location.href = '/login';
+    window.location.href = '/retail/login';
   }
   return Promise.reject(e);
 });

@@ -29,7 +29,10 @@ app.use(cors({ origin: '*', credentials: false }));
 app.use(express.json({ limit: '20mb' }));
 app.use(morgan('combined'));
 
-// ── Lazy DB init ──────────────────────────────────────────────────────────────
+// ── Auth route (in-memory users — no DB needed, mount BEFORE DB middleware) ──
+app.use('/api/retail/auth', require(path.join(SERVER_DIR, 'routes/auth')));
+
+// ── Lazy DB init (only for routes that need MongoDB) ─────────────────────────
 let dbReady = false;
 
 app.use(async (req, res, next) => {
@@ -57,8 +60,7 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// ── Routes ────────────────────────────────────────────────────────────────────
-app.use('/api/retail/auth',      require(path.join(SERVER_DIR, 'routes/auth')));
+// ── DB-backed routes ──────────────────────────────────────────────────────────
 app.use('/api/retail/dashboard', require(path.join(SERVER_DIR, 'routes/dashboard')));
 app.use('/api/retail/cameras',   require(path.join(SERVER_DIR, 'routes/cameras')));
 app.use('/api/retail/footfall',  require(path.join(SERVER_DIR, 'routes/footfall')));

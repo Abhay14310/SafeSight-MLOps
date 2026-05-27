@@ -2,8 +2,13 @@
 /// <reference types="vite/client" />
 import axios from 'axios';
 const getBaseURL = () => {
+  // VITE_API_BASE is set by vite.config.ts:
+  //   dev  → '/api'          (proxied to localhost:5055)
+  //   prod → '/api/ecotrack' (Vercel serverless at api/ecotrack.js)
+  // Use it directly — do NOT append /api again.
   const envUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE;
-  if (envUrl) return envUrl.endsWith('/api') ? envUrl : envUrl + '/api';
+  if (envUrl) return envUrl;
+  // Fallback: detect from current path
   if (typeof window !== 'undefined' && window.location.pathname.startsWith('/ecotrack')) {
     return '/api/ecotrack';
   }
@@ -11,7 +16,7 @@ const getBaseURL = () => {
 };
 const api = axios.create({ baseURL: getBaseURL(), timeout:12000 });
 api.interceptors.request.use(c=>{ const t=localStorage.getItem('eco_token'); if(t)c.headers.Authorization=`Bearer ${t}`; return c; });
-api.interceptors.response.use(r=>r,e=>{ if(e.response?.status===401){localStorage.removeItem('eco_token');localStorage.removeItem('eco_user');window.location.href='/login';} return Promise.reject(e); });
+api.interceptors.response.use(r=>r,e=>{ if(e.response?.status===401){localStorage.removeItem('eco_token');localStorage.removeItem('eco_user');window.location.href='/ecotrack/login';} return Promise.reject(e); });
 
 export const authApi     = { login:(email:string,password:string)=>api.post('/auth/login',{email,password}), me:()=>api.get('/auth/me'), profile:(d:Record<string,unknown>)=>api.patch('/auth/profile',d) };
 export const dashApi     = { summary:()=>api.get('/dashboard/summary') };
