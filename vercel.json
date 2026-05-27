@@ -64,19 +64,20 @@
       "dest": "/smartretail/client/dist/index.html"
     },
     {
+      "src": "/app",
+      "status": 308,
+      "headers": { "Location": "/app/" }
+    },
+    {
+      "src": "/app/",
+      "dest": "/web-dashboard/public/login.html"
+    },
+    {
       "src": "/app/assets/(.*)",
       "dest": "/web-dashboard/public/$1"
     },
     {
       "src": "/app/(.*)",
-      "dest": "/web-dashboard/public/$1"
-    },
-    {
-      "src": "/app",
-      "dest": "/web-dashboard/public/login.html"
-    },
-    {
-      "src": "/(main\\.js|styles\\.css)",
       "dest": "/web-dashboard/public/$1"
     },
     {
