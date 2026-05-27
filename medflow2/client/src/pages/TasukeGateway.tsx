@@ -20,10 +20,10 @@ export default function TasukeGateway(){
   const tlRef=useRef<gsap.core.Timeline|null>(null);
   const[step,setStep]=useState(0);
   const[done,setDone]=useState(false);
-  const[tasukeUrl,setTasukeUrl]=useState('http://localhost:4000');
+  const[tasukeUrl,setTasukeUrl]=useState('/');
 
   useEffect(()=>{
-    settingsApi.tasukeUrl().then(r=>setTasukeUrl(r.data.url??'http://localhost:4llhhlkll;jyhjjmklkkl;lll;l;lll000')).catch(()=>{});
+    settingsApi.tasukeUrl().then(r=>setTasukeUrl(r.data.url??'/')).catch(()=>{});
     const ctx=gsap.context(()=>{
       gsap.fromTo('.tg-logo',   {scale:.7,opacity:0},{scale:1,opacity:1,duration:.7,ease:'back.out(1.5)'});
       gsap.fromTo('.tg-title',  {y:20,opacity:0},{y:0,opacity:1,duration:.5,ease:'power3.out',delay:.2});
