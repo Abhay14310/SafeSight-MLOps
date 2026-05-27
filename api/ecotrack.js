@@ -25,15 +25,28 @@ app.use(cors({ origin: '*', credentials: false }));
 app.use(express.json({ limit: '20mb' }));
 app.use(morgan('combined'));
 
-// ── Lazy DB init ──────────────────────────────────────────────────────────────
+// ── Lazy DB init & Isolation ──────────────────────────────────────────────────
+function getIsolatedUri(baseUri, dbName) {
+  if (!baseUri) return '';
+  try {
+    const url = new URL(baseUri.replace('mongodb+srv://', 'http://').replace('mongodb://', 'http://'));
+    url.pathname = '/' + dbName;
+    return baseUri.startsWith('mongodb+srv://') 
+      ? url.toString().replace('http://', 'mongodb+srv://')
+      : url.toString().replace('http://', 'mongodb://');
+  } catch (e) {
+    return baseUri;
+  }
+}
+
 let dbReady = false;
 let seeded  = false;
 
 app.use(async (req, res, next) => {
   if (!dbReady) {
     try {
-      const uri = process.env.ECOTRACK_MONGO_URI || process.env.MONGO_URI;
-      if (!uri) {
+      const baseUri = process.env.ECOTRACK_MONGO_URI || process.env.MONGO_URI;
+      if (!baseUri) {
         console.error('[EcoTrack] CRITICAL: No MongoDB URI found in environment variables.');
         console.error('[EcoTrack] Set either ECOTRACK_MONGO_URI or MONGO_URI on Vercel.');
         return res.status(503).json({ 
@@ -41,9 +54,10 @@ app.use(async (req, res, next) => {
           message: 'Missing ECOTRACK_MONGO_URI or MONGO_URI environment variable. Configure in Vercel project settings.'
         });
       }
+      const uri = getIsolatedUri(baseUri, 'ecotrack');
       if (mongoose.connection.readyState === 0) {
         await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
-        console.log('[EcoTrack] MongoDB connected');
+        console.log('[EcoTrack] MongoDB connected to database: ecotrack');
       }
       dbReady = true;
     } catch (err) {

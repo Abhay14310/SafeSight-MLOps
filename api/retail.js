@@ -29,14 +29,27 @@ app.use(cors({ origin: '*', credentials: false }));
 app.use(express.json({ limit: '20mb' }));
 app.use(morgan('combined'));
 
-// ── Lazy DB init ──────────────────────────────────────────────────────────────
+// ── Lazy DB init & Isolation ──────────────────────────────────────────────────
+function getIsolatedUri(baseUri, dbName) {
+  if (!baseUri) return '';
+  try {
+    const url = new URL(baseUri.replace('mongodb+srv://', 'http://').replace('mongodb://', 'http://'));
+    url.pathname = '/' + dbName;
+    return baseUri.startsWith('mongodb+srv://') 
+      ? url.toString().replace('http://', 'mongodb+srv://')
+      : url.toString().replace('http://', 'mongodb://');
+  } catch (e) {
+    return baseUri;
+  }
+}
+
 let dbReady = false;
 
 app.use(async (req, res, next) => {
   if (!dbReady) {
     try {
-      const uri = process.env.SMARTRETAIL_MONGO_URI || process.env.MONGO_URI;
-      if (!uri) {
+      const baseUri = process.env.SMARTRETAIL_MONGO_URI || process.env.MONGO_URI;
+      if (!baseUri) {
         console.error('[SmartRetail] CRITICAL: No MongoDB URI found in environment variables.');
         console.error('[SmartRetail] Set either SMARTRETAIL_MONGO_URI or MONGO_URI on Vercel.');
         return res.status(503).json({ 
@@ -44,9 +57,10 @@ app.use(async (req, res, next) => {
           message: 'Missing SMARTRETAIL_MONGO_URI or MONGO_URI environment variable. Configure in Vercel project settings.'
         });
       }
+      const uri = getIsolatedUri(baseUri, 'smartretail');
       if (mongoose.connection.readyState === 0) {
         await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
-        console.log('[SmartRetail] MongoDB connected');
+        console.log('[SmartRetail] MongoDB connected to database: smartretail');
       }
       dbReady = true;
     } catch (err) {

@@ -3,7 +3,7 @@
 import axios from 'axios';
 const getBaseURL = () => {
   const envUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE;
-  if (envUrl) return envUrl.endsWith('/api') ? envUrl : envUrl + '/api';
+  if (envUrl) return envUrl;
   if (typeof window !== 'undefined' && window.location.pathname.startsWith('/ecotrack')) {
     return '/api/ecotrack';
   }

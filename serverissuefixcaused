@@ -1,4 +1,4 @@
-# Server Seeding and Authentication Issues Analysis
+# Server Seeding, Authentication, and Routing Issues Analysis
 
 This document summarizes the root causes of the database seeding, authentication, and routing issues across the SafeSight-MLOps (Tasuke'26) monorepo and details the corrective actions taken.
 
@@ -18,9 +18,9 @@ The MedFlow 2 clinical ward login was returning "Invalid Credentials" due to a c
   The root SafeSight server returned an HTTP `404 Not Found` for these endpoints. The client-side login caught this error and immediately mapped all HTTP failures to the hardcoded display message: `"Invalid credentials. Try nurse@medflow.io / medflow123"`.
   
 * **The Resolution**: Created dynamic baseURL path-prefix detectors in all client connection configuration files:
-  - [medflow2/client/src/lib/api.ts](file:///c:/Users/abhay/SafeSight-MLOps/medflow2/client/src/lib/api.ts) & [PatientsPage.tsx](file:///c:/Users/abhay/SafeSight-MLOps/medflow2/client/src/pages/PatientsPage.tsx)
-  - [ecotrack/client/src/lib/api.ts](file:///c:/Users/abhay/SafeSight-MLOps/ecotrack/client/src/lib/api.ts) & [Register.tsx](file:///c:/Users/abhay/SafeSight-MLOps/ecotrack/client/src/pages/Register.tsx)
-  - [smartretail/client/src/lib/api.ts](file:///c:/Users/abhay/SafeSight-MLOps/smartretail/client/src/lib/api.ts)
+  - `medflow2/client/src/lib/api.ts` & `PatientsPage.tsx`
+  - `ecotrack/client/src/lib/api.ts` & `Register.tsx`
+  - `smartretail/client/src/lib/api.ts`
   
   They now compute base URLs dynamically on Vercel using:
   ```typescript
@@ -43,18 +43,33 @@ The MedFlow 2 clinical ward login was returning "Invalid Credentials" due to a c
 
 ---
 
-## 2. Multi-Module Seeding & Routing Integrity Audit
-The other modules were successfully audited and fixed for matching routing vulnerabilities:
+## 2. Dynamic Sidebar Product Switcher & API Diagnosis (SafeSight)
+Audited and resolved two major production issues with SafeSight inside `web-dashboard`:
 
-* **EcoTrack (Fixed)**: 
-  * *Routing*: Patched `api.ts` and `Register.tsx` to dynamically detect `/ecotrack` pathname and prefix with `/api/ecotrack`.
-  * *Seeding*: Modified `seedUsers()` in `ecotrack/server/config/seed.js` to check specifically for `manager@ecotrack.io`.
-* **SmartRetail (Fixed)**: 
-  * *Routing*: Patched `api.ts` to dynamically detect `/retail` pathname and prefix with `/api/retail`.
-  * *Seeding*: Hardcoded user array in `routes/auth.js` (`manager@store.io` / `retail123`) is in-memory and thus unaffected by seeding.
-* **SafeSight Web Dashboard (Secure)**: 
-  * *Routing*: Root application handles all `/api/*` matching correctly.
-  * *Seeding*: Already implements `SecurityUser.findOne({ username: 'admin' })` to safely seed `admin` / `password123`.
+### A. Sidebar Product Switcher Hardcoded Localhost Paths
+* **The Problem**: Clicking products inside the `web-dashboard/public/dashboard.html` sidebar dropdown used hardcoded ports (e.g. `http://localhost:3010` for MedFlow) or static non-functional preview loaders (for EcoTrack and SmartRetail). In a cloud deployment like Vercel, this caused navigation to fail or render blank placeholders.
+* **The Resolution**: Replaced the product switcher with a dynamic URL resolver in `web-dashboard/public/dashboard.html`:
+  ```javascript
+  function getModuleUrl(pId) {
+    const isLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+    if (isLocal) {
+      const ports = { medflow: "http://localhost:3010", ecotrack: "http://localhost:3008", smartretail: "http://localhost:3005" };
+      return ports[pId] || "dashboard.html";
+    } else {
+      const paths = { medflow: "/medflow", ecotrack: "/ecotrack", smartretail: "/retail" };
+      return paths[pId] || "dashboard.html";
+    }
+  }
+  ```
+  Now, switching between products in the dropdown dynamically redirects to their fully functioning live modules under production paths in Vercel, and to correct port mappings in local development.
+
+### B. Zero-Trust Login & Database Offline Diagnostics
+* **The Problem**: If Vercel fails to connect to MongoDB Atlas (due to IP whitelist settings blocking serverless calls), SafeSight authentication fails silently inside the login catch block and returns a generic `500 Server error during login`. The client then displays a misleading `Server connection lost. Is Docker running?` warning.
+* **The Resolution**: Upgraded `web-dashboard/app.js` error handling and health check:
+  - **Health Check (`/api/health`)**: Now returns active database connection readyState (`mongo: connected | disconnected`) for quick self-audits.
+  - **Login Routing Catch Block**: If the database connection is offline, the API explicitly returns an HTTP 503 Service Unavailable with a precise diagnostic alert:
+    `Database offline. Check if your MongoDB Atlas IP Whitelist (0.0.0.0/0) is configured.`
+    This alerts the user directly to configure their Atlas cluster settings rather than leaving the system in a generic error loop.
 
 ---
 
