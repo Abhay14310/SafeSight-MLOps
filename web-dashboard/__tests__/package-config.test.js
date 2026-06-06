@@ -83,7 +83,7 @@ describe('package.json - overrides section (path-to-regexp security fix)', () =>
 
 describe('package.json - all expected dependencies present', () => {
   const expectedDeps = [
-    'bcrypt',
+    'bcryptjs',  // project uses bcryptjs (pure-JS implementation, no native bindings)
     'cors',
     'express',
     'express-rate-limit',
@@ -159,7 +159,7 @@ describe('package-lock.json - root package entry reflects changes', () => {
 
   test('root package dependencies include all new packages', () => {
     const deps = lockfile.packages[''].dependencies;
-    expect(deps['bcrypt']).toBeDefined();
+    expect(deps['bcryptjs']).toBeDefined();  // project uses bcryptjs
     expect(deps['cors']).toBeDefined();
     expect(deps['express']).toBeDefined();
     expect(deps['jsonwebtoken']).toBeDefined();

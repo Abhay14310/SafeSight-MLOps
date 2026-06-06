@@ -10,6 +10,14 @@ on:
   pull_request:
     branches: [main]
 
+# Principle of least privilege — only grant what each job needs.
+# pull-requests: write  → allows gitleaks to post findings as a PR comment
+# security-events: write → allows uploading SARIF results to GitHub Security tab
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
 jobs:
 
   # ── Job 1: Secret / credential leak scan (fast gate — runs first) ─────────
